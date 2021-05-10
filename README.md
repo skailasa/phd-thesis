@@ -1,4 +1,16 @@
-# phd-thesis
+<h1 align='center'> PhD Thesis </h1>
+
+## Outline
+
+...
+
+## Publications
+
+...
+
+## Associated Software
+
+...
 
 ## Citatation
 
