@@ -5,8 +5,9 @@
 ...
 
 ## Publications
+- [PyExaFMM-Computing in Science and Engineering](https://github.com/betckegroup/pyexafmm-cise/blob/main/article/pyexafmm.pdf)
+- ...
 
-...
 
 ## Associated Software
 
