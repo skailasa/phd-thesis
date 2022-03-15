@@ -13,16 +13,16 @@
 
 - [PyExaFMM](https://github.com/exafmm/pyexafmm)
 - [AdaptOctree](https://github.com/Excalibur-SLE/AdaptOctree)
-- ...
+- [Rusty Tree](https://github.com/rusty-fast-solvers/rusty-tree)
 
 ## Citatation
 
 ```bash
-@phdthesis{Kailasa:PhDThesis:2023,
+@phdthesis{Kailasa:PhDThesis:2024,
     author = {Srinath Kailasa},
     title = {{Task Parallel Fast Direct Solvers On Heterogenous Computing Clusters}},
     school = {University College London},
     address = {United Kingdom},
-    year = {2023},
+    year = {2024},
 }
 ```
