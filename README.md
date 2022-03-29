@@ -6,7 +6,7 @@
 
 ## Publications
 - [PyExaFMM-Computing in Science and Engineering](https://github.com/betckegroup/pyexafmm-cise/)
-- ...
+- [Rusty Trees - SoftwareX](https://github.com/betckegroup/rusty-trees-softwarex)
 
 
 ## Associated Software
