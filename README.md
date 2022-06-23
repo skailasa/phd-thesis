@@ -1,5 +1,7 @@
 <h1 align='center'> PhD Thesis </h1>
 
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+
 ## Outline
 
 The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical components required in their implementation. The main innovations presented in this thesis are: 
