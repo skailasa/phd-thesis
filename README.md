@@ -7,22 +7,20 @@ The goal of this thesis was the implementation of a fully distributed, $O(N)$, f
 ## Publications
 - [PyExaFMM - Computing in Science and Engineering](https://github.com/betckegroup/pyexafmm-cise/)
 - [Rusty Trees - SoftwareX](https://github.com/betckegroup/rusty-trees-softwarex)
+- WIP: Formulation of Proxy Compression Method for different Boundary Integral Equations Based on RS-S
 
 
 ## Associated Software
-
 - [PyExaFMM](https://github.com/exafmm/pyexafmm)
 - [AdaptOctree](https://github.com/Excalibur-SLE/AdaptOctree)
 - [Rusty Tree](https://github.com/rusty-fast-solvers/rusty-tree)
 - [Hyksort](https://github/com/rusty-fast-solvers/hyksort)
 
 
-## Presentations
-
+## Presentations
 - [Rust for Computational Science, Rust @ Imperial](https://mora.stream/event/34875)
 
 ## Posters
-
 - [Painless-ish HPC with Rust+Python, SuperComputing 22]()
 
 ## Citatation
