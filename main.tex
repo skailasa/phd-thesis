@@ -14,7 +14,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[RO,LE]{Computational Topics in the Solution of Integral Equations}
+\fancyhead[RO,LE]{Computational Topics on the Solution of Integral Equations}
 \fancyfoot{}
 \fancyfoot[LE,RO]{\thepage}
 \fancyfoot[LO,CE]{Chapter \thechapter}
@@ -33,7 +33,7 @@
 \usepackage[toc]{glossaries}
 
 \makeglossaries
-\input{glossary.tex}
+\input{pages/glossary.tex}
 
 % Default fixed font does not support bold face
 \DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
@@ -80,20 +80,20 @@ showstringspaces=false            %
 \begin{document}
 
 
-    \input{titlepage.tex}
+    \input{pages/titlepage.tex}
 
-    \input{acknowledgements.tex}
+    \input{pages/acknowledgements.tex}
 
     \newpage
 
-    \input{abstract.tex}
+    \input{pages/abstract.tex}
 
     \tableofcontents
 
     \input{chapters/ch_1/ch_1.tex}
 
     \appendix
-    \input{appendix.tex}
+    \input{pages/appendix.tex}
 
     \printglossary
 
