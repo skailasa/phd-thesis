@@ -2,13 +2,13 @@
 
 ## Outline
 
-The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical implementations required in their implementation. The main innovations presented in this thesis are: 
+The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical components required in their implementation. The main innovations presented in this thesis are: 
 
 - (1) A flexible, Rust-based, software infrastructure for the __fast__, $O(N)$ forward **and** backward applications of integral operators that arise in the discretisation of numerous problems in science and engineering
 
 - (2) Mathematical investigations for the optimal representations of various aspects of these solvers, with numerical verification of the performance of our choices.
 
-Rust is chosen as it's a promising young programming language with excellent properties for high-performance computational science. Our codes are highly-portable and malleable, with complete Python APIs designed for accessability by the wider community of math/physics/engineering researchers without software expertise.
+Rust is chosen as it's a promising young programming language with excellent properties for high-performance computational science. Our codes are highly-portable and malleable, with complete Python APIs designed for accessibility by the wider community of math/physics/engineering researchers without software expertise.
 
 We demonstrate the performance of our solvers, and the ease of deploying them, with experiments scaling from local workstations all the way up to the latest petascale supercomputing clusters.
 
