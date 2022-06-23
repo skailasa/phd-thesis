@@ -8,7 +8,7 @@ The goal of this thesis was the implementation of a fully distributed, $O(N)$, f
 
 - (2) Mathematical investigations for the optimal representations of various aspects of these solvers, with numerical verification of the performance of our choices.
 
-Rust is chosen as it's a promising young programming language with excellent properties for high-performance computational science. Our codes are highly-portable and malleable, with fully Python APIs designed for accessability by the wider community of math/physics/engineering researchers without software expertise.
+Rust is chosen as it's a promising young programming language with excellent properties for high-performance computational science. Our codes are highly-portable and malleable, with complete Python APIs designed for accessability by the wider community of math/physics/engineering researchers without software expertise.
 
 We demonstrate the performance of our solvers, and the ease of deploying them, with experiments scaling from local workstations all the way up to the latest petascale supercomputing clusters.
 
