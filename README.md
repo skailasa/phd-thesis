@@ -22,7 +22,7 @@ We demonstrate the performance of our solvers, and the ease of deploying them, w
 - [PyExaFMM](https://github.com/exafmm/pyexafmm)
 - [AdaptOctree](https://github.com/Excalibur-SLE/AdaptOctree)
 - [Rusty Tree](https://github.com/rusty-fast-solvers/rusty-tree)
-- [Hyksort](https://github/com/rusty-fast-solvers/hyksort)
+- [Hyksort](https://github.com/rusty-fast-solvers/hyksort)
 
 
 ## Presentations
