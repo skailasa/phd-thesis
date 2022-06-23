@@ -2,7 +2,7 @@
 
 ## Outline
 
-The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical implementations required of these solvers. The main innovations presented in this thesis are: 
+The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical implementations required in their implementation. The main innovations presented in this thesis are: 
 
 - (1) A flexible, Rust-based, software infrastructure for the __fast__, $O(N)$ forward **and** backward applications of integral operators that arise in the discretisation of numerous problems in science and engineering
 
