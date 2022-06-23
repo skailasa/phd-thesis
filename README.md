@@ -2,7 +2,15 @@
 
 ## Outline
 
-The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. To that end we've developed a software infrastructure for solving these problems in Rust, a promising young programming language with excellent properties for high-performance computational science. These codes are portable and malleable, and we demonstrate their scaling performance from local workstations to the petascale supercomputing clusters.
+The goal of this thesis was the implementation of a fully distributed, $O(N)$, fast-direct solver for the integral equations arising from Maxwell's equations for electromagnetism. The compute and memory requirements of these solvers requires careful consideration of the algorithmic and mathematical implementations required of these solvers. The main innovations presented in this thesis are: 
+
+- (1) A flexible, rust-based, software infrastructure for the __fast__, $O(N)$ forward **and** backward applications of integral operators that arise in the discretisation of numerous problems in science and engineering
+
+- (2) Mathematical investigations for the optimal representations of various aspects of these solvers, with numerical verification of the performance of our choices.
+
+Rust is chosen as it's a promising young programming language with excellent properties for high-performance computational science. Our codes are highly-portable and malleable, with fully Python APIs designed for accessability by the wider community of math/physics/engineering researchers without software expertise.
+
+We demonstrate the performance of our solvers, and the ease of deploying them, with experiments scaling from local workstations all the way up to the latest petascale supercomputing clusters.
 
 ## Publications
 - [PyExaFMM - Computing in Science and Engineering](https://github.com/betckegroup/pyexafmm-cise/)
