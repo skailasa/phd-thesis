@@ -20,7 +20,7 @@ The goal of this thesis was the implementation of a fully distributed, $O(N)$, f
 ## Presentations
 - [Rust for Computational Science, Rust @ Imperial](https://mora.stream/event/34875)
 
-## Posters
+## Posters
 - [Painless-ish HPC with Rust+Python, SuperComputing 22]()
 
 ## Citatation
