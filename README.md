@@ -28,7 +28,7 @@ The goal of this thesis was the implementation of a fully distributed, $O(N)$, f
 ```bash
 @phdthesis{Kailasa:PhDThesis:2024,
     author = {Srinath Kailasa},
-    title = {{Computational Topics in The Solution of Integral Equations}},
+    title = {{Computational Topics in the Solution of Integral Equations}},
     school = {University College London},
     address = {United Kingdom},
     year = {2024},
