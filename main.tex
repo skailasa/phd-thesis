@@ -81,8 +81,13 @@ showstringspaces=false            %
 % Python for inline
 \newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
 
+% Remove excess double page
+\let\cleardoublepage\clearpage
+
 \begin{document}
 
+
+    \frontmatter
 
     \input{pages/cover.tex}
 
@@ -93,6 +98,8 @@ showstringspaces=false            %
     \input{pages/abstract.tex}
 
     \tableofcontents
+
+    \mainmatter
 
     \input{chapters/ch_1/ch_1.tex}
 
