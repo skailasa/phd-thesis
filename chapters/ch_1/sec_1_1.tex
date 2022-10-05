@@ -12,91 +12,27 @@ Consider electrostatics, or gravitation, where $q_i$ is a point charge or mass, 
     a(x)u(x) + b(x) \int_\Omega K(x, y)c(y)u(y)dy = f(x), \> \> x \in \Omega \subset \mathbb{R}^d
 \end{flalign}
 
-where the dimension $d = 2$ or $3$. The functions $a(x)$, $b(x)$ and $c(y)$ are given and linked to the parameters of a problem, $K(x,y)$ is some known kernel function and $f(x)$ is a known right hand side, $K(x,y)$ is associated with the PDE - either its Green's function, or the derivative. This is a very general formula, and includes common problems such as the Laplace equation, Lippman-Schwinger equation and the Helmholtz equation in the low frequency case. Upon discretisation using some appropriate method, for example the Nyström or Galerkin methods, we obtain a linear system of the form,
+where the dimension $d = 2$ or $3$. The functions $a(x)$, $b(x)$ and $c(y)$ are given and linked to the parameters of a problem, $K(x,y)$ is some known kernel function and $f(x)$ is a known right hand side, $K(x,y)$ is associated with the PDE - either its Green's function, or the derivative. This is a very general formulation, and includes common problems such as the Laplace and Helmholtz equations. Upon discretisation with an appropriate method, for example the Nyström or Galerkin methods, we obtain a linear system of the form,
 
 \begin{flalign}
     \label{eq:linear_system:sec:1_1}
     \mathsf{K} u = f
 \end{flalign}
 
-The defining feature of this linear system is that $\mathsf{K}$ is \textit{dense}, with non-zero off-diagonal elements. Such problems are \textit{globally data dependent}, in the sense that the calculation at each element in the discrete system depends on all other elements.
+The key feature of this linear system is that $\mathsf{K}$ is \textit{dense}, with non-zero off-diagonal elements. Such problems are also \textit{globally data dependent}, in the sense that the calculation at each matrix element of the discretized system in the depends on all other elements. This density made numerical methods based on boundary integral equations prohibitively expensive prior to the discovery of so called `fast algorithms', of which the \gls{FMM} is the prototypical example. The naive computational complexity of storing a dense matrix, or calculating its matrix vector product is $O(N^2)$, and the complexity of finding its inverse is $O(N^3)$ with linear algebra techniques such as LU decomposition on Gaussian elimination, where $N$ is the number unknowns. 
+The critical insight behind the FMM, and other fast algorithms, is that one can compress physically distant interactions by utilizing the rapid decay behaviour of the problem's kernel. A compressed `low-rank' representation can be sought in this situation, displayed in figure (\ref{fig:low_rank:sec_1_1}) for $\mathbb{R}^2$.
 
-This density made numerical methods based on boundary integral equations prohibitively expensive prior to the discovery of so called `fast algorithms', of which the FMM is the prototypical example. The naive computational complexity of storing a dense matrix, or calculating its matrix vector product is $O(N^2)$, and the complexity of finding its inverse is $O(N^3)$, where $N$ is the number unknowns. This cost should have made the construction of numerical software based on boundary integral formulations moot, however the FMM demonstrated that the rapid decay behaviour exhibited by certain classes of kernel function can be exploited to reduce the asymptotic cost of handling dense matrices in formulations that result from them. 
+Using the FMM the best case the matrix vector product described by (\ref{eq:n_body:sec:1_1}) and (\ref{eq:linear_system:sec:1_1}) can be computed in just $O(N)$ \gls{flops} and stored with $O(N)$ memory. Fast algorithm based matrix inversion techniques display similarly optimal scaling in the best case. Given the wide applicability of boundary integral equations to natural sciences, from acoustics \cite{wolf2011aeroacoustic,hao2015efficient} and electrostatics \cite{wang2021high} to electromagnetics \cite{darve2004fast} fluid dynamics \cite{rahimian2010petascale} and earth science \cite{chaillat2008multi}. Fast algorithms can be seen to have dramatically brought within reach large scale simulations of a wide class of scientific and engineering problems. The applications of FMMs aren't restricted to BIEs, as (\ref{eq:n_body:sec:1_1}) shares its form with the kernel summations often found in statistical applications, the FMM has found uses in and computational statistics \cite{ambikasaran2013large}, machine learning \cite{lee2012distributed} and Kalman filtering \cite{li2014kalman}. The uniting feature of these applications are their global data dependency. 
 
-In the best case the matrix vector product described by (\ref{eq:n_body:sec:1_1}) and (\ref{eq:linear_system:sec:1_1}) can be computed in just $O(N)$ \gls{FLOPS} and stored with $O(N)$ memory. Given the wide applicability of boundary integral equations to natural sciences, from acoustics \cite{wolf2011aeroacoustic,hao2015efficient} and electrostatics \cite{wang2021high} to electromagnetics \cite{darve2004fast} fluid dynamics \cite{rahimian2010petascale} and earth science \cite{chaillat2008multi}. The FMM can be seen to have dramatically brought within reach large scale simulations of a wide class of scientific and engineering problems. 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{ch_1/low_rank.pdf}
+    \caption{Given two boxes in $\mathbb{R}^2$, $\mathcal{B}_1$, $\mathcal{B}_2$, which enclose corresponding degrees of freedom, off diagonal blocks in the linear system matrix $\mathsf{K}_{\mathcal{B}_1\mathcal{B}_2}$ and $\mathsf{K}_{\mathcal{B}_2\mathcal{B}_1}$ are considered low-rank for the FMM when separated by a distance at least equal to their diameter, this is also known as `strong admissibility'. Figure adapted from \cite{minden2017recursive}.}
+    \label{fig:low_rank:sec_1_1}
+\end{figure}
 
-Furthermore, the FMM can also be applied to volume integral equations \cite{malhotra2015pvfmm}. Indeed, as (\ref{eq:n_body:sec:1_1}) shares its form with the kernel summations often found in statistical applications, the FMM has found uses in and computational statistics \cite{ambikasaran2013large}, machine learning \cite{lee2012distributed} and Kalman filtering \cite{li2014kalman}.
+Recent decades have seen the development of numerous mathematical techniques for computation of fast algorithms. However given their broad applicability across various fields of science and engineering, this development has not been met with a commensurate black box open-source software solutions which are easy to use and deploy by non-experts. This is not to say that there is an absence of research software for the FMM \cite{kailasa2022pyexafmm, exafmm,wang2021exafmm,malhotra2015pvfmm, fmm3d}, or fast matrix inversion \cite{fmm3dbie, strongskel, ho2020flam}. However, the software landscape is heavily fragmented, codes often arising out of a software or mathematical investigation with infrequent maintenance or development post-publication. Few attempts have been made to re-use data structures, or application programming interfaces (\gls{API}s) between projects, and source code is often poorly documented leading to little to no interoperability between projects. Furthermore, as codes are often written in compiled languages such as Fortran \cite{fmm3d} or C++ \cite{malhotra2015pvfmm, exafmm,wang2021exafmm}, there is a relatively high software engineering barrier entry for community contributions, further discouraging widespread adoption amongst non-specialist academics and industry practitioners. Additionally, significant domain specific expertise in numerical analysis is required by users to discern the subtle differences between fast algorithm implementations, or indeed to write one independently. 
 
-Despite their different origins and formulations, these example applications are united by their global data dependency. Resolving this is the key challenge in developing software for fast algorithms. The rapid decay behaviour between physically distant interactions required by these algorithms is often referred to as `low rank', in which cases a compressed representation may be sought
+Computer hardware and architectures continue to advance concurrently with advances in numerical algorithms. Recently, the exascale (capable of $10^{18}$ \gls{flops}) benchmark was achieved by Oak Ridge National Labs' Frontier machine\footnote{https://www.olcf.ornl.gov/frontier/}. With  9,472 64 core AMD Trento nodes with a total of 606,208 compute cores, alongside 37,888 Radeon Instinct GPUs with a total of 8,335,360 cores, programming fast algorithms with their inbuilt global data dependency is challenging at a software level, due to the communication bottlenecks imposed by the necessary all to all communications. Furthermore, the dense matrix operations required by fast algorithms require delicate tuning to fully take advantage of memory hierarchies on each node. Currently there exist very few open-source fast algorithm implementations that are capable of being deployed on parallel machines \cite{malhotra2015pvfmm, exafmm}, or take advantage of a heterogenous CPU/GPU environments \cite{exafmm}. In fact for fast inverses there doesn't yet exist an open-source parallel implementation. Furthermore, developers must using existing codes must employ careful consideration in order to successfully compile the software in each new hardware environment they encounter, from desktop workstations to supercomputing clusters.
 
-...Figure illustrating low-rank assumption.
- 
-...FMM logic. It relies on a recursive data structure to hierarchically partition a domain of interest. In two dimensions, we use a quadtree (FIGURE FOR QUADTREE), and in three dimensions we use an octree (FIGURE FOR OCTREE). Denoting the set of points contained within a node of a tree as a `cluster', the basic logic of the FMM, regardless of its flavour (see section \ref{sec:1_2}), involves a hierarchical recursion through the tree, and approximating interactions between distant clusters where a low-rank assumption can be applied. This is the how the FMM, and other fast-algorithms, can 
-
-% Yokota, Ibeid, Keyes (2016)
-
-% - Applications of FMM can be broadly categorised as elliptic PDEs and kernel summation.
-
-% - Integral forms of elliptic PDEs for which FMM applies
-%     - boundary integrals for homogenous problems
-%     - discrete volume integrals
-%     - continuous volume integrals
-
-% Continuous volume integrals:
-% Schrodinger 106
-% Stokes 77
-
-% - Common feature of all applications is that they are global problems whre the calculation at every location depends on values everywhere else.
-
-% - Dense matrices in BIEs <=> all to all interaction in N body problems, and kernel summations with global support -> all manifestations of same global problem.
-
-% - Uniform resolution use FFT, introduce FFT as first 'fast algorithm', however has unfavourable communication cost.
-% - For non-uniform global problems also have multigrid methods as an alternative, also O(N) cost for elliptic/hyperbolic PDE problems. Gholami, Malhotra, Sundar, Biros (2016) - multigrid decent.
-
-% - Ambikasaran \& Darve summarise differences between different algebraic methods.
-%     - H, H2, HSS, HBS, HODLR.
-
-% - Purely algebraic methods
-%     - precompute and store entire hierarchical matrix.
-%     - more storage, more data movement - both vertically and horizontally in memory hierarchy.
-
-% - When the cost of data movement increases faster than arithmetic operations on future architectures, the methods that compute more to store/move less will become advantageous (computationally) - tradeoff results in KIFMM as choice - semi-analytical.
-
-% - algebraic variants commonly argued to be superior as they operate directly on the matrix without th eneed to pass geometric information
-%     - not convincing on their own.
-%         - major libraries (PETSc) offer interfaces to insert a matrix free preconditioner as a function, and passing geometric info is something users are willing to do if it increases performance.
-%     - Always just comes down to the flops vs bytes trade-off
-%     - need a decent reference or description of where architecture technology is heading in order to justify our choice of FMM.
-
-% - Note, analytical FMM have very high arithmetic intensity (flop/byte).
-%     - not brute force methods doing wasteful calculations, only doing useful flops. Very different from achieving high arithmetic intensity on dense mat-mat mults or LU decompositions.
-%     - Bonsai - an analytical treecode.
-
-% - Fast translation operators crucial - take up a lot of time of the FMM, whatever its implementation.
-%     - analytical options for fast translation operators.
-%         - Rotation of spherical harmonics 92
-%         - Block FFT 36
-%         - Planewaves 50
-
-%     - Accelerating M2L step
-%         - level-skip M2L method 91
-%         - 8,4,2 box method 93
-%         - methods that use dual tree traversal alongside multipole acceptance criterion to construct optimal interaction lists 34
-
-%     - Variable expansion order
-%         - VFMM 85
-%         - Guassian VFMM 20
-%         - optimal parameter FMM 28
-%     - intuition = boxes further away can afford to be of lower expansion order without loss of accuracy.
-
-%     - Can store translations as matrices - typical optimisation
-%         - matrix compression techniques - randomized techniques too.
-%         - matrix techniques allow one to take advantage of BLAS
-%             - maximises cache utilisation 39 (And US in PyExaFMM)
-%         - Combination of techniques like Chebychev with SVD 38
-%             - essentially systematic way of doing something like variable expansion order.
-% - FMM is a method that has the analytical form to generate small (low-rank) off-diagonal matrices without needing to rely on a numerical approximation method.
-
-% - making better use of translational invariance and rotational symmetry of the interaction list one can reduce the amount of storage further - 30, 32, 89
-
-% % It remains an outstanding challenging in research software to optimally map fast algorithms including the FMM to modern distributed computing systems. We address some of these challenges in this thesis, including the implementation of distributed octrees data structures (section (\ref{sec:2_3})), efficient low-rank compression techniques (section (\ref{sec:3_2})) and designing for ergonomic software that can be deployed by anyone, anywhere (section \ref{sec:2_3}).
+Resultantly, researchers who may want to write application code that takes advantage of fast algorithms as a black box without the necessary software or numerical analysis expertise to implement their own have few choices, and fewer still in a distributed computing setting. Identifying this as a significant barrier to entry for the adoption of fast algorithms in the wider community, we propose a new unified framework for fast algorithms, beginning with an implementation of a parallel FMM, which we introduce in the following section, designed for modern large scale supercomputing clusters. With a key target application being the simulation of exascale boundary integral problems.
