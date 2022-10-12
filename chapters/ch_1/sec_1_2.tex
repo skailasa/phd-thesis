@@ -1,11 +1,15 @@
-The FMM as originally presented has since been extended into a broad class of algorithms with differing implications for practical implementations. We consider the problem in its most generic form by returning to the matrix vector product (\ref{eq:n_body:sec:1_1}). Consider an $N$ body evaluation of electrostatic potentials, which motivated the development of the original FMM of Greengard and Rokhlin \cite{greengard1987fast}. We let $\{ x_i\}_{i=1}^N \in \mathbb{R}^d$ denote the set of locations of charges of strength $q_i$, where $d=2$ or $d=3$. Our task is then to evaluate potentials, $\phi_j$ for $i=1,2,...,N$. We can without loss of generality take the value of $K(x,x)=0$. Denoting our square domain containing all points with $\Omega$, we seek a matrix vector product of the form,
+The FMM as originally presented has since been extended into a broad class of algorithms with differing implications for practical implementations. We consider the problem in its most generic form by returning to the matrix vector product (\ref{eq:n_body:sec:1_1}). We consider the non-oscillatory problem with a Laplace kernel to most clearly  introduce the ideas behind the FMM.
+
+Consider an $N$ body evaluation of electrostatic potentials, which motivated the development of the original FMM of Greengard and Rokhlin \cite{greengard1987fast}. We let $\{ x_i\}_{i=1}^N \in \mathbb{R}^d$ denote the set of locations of charges of strength $q_i$, where $d=2$ or $d=3$. Our task is then to evaluate potentials, $\phi_j$ for $i=1,2,...,N$. We can without loss of generality take the value of $K(x,x)=0$. Denoting our square domain containing all points with $\Omega$, we seek a matrix vector product of the form,
 
 \begin{flalign}
     \label{eq:potential_matvec:sec_1_2}
     \mathsf{\phi} = \mathsf{K} \mathsf{q}
 \end{flalign}
 
-where $\mathsf{\phi} \in \mathbb{C}^N$, $\mathsf{q} \in \mathbb{C}^N$ and $\mathsf{K} \in \mathbb{C}^{N \times N}$. The idea is to compress the kernel interactions defined by $K(x,y)$ when $x$ and $y$ are distant. Consider the situation in figure [FIGURE OF SINGLE LEVEL SITUATION] where we choose $\mathbb{R}^2$ for simplicity. Here we seek to evaluate the potential induced by the `source particles, ${y_j}^M$, in $\Omega_s$ at the target particles, ${x_i}^L$ in $\Omega_t$. 
+where $\mathsf{\phi} \in \mathbb{C}^N$, $\mathsf{q} \in \mathbb{C}^N$ and $\mathsf{K} \in \mathbb{C}^{N \times N}$. The idea is to compress the kernel interactions defined by $K(x,y)$ when $x$ and $y$ are distant. Consider the situation in figure (\ref{fig:single_level_r2:sec_1_2}) where we choose $\mathbb{R}^2$ for simplicity. Here we seek to evaluate the potential induced by the source particles, $\{y_j\}_{j=1}^M$, in $\Omega_s$ at the target particles, $\{x_i\}_{i=1}^L$ in $\Omega_t$.
+
+
 
 \begin{flalign}
     \label{eq:two_box_calc:sec_1_2}
@@ -16,6 +20,7 @@ As the sources and targets are physically distant, we can apply a low-rank appro
 
 \begin{flalign}
     K(x,y) \approx \sum_{p=0}^{P-1}B_p(x)C_p(y), \> \> \text{when } x \in \Omega_t, y \in \Omega_s 
+    \label{eq:low_rank_decomposition_of_kernel:sec_1_2}
 \end{flalign}
 
 where $P$ is called the `expansion order', or `interaction rank'. We introduce the index sets $I_s$ and $I_t$ which list the points inside $\Omega_s$ and $\Omega_t$ respectively, and consider a generic approximation by tensor products where,
@@ -31,7 +36,7 @@ this is valid as $K$ is smooth in the far field. Using this, we evaluate the app
     \phi_i \approx \sum_{p=1}^{P-1} B_p(x_i)\hat{q}_p
 \end{flalign}
 
-In doing so we see that we accelerate (\ref{eq:two_box_calc:sec_1_2}) from $O(M+L)$ to $O(P(M+L))$. As long as we choose $P << M$ and $P << L$, we will recover an accelerated matrix vector product. The power of the FMM, and similar fast algorithms, is that we can recover the potential in $\Omega_t$ with high accuracy even when $P$ is small. We deliberately haven't stated how we calculate $B_p$ or $C_p$. In Greengard and Rokhlin's FMM these took the form of analytical multipole and local expansions of the kernel function \cite{greengard1987fast}. 
+In doing so we see that we accelerate (\ref{eq:two_box_calc:sec_1_2}) from $O(ML)$ to $O(P(M+L))$. As long as we choose $P \ll M$ and $P \ll L$, we will recover an accelerated matrix vector product. The power of the FMM, and similar fast algorithms, is that we can recover the potential in $\Omega_t$ with high accuracy even when $P$ is small. We deliberately haven't stated how we calculate $B_p$ or $C_p$. In Greengard and Rokhlin's FMM these took the form of analytical multipole and local expansions of the kernel function \cite{greengard1987fast}. 
 
 To demonstrate this we derive an expansion in the $\mathbb{R}^2$ case, taking $c_s$ and $c_t$ as the centres of $\Omega_s$ and $\Omega_t$ respectively,
 
@@ -64,7 +69,7 @@ Greengard and Rokhlin also define a local expansion centered on $\Omega_t$, that
 
 with a simple computation to derive the local expansion coefficients $\{\hat{\phi}^t_p\}_{p=0}^\infty$ from $\{ \hat{q}_p^s \}_{p=0}^{P-1}$ (see app. \ref{app:a_1_fmm_algorithm}).
 
-For our purposes it's useful to write the multipole expansion in linear algebraic terms as a linear map,
+For our purposes it's useful to write the multipole expansion in linear algebraic terms as a linear map between vectors,
 
 \begin{flalign}
     \mathsf{\hat{q}}^s = \mathsf{T}^{P2M}_s\mathsf{q}(I_s)    
@@ -82,13 +87,10 @@ where $\mathsf{T}_{t,s}^{M2L}$ is a $P \times P$ matrix, and the calculation of 
     \mathsf{\phi}^t = \mathsf{T}_t^{L2P}\mathsf{\hat{\phi}}^t
 \end{flalign}
 
-where $\mathsf{T}_t^{L2P}$ is a $N_t \times P$ matrix. Here we denote each \textit{translation} operator, $\mathsf{T}$, with a label read `'$X$ to $Y$' where $L$ stands for local, $M$ for multipole and $P$ for particle. Written in this form, we observe that we could use a different method to approximate the translation operators than explicit kernel expansions to recover our approach's algorithmic complexity, and this is indeed the main difference between different implementations of the FMM.
+where $\mathsf{T}_t^{L2P}$ is a $N_t \times P$ matrix. Here we denote each \textit{translation} operator, $\mathsf{T}^{X2Y}$, with a label read as `$X$ to $Y$' where $L$ stands for local, $M$ for multipole and $P$ for particle. Written in this form, we observe that one could use a different method to approximate the translation operators than explicit kernel expansions to recover our approach's algorithmic complexity, and this is indeed the main difference between different implementations of the FMM.
 
-We have described how to obtain linear complexity when considering two isolated nodes, however to recover this for interactions between \textit{all particles} with we rely on a hierarchical partitioning of $\Omega$ using a data structure from computer science called a \textit{quadtree} in $\mathbb{R}^2$ or an \textit{octree} in $\textit{R}^3$. 
+We have described how to obtain linear complexity when considering two isolated nodes, however in order to recover this for interactions between \textit{all particles} with we rely on a hierarchical partitioning of $\Omega$ using a data structure from computer science called a \textit{quadtree} in $\mathbb{R}^2$ or an \textit{octree} in $\textit{R}^3$. The defining feature of these data structures is a recursive partition of a bounding box drawn over the region of interest (see fig. \ref{fig:octree_example:sec_1_2}). This ‘root node’ is subdivided into four equal parts in $\mathbb{R}^2$ and eight equal parts in $\mathbb{R}^3$. These ‘child nodes’ turn are recursively subdivided until a user defined threshold is reached based on the maximum number of points per leaf node. These trees can be `adaptive' by allowing for non-uniform node sizes, and `balanced' to enforce a maximum size constraint between adjacent nodes \cite{sundar2008bottom}.
 
-The defining feature of these data structures is a recursive partition of a bounding box drawn over the region of interest (see fig. \ref{fig:octree_example:sec_1_2}). This ‘root node’ is subdivided into four equal parts in $\mathbb{R}^2$ and eight equal parts in $\mathbb{R}^3$. These ‘child nodes’ turn are recursively subdivided until a user defined threshold is reached based on the maximum number of points per leaf node. These trees can be `adaptive' by allowing for non-uniform node sizes, and `balanced' to enforce a maximum size constraint between adjacent nodes \cite{sundar2008bottom}.
-
-\gls{FMM} literature distinguishes between types of relationships  between neighbouring nodes with the concept of \textit{interaction lists}. There are four such lists for a given node $B$, called $V$, $U$, $W$ and $X$. For a leaf node $B$, the $U$ list contains $B$ itself and leaf nodes adjacent to $B$. and the $W$ list consists of the descendants of $B$'s neighbours whose parents are adjacent to $B$. For non-leaf nodes, the $V$ list is the set of children of the neighbours of the parent of $B$ which are not adjacent to $B$, and the $X$ list consists of all nodes $A$ such that $B$ is in their $W$ lists. 
 
 \begin{figure}
     \centering
@@ -97,12 +99,11 @@ The defining feature of these data structures is a recursive partition of a boun
     \label{fig:octree_example:sec_1_2}
 \end{figure}
 
-
-The FMM then consists of three steps: tree construction, a preorder `bottom up' traveral, and a postorder `top down' traversal, made up of eight operators. P2M, M2L and L2P have been introduced, however we also require P2L, M2L, L2L, L2P, M2P and P2P, applied once to each applicable node. The operators define interactions between a given ‘target’ node, and potentially multiple ‘source’ nodes from the tree. They are read as ‘X to Y’, where ‘P’ stands for particle(s), ‘M’ for multipole expansion and ‘L’ for local expansion. The non-adaptive case is similar, except the $W$ and $X$ lists are now empty.
+In addition to the $\mathsf{T}^{P2M}$, $\mathsf{T}^{M2L}$ and $\mathsf{T}^{L2P}$ the FMM also require operators that can translate the expansion centre of a multipole or local expansion, $\mathsf{T}^{L2L}$, $\mathsf{T}^{M2M}$, an operator that can form a local expansion from a set of points $\mathsf{T}^{P2L}$, and apply a multipole approximation to a set of points, $\mathsf{T}^{M2P}$, finally we need define a $P2P$ operator as short hand for direct kernel evaluations. Algorithm (1) provides a brief sketch of the full FMM algorithm.
 
 \begin{algorithm}
-\caption{Fast Multipole Method}
 \label{alg:fmm:sec_1_2}
+\caption{\textbf{Adaptive Fast Multipole Method}: \gls{FMM} literature distinguishes between types of relationships  between neighbouring nodes with the concept of \textit{interaction lists}. There are four such lists for a given node $B$, called $V$, $U$, $W$ and $X$. For a leaf node $B$, the $U$ list contains $B$ itself and leaf nodes adjacent to $B$. and the $W$ list consists of the descendants of $B$'s neighbours whose parents are adjacent to $B$. For non-leaf nodes, the $V$ list is the set of children of the neighbours of the parent of $B$ which are not adjacent to $B$, and the $X$ list consists of all nodes $A$ such that $B$ is in their $W$ lists. The non-adaptive algorithm is similar, however the $W$ and $X$ lists are empty.}
 \begin{algorithmic}
 
     \State $N$ is the total number of points
@@ -124,7 +125,7 @@ The FMM then consists of three steps: tree construction, a preorder `bottom up' 
     \State \textbf{P2M}: compute multipole expansion for the particles they contain.
     \EndFor
     \For{each non leaf node $B$ in \textit{postorder} traversal of the tree}
-    \State \textbf{M2M}: form a multipole expansion by translating and summing the expansion coefficients of the multipole expansions of its children.
+    \State \textbf{M2M}: form a multipole expansion by translating the expansion centre of its children to its centre and summing their multipole expansion coefficients.
     \EndFor
 
     \State
@@ -132,52 +133,114 @@ The FMM then consists of three steps: tree construction, a preorder `bottom up' 
     \For{each non-root node $B$ in \textit{preorder} traversal of the tree}
     \State \textbf{M2L}: translate multipole expansions of nodes in $B$'s $V$ list to a local expansion at $B$.
     \State \textbf{P2L}: translate the charges of particles in $B$'s $X$ to the local expansion at $B$.
-    \State \textbf{L2L}: translate $B$'s local expansion to its children.
+    \State \textbf{L2L}: translate $B$'s local expansion to its children by translating its expansion centre to the centre of its children, and assigning the same coefficients.
     \EndFor 
 
     \For{each leaf node $B$ in \textit{preorder} traversal of the tree}
-    \State \textbf{P2P}: Directly compute the local interactions using the kernel between the particles in $B$ and its $U$ list.
-    \State \textbf{L2P}: Translate local expansions for nodes in $B$'s $W$ list to the particles in $B$.
-    \State \textbf{M2P}: Translate the multipole expansions for nodes in $B$'s $W$ list to the particles in $B$.
+    \State \textbf{P2P}: directly compute the local interactions using the kernel between the particles in $B$ and its $U$ list.
+    \State \textbf{L2P}: translate local expansions for nodes in $B$'s $W$ list to the particles in $B$.
+    \State \textbf{M2P}: translate the multipole expansions for nodes in $B$'s $W$ list to the particles in $B$.
     \EndFor
-
 \end{algorithmic}
 \end{algorithm}
 
-% In its original `analytical' form  \cite{greengard1987fast} an analytical series multipole expansion for a given node encoded point data within that node to a given expansion order, and the local expansion was the translation of this multipole expansion to another region of space in which it is analytic.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{ch_1/single_level_r2.pdf}
+    \caption{Two well separated clusters $\Omega_t$ and $\Omega_s$ where we can apply a low-rank approximation.}
+    \label{fig:single_level_r2:sec_1_2}
+\end{figure}
 
-% As, the tree must be refined such that the leaf nodes contain only a small constant number of particles per leaf node, $s$, the maximum level of refinement is therefore approximately $n \approx \log(N)$, where $N$ is the number of particles in the tree. The multipole and local expansions are \textit{truncated} such that their expansion orders $p$, are chosen such that $p < N$,  the complexity of each translation operator (P2M, P2L, M2M, M2L, L2L, L2P, M2P) are bounded by complexities of the form $O(\kappa(p)N)$ where $\kappa(p)$ is a constant that depends on $p$, for all nodes in the tree. The direct calculations at the end are bounded by the maximum size of the $U$ lists, $|U|$, and $s$ as $O(s|U|N)$. The whole algorithm can therefore be seen to be bounded by $O(N)$. We defer to the literature for a more detailed analysis \cite{greengard1987fast}.
+In its original analytical form the applicability of the FMM is limited by the requirement for an explicit multipole and local expansions, as well as a restriction to matrix vector products. This lead to the development of algebraic variants that operate on the matrix represented by (\ref{eq:potential_matvec:sec_1_2}) directly, without the need for geometrical considerations via an octree. Examples include, the $\mathcal{H}$ matrix \cite{hackbusch1999sparse}, $\mathcal{H}^2$ matrix \cite{borm2003short}, hierarchically semi-separable (HSS) \cite{chandrasekaran2007fast}, and hierarchically off-diagonal low-rank (HODLR) \cite{ambikasaran2013mathcal} matrices.
 
+Consider an index set $I$, corresponding to the indices of all points $\{ x_i \}_{i=1}^N$ in a given discretisation. The general approach of these methods is to partition $I$ in such a way that we can exploit the low-rank interactions between distantly separated clusters of particles. Initially, an $n$-ary `cluster tree' $\mathcal{T}_I$, with a set of nodes $T_I$, is formed such that
 
-% The structure of the operators is the key difference between FMM implementations.
+\begin{enumerate}
+    \item $T_I \subseteq \mathcal{P}(I) \setminus \{ \emptyset \}$, meaning each node  of $\mathcal{T}_I$ is a subset of the index set $I$, here $\mathcal{P}(I)$ denotes the power set of $I$.
+    \item $I$ is the root of $\mathcal{T}_I$
+    \item The number of indices in a leaf node $\tau \in T_I$ is such that $|\tau| \leq C_{\text{leaf}}$ where $C_{\text{leaf}}$ is a small constant.
+    \item Non leaf nodes $\tau$ have $n$ child nodes $\{ \tau \}_i^n$, and is formed of their disjoint union $\tau = \cupdot_{i=1}^n \tau_i$ 
+\end{enumerate}
 
-% - Note on how we've been deliberately vague on its implementation due to the variety of implementations. 
-% - Need to have a note on how FMM actually works
-% - Lead into the main differences between FMM implementations. 
-% - Sketch out algebraic to analytic tagline, with a note on hierarchical methods.
-% - Ambikasaran \& Darve summarise differences between different algebraic methods.
-%     - H, H2, HSS, HBS, HODLR.
+Cluster trees may in general be $n$-ary, however common implementations are as binary trees. Using a cluster tree, one forms a `block tree', $\mathcal{T}_{I \times I}$. Each node, or `block', of a block tree, $N(\tau \times \sigma)$, corresponds to the clusters represented by indices $\tau \subseteq I$ and $\sigma \subseteq I$ respectively. The $\mathcal{H}$ and $\mathcal{H}^2$ representations are `strongly admissible', meaning that well separated blocks as in figure (\ref{fig:low_rank:sec_1_1}) can be compressed. In contrast, the HSS and HODLR approaches are `weakly admissible', and also consider adjacent clusters to be compressible. Admissibility is calculated by forming a bounding box around clusters, and checking their separation along each dimension \cite{borm2003introduction}. Furthermore, as in the \gls{FMM} which creates parent multipole expansions for a given node from that of its children, and vice versa for local expansions, an analagous approach is taken by $\mathcal{H}^2$ and HSS matrices, referred to as `nested bases'. These different approaches are succinctly visualised in figure (\ref{fig:ambikasaran_hierarchical:sec_1_2}). 
 
+Expressed in this way the matrix implicit in the FMM (alg. (\ref{alg:fmm:sec_1_2})), can be seen to be a member of the $\mathcal{H}^2$ class of matrices. Therefore the algorithms developed for algebraic approaches for matrix vector products similarly recover optimal $O(N)$ scaling in the best case \cite{borm2003introduction}. However, hierarchical matrix representations have an additional advantage in that they are simple to extend to matrix-matrix products, and also matrix inversion in with optimal complexity. 
 
-% - Comparison of analytical vs algebraic methods
-% - Purely algebraic methods
-%     - pre-compute and store entire hierarchical matrix.
-%     - more storage, more data movement - both vertically and horizontally in memory hierarchy.
-% - When the cost of data movement increases faster than arithmetic operations on future architectures, the methods that compute more to store/move less will become advantageous (computationally) - tradeoff results in KIFMM as choice - semi-analytical.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{ch_1/ambikasaran_hierarchical.pdf}
+    \caption{Matrix containing common algebraic alternatives to the FMM, adapted from \cite{ambikasaran2013fast}.}
+    \label{fig:ambikasaran_hierarchical:sec_1_2}
+\end{figure}
+
+From a computational perspective, the trade-off between these analytical and algebraic approaches for the FMM are best expressed in terms of the ratio of compute (\gls{flops}) to memory (bytes), or `arithmetic intensity'. The analytical \gls{FMM} has a high arithmetic intensity, due to its matrix free nature. However, using explicit $\mathcal{H}^2$ representations requires one to compute and store the full matrix in memory, resulting in increased memory movement costs, both vertically on a single node, and horizontally in a distributed memory setting. 
+
+A third `semi-analytical' approach, combining the best of the purely analytical and algebraic approaches and are known as  `black box', or `kernel independent', FMMs \cite{Ying:2004:JCP,fong2009black,martinsson2007accelerated}. These methods mimic the algorithmic structure of the analytical FMM, with its matrix free nature, however the low rank representations they construct are done so independently of the kernel. We contrast the approach taken by Ying et. al and Fong. et. al in figure (\ref{box:kifmm_vs_bbfmm:sec_1_2}).
+
+\begin{multicols}{2}
+    % \begin{figure}
+    \begin{tcolorbox}[width=1\linewidth, halign=left, colframe=black, colback=gray!10, boxsep=2mm, arc=0mm, left=1pt,right=1pt,top=0pt,bottom=0pt]
+    \textbf{Kernel-Independent FMM (KIFMM)}
+        
+    The KIFMM approximates the multipole expansion for a given leaf node containing particles $\{ y_j \}_j^N$ with charges $\{ q_j\}_j^N$ by evaluating their potential directly (\ref{eq:potential_matvec:sec_1_2}) at corresponding evenly spaced points on a `check surface', displayed in blue.
+
+    \vspace{2pt} 
+    \begin{center}
+        \includegraphics[height=2.1cm]{ch_1/kifmm2.pdf}
+    \end{center} 
+    \vspace{2pt} 
+
+    This is matched to $N_e$ `equivalent charges', $\mathsf{q}^e$, placed evenly on a the (red) equivalent surface at $\{ x_i \}_i^{N_e}$. These surfaces are taken to be circles in $\mathbb{R}^2$ and cubes in $\mathbb{R}^3$. They perform a Tikhonov-regularised least squares fit to calculate  $\mathsf{q}^e$, which plays the role of the \textit{multipole expansion}.
+    
+    \begin{flalign*}
+        \mathsf{q}^e = (\alpha I + \mathsf{K}^* \mathsf{K})^{-1}\mathsf{K}\mathsf{q}^{\text{node}}
+    \end{flalign*}
+
+    where $\mathsf{q}^{\text{node}}$ are the charges in the leaf node. Using a similar framework, involving equivalent and check surfaces, the $T^{M2M}$, $T^{M2L}$, $T^{L2L}$ and $T^{L2P}$ operators are also calculated with Tikhonov-regularised least squares fitting, and are sketched below.
+
+    \vspace{2pt} 
+    \begin{center}
+        \includegraphics[height=2.1cm]{ch_1/kifmm.pdf}
+    \end{center} 
+    \vspace{2pt} 
+
+    The KIFMM is designed for non-oscillatory kernels, such as the Laplace kernel of our didactic example, though in practice works well with low-frequency oscillatory problems, with extensions to high frequency problems \cite{engquist2007fast}.
+    
+    The least-squares fit can be pre-computed for each given geometry, and re-used. Additionally, as the KIFMM decomposes into a series of matrix vector products, it is well suited to software implementations.
+    \end{tcolorbox} 
+        
+    \columnbreak
+    \begin{tcolorbox}[width=1\linewidth, halign=left, colframe=black, colback=gray!10, boxsep=2mm, arc=0mm, left=1pt,right=1pt,top=0pt,bottom=0pt]
+    \textbf{Black-Box FMM (bbFMM)}
+
+    Returning to the low-rank decomposition of the kernel (\ref{eq:low_rank_decomposition_of_kernel:sec_1_2}),
+    
+    \begin{flalign*}
+        K(x,y) \approx \sum_{p=0}^{P-1}B_p(x)C_p(y)
+    \end{flalign*}
+    \end{tcolorbox}
+    % \end{figure}
+\end{multicols}
+\noindent\begin{minipage}{\textwidth}
+    \captionof{figure}{The formulations of the kernel-independent FMM (KIFMM) \cite{Ying:2004:JCP} compared to the black-box FMM (bbFMM) \cite{fong2009black}.}
+    \label{box:kifmm_vs_bbfmm:sec_1_2} 
+\end{minipage}
+
+    
+
+Black box approaches are preferable from a software standpoint for three reasons: (1) generic interfaces can be built for a variety of kernels, (2) they have reduced storage requirements in comparison to purely algebraic approaches, and (3) the majority of computations are simple matrix vector products that are readily expressed with BLAS L2 operations. However, few studies \cite{yokota2015fast} have directly compared the efficacy of analytical, semi-analytical and algebraic FMM variants. Further comparison is restricted by the limited availability of open-source high-performance software implementing different approaches for distributed memory machines. However the trend in computing architectures is towards systems with relatively cheap computations and significantly more expensive memory movements \cite{dongarra2017extreme}. This is especially the case in large scale distributed systems, where memory movements between nodes dominate compute times.
+
+Available black box approaches differ in their representation and calculation of translation operators. Fong et al. introduce a Chebyshev FMM \cite{fong2009black}, which approximates the kernel using a Chebyshev expansion over each box [CHEBYSHEV FIGURE]. We prefer the kernel-independent FMM introduced by Ying et. al \cite{Ying:2004:JCP}. Here, we are able to represent translations as in figure [YING FIGURE]. Here translations can be readily accelerated with randomized techniques for matrix compression \cite{halko2011finding}. Consider the $T^{M2L}$ operator, this dominates the cost of an FMM as its interaction list, $V$,  for a given non-leaf node is $|V| = 189$ in $\mathbb{R}^3$ and $|V|=27$ in $\mathbb{R}^2$.
+
+... Digression on the acceleration of the M2L operator using randomized svd
+
+Numerous techniques have emerged to accelerate the calculation of $T^{M2L}$ in a black box setting. By focussing on the rotational symettry of interactions (see figure [M2L SYMETTRY FIGURE), and their translational invariance, we can avoid redundant calculations, while pre-computing and storing the remainder.
+
+We conclude by mentioning that the \gls{FMM} and its variants are not the only technique available to accelerate (\ref{eq:n_body:sec:1_1}), for problems in which only uniform resolution is required the \gls{FFT}, which has corresponding distributed memory implementations [FAST FFT REFERENCE SOFTWARE]. However, we are commonly interested in multiscale problems in which neighbouring nodes can be of differing sizes, in which case multigrid approaches have shown similar efficacy to the FMM \cite{gholami2016fft}, however has an unfavourable communication cost (see appendix [FFT COMMUNICATION COST]). However, a multigrid approach does not allow for a re-use of FMM data structures (sec. \ref{sec:3_2}) for other fast algorithms we are interested in implementing, and aim to present as a unified framework with maximum code re-use.
 
 % - FMM vs other methods (FFT, Multigrid)
 % - Uniform resolution use FFT, introduce FFT as first 'fast algorithm', however has unfavourable communication cost.
 % - For non-uniform global problems also have multigrid methods as an alternative, also O(N) cost for elliptic/hyperbolic PDE problems. Gholami, Malhotra, Sundar, Biros (2016) - multigrid decent.
-
-% - algebraic variants commonly argued to be superior as they operate directly on the matrix without the need to pass geometric information
-%     - not convincing on their own.
-%         - major libraries (PETSc) offer interfaces to insert a matrix free preconditioner as a function, and passing geometric info is something users are willing to do if it increases performance.
-%     - Always just comes down to the flops vs bytes trade-off
-%     - need a decent reference or description of where architecture technology is heading in order to justify our choice of FMM.
-
-% - Note, analytical FMM have very high arithmetic intensity (flop/byte).
-%     - not brute force methods doing wasteful calculations, only doing useful flops. Very different from achieving high arithmetic intensity on dense mat-mat mults or LU decompositions.
-%     - Bonsai - an analytical treecode.
 
 % - Fast translation operators crucial - take up a lot of time of the FMM, whatever its implementation.
 %     - analytical options for fast translation operators.
@@ -202,22 +265,7 @@ The FMM then consists of three steps: tree construction, a preorder `bottom up' 
 %             - maximises cache utilisation 39 (And US in PyExaFMM)
 %         - Combination of techniques like Chebychev with SVD 38
 %             - essentially systematic way of doing something like variable expansion order.
+
 % - FMM is a method that has the analytical form to generate small (low-rank) off-diagonal matrices without needing to rely on a numerical approximation method.
 
-% - making better use of translational invariance and rotational symmetry of the interaction list one can reduce the amount of storage further - 30, 32, 89
-
-% - Lay out a sketch of the fast-algorithms for particle summation in terms of the flops/memory trade-off as in Yokota paper.
-
-% - Discuss other hierarchical schemes (H, H2 etc) and explain why FMM is preferred for our application.
-
-% - Explain why our version of FMM - semi-analytical - is preferred for programming.
-
-% - Explain what we can focus on to really accelerate in the semi-analytical FMM to program for exascale, with reference to field translations chapter.
-
-% - Discuss software construction for FMM, and what works and doesn't, what's currently available - and its shortcomings, and positives.
-
-% - Discuss software challenges for high performance FMM, teeing up remaining sections of paper.
-
-% - Close off with alternatives to FMM
-% - Allows us to tackle problems that require non-uniform resolution, which isn't possible with the FFT
-% - Multigrid methods - link to paper describing their performance.
+% - making better use of translational invariance and rotational symmetry of the interacti

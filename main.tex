@@ -8,8 +8,12 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{mathtools} % dcases
-
+\usepackage{multicol}
+\usepackage{tcolorbox}
 \usepackage{datetime}
+\usepackage{caption}
+\usepackage{etoolbox}
+\AtBeginEnvironment{tcolorbox}{\footnotesize}
 
 \newdateformat{monthyeardate}{%
   \monthname[\THEMONTH], \THEYEAR}
@@ -86,6 +90,7 @@ showstringspaces=false            %
 
 % Remove excess double page
 \let\cleardoublepage\clearpage
+\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 
 \begin{document}
 
