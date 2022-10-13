@@ -102,8 +102,8 @@ We have described how to obtain linear complexity when considering two isolated 
 In addition to the $\mathsf{T}^{P2M}$, $\mathsf{T}^{M2L}$ and $\mathsf{T}^{L2P}$ the FMM also require operators that can translate the expansion centre of a multipole or local expansion, $\mathsf{T}^{L2L}$, $\mathsf{T}^{M2M}$, an operator that can form a local expansion from a set of points $\mathsf{T}^{P2L}$, and apply a multipole approximation to a set of points, $\mathsf{T}^{M2P}$, finally we need define a $P2P$ operator as short hand for direct kernel evaluations. Algorithm (1) provides a brief sketch of the full FMM algorithm.
 
 \begin{algorithm}
-\label{alg:fmm:sec_1_2}
 \caption{\textbf{Adaptive Fast Multipole Method}: \gls{FMM} literature distinguishes between types of relationships  between neighbouring nodes with the concept of \textit{interaction lists}. There are four such lists for a given node $B$, called $V$, $U$, $W$ and $X$. For a leaf node $B$, the $U$ list contains $B$ itself and leaf nodes adjacent to $B$. and the $W$ list consists of the descendants of $B$'s neighbours whose parents are adjacent to $B$. For non-leaf nodes, the $V$ list is the set of children of the neighbours of the parent of $B$ which are not adjacent to $B$, and the $X$ list consists of all nodes $A$ such that $B$ is in their $W$ lists. The non-adaptive algorithm is similar, however the $W$ and $X$ lists are empty.}
+\label{alg:fmm:sec_1_2}
 \begin{algorithmic}
 
     \State $N$ is the total number of points
@@ -153,6 +153,8 @@ In addition to the $\mathsf{T}^{P2M}$, $\mathsf{T}^{M2L}$ and $\mathsf{T}^{L2P}$
 
 In its original analytical form the applicability of the FMM is limited by the requirement for an explicit multipole and local expansions, as well as a restriction to matrix vector products. This lead to the development of algebraic variants that operate on the matrix represented by (\ref{eq:potential_matvec:sec_1_2}) directly, without the need for geometrical considerations via an octree. Examples include, the $\mathcal{H}$ matrix \cite{hackbusch1999sparse}, $\mathcal{H}^2$ matrix \cite{borm2003short}, hierarchically semi-separable (HSS) \cite{chandrasekaran2007fast}, and hierarchically off-diagonal low-rank (HODLR) \cite{ambikasaran2013mathcal} matrices.
 
+These methods all represent the system matrix in (\ref{eq:potential_matvec:sec_1_2}) using a stored hierarchical matrix factorisation. Once this factorisation is computed, it can be used again - allowing for simple extensions to matrix-matrix products. Furthermore, an explicit matrix forms also allows for optimal matrix inversion algorithms.
+
 Consider an index set $I$, corresponding to the indices of all points $\{ x_i \}_{i=1}^N$ in a given discretisation. The general approach of these methods is to partition $I$ in such a way that we can exploit the low-rank interactions between distantly separated clusters of particles. Initially, an $n$-ary `cluster tree' $\mathcal{T}_I$, with a set of nodes $T_I$, is formed such that
 
 \begin{enumerate}
@@ -164,7 +166,7 @@ Consider an index set $I$, corresponding to the indices of all points $\{ x_i \}
 
 Cluster trees may in general be $n$-ary, however common implementations are as binary trees. Using a cluster tree, one forms a `block tree', $\mathcal{T}_{I \times I}$. Each node, or `block', of a block tree, $N(\tau \times \sigma)$, corresponds to the clusters represented by indices $\tau \subseteq I$ and $\sigma \subseteq I$ respectively. The $\mathcal{H}$ and $\mathcal{H}^2$ representations are `strongly admissible', meaning that well separated blocks as in figure (\ref{fig:low_rank:sec_1_1}) can be compressed. In contrast, the HSS and HODLR approaches are `weakly admissible', and also consider adjacent clusters to be compressible. Admissibility is calculated by forming a bounding box around clusters, and checking their separation along each dimension \cite{borm2003introduction}. Furthermore, as in the \gls{FMM} which creates parent multipole expansions for a given node from that of its children, and vice versa for local expansions, an analagous approach is taken by $\mathcal{H}^2$ and HSS matrices, referred to as `nested bases'. These different approaches are succinctly visualised in figure (\ref{fig:ambikasaran_hierarchical:sec_1_2}). 
 
-Expressed in this way the matrix implicit in the FMM (alg. (\ref{alg:fmm:sec_1_2})), can be seen to be a member of the $\mathcal{H}^2$ class of matrices. Therefore the algorithms developed for algebraic approaches for matrix vector products similarly recover optimal $O(N)$ scaling in the best case \cite{borm2003introduction}. However, hierarchical matrix representations have an additional advantage in that they are simple to extend to matrix-matrix products, and also matrix inversion in with optimal complexity. 
+Expressed in this way the matrix implicit in the FMM (alg. (\ref{alg:fmm:sec_1_2})), can be seen to be a member of the $\mathcal{H}^2$ class of matrices. Therefore the algorithms developed for algebraic approaches for matrix vector products similarly recover optimal $O(N)$ scaling in the best case, with the additional benefit of easy extension to matrix matrix products, and matrix inversion in optimal complexity \cite{borm2003introduction}.
 
 \begin{figure}
     \centering
@@ -173,10 +175,23 @@ Expressed in this way the matrix implicit in the FMM (alg. (\ref{alg:fmm:sec_1_2
     \label{fig:ambikasaran_hierarchical:sec_1_2}
 \end{figure}
 
-From a computational perspective, the trade-off between these analytical and algebraic approaches for the FMM are best expressed in terms of the ratio of compute (\gls{flops}) to memory (bytes), or `arithmetic intensity'. The analytical \gls{FMM} has a high arithmetic intensity, due to its matrix free nature. However, using explicit $\mathcal{H}^2$ representations requires one to compute and store the full matrix in memory, resulting in increased memory movement costs, both vertically on a single node, and horizontally in a distributed memory setting. 
+From a computational perspective, the trade-off between these analytical and algebraic approaches for the FMM are best expressed in terms of the ratio of compute (\gls{flops}) to memory (bytes), or `arithmetic intensity'. The analytical \gls{FMM} has a high arithmetic intensity, due to its matrix free nature. However, using explicit $\mathcal{H}^2$ representations requires one to compute and store the full hierarchical matrix in memory, resulting in increased memory movement costs, both vertically on a single node, and horizontally in a distributed memory setting. 
 
-A third `semi-analytical' approach, combining the best of the purely analytical and algebraic approaches and are known as  `black box', or `kernel independent', FMMs \cite{Ying:2004:JCP,fong2009black,martinsson2007accelerated}. These methods mimic the algorithmic structure of the analytical FMM, with its matrix free nature, however the low rank representations they construct are done so independently of the kernel. We contrast the approach taken by Ying et. al and Fong. et. al in figure (\ref{box:kifmm_vs_bbfmm:sec_1_2}).
+A third `semi-analytical' method, combining the best of the purely analytical and algebraic methods are known as `black box', or `kernel independent', \gls{FMM}s \cite{Ying:2004:JCP,fong2009black,martinsson2007accelerated}. These methods mimic the algorithmic structure of the analytical FMM, with its matrix free nature, however the low rank representations they construct are done so independently of the kernel, hence the name `black box'. We contrast two common black box methods in figure (\ref{box:kifmm_vs_bbfmm:sec_1_2}), the underlying difference being in their representation of translation operators.
 
+Black box methods are preferable from a software standpoint for three reasons: (1) generic interfaces can be built for a variety of kernels, (2) they have reduced storage requirements in comparison to purely algebraic approaches, and (3) the majority of computations are simple matrix vector products that are readily expressed with BLAS L2 operations. However, few studies have directly compared the efficacy of analytical, semi-analytical and algebraic FMM variants. Yokota et. al \cite{yokota2015fast}, find similar single node performance between ...
+
+Further comparison is restricted by the limited availability of open-source high-performance software implementing different approaches for distributed memory machines. However the trend in computing architectures is towards systems with relatively cheap computations and significantly more expensive memory movements \cite{dongarra2017extreme}. This is especially the case in large scale distributed systems, where memory movements between nodes dominate compute times.
+
+We prefer the kernel-independent FMM introduced by Ying et. al \cite{Ying:2004:JCP}. Here, we are able to represent translations as in figure [YING FIGURE]. Here translations can be readily accelerated with randomized techniques for matrix compression \cite{halko2011finding}. Consider the $T^{M2L}$ operator, this dominates the cost of an FMM as its interaction list, $V$,  for a given non-leaf node is $|V| = 189$ in $\mathbb{R}^3$ and $|V|=27$ in $\mathbb{R}^2$.
+
+... Digression on the acceleration of the M2L operator using randomized svd
+
+Numerous techniques have emerged to accelerate the calculation of $T^{M2L}$ in a black box setting. By focussing on the rotational symettry of interactions (see figure [M2L SYMETTRY FIGURE), and their translational invariance, we can avoid redundant calculations, while pre-computing and storing the remainder.
+
+We conclude by mentioning that the \gls{FMM} and its variants are not the only technique available to accelerate (\ref{eq:n_body:sec:1_1}), for problems in which only uniform resolution is required the \gls{FFT}, which has corresponding distributed memory implementations [FAST FFT REFERENCE SOFTWARE]. However, we are commonly interested in multiscale problems in which neighbouring nodes can be of differing sizes, in which case multigrid approaches have shown similar efficacy to the FMM \cite{gholami2016fft}, however has an unfavourable communication cost (see appendix [FFT COMMUNICATION COST]). However, a multigrid approach does not allow for a re-use of FMM data structures (sec. \ref{sec:3_2}) for other fast algorithms we are interested in implementing, and aim to present as a unified framework with maximum code re-use.
+
+\newpage
 \begin{multicols}{2}
     % \begin{figure}
     \begin{tcolorbox}[width=1\linewidth, halign=left, colframe=black, colback=gray!10, boxsep=2mm, arc=0mm, left=1pt,right=1pt,top=0pt,bottom=0pt]
@@ -212,32 +227,71 @@ A third `semi-analytical' approach, combining the best of the purely analytical 
     \columnbreak
     \begin{tcolorbox}[width=1\linewidth, halign=left, colframe=black, colback=gray!10, boxsep=2mm, arc=0mm, left=1pt,right=1pt,top=0pt,bottom=0pt]
     \textbf{Black-Box FMM (bbFMM)}
-
-    Returning to the low-rank decomposition of the kernel (\ref{eq:low_rank_decomposition_of_kernel:sec_1_2}),
     
+    \setlength{\belowdisplayskip}{0pt} \setlength{\belowdisplayshortskip}{0pt}
+    
+    \setlength{\abovedisplayskip}{0pt} \setlength{\abovedisplayshortskip}{0pt}
+
+
+    An $n$ point interpolation scheme for the kernel is constructed sequentially over each variable, 
+
     \begin{flalign*}
-        K(x,y) \approx \sum_{p=0}^{P-1}B_p(x)C_p(y)
+        &K(x, y) \approx \sum_{l=1}^n K(x_l, y)w_l(x) \\
+        &K(x, y) \approx \sum_{l=1}^n\sum_{m=1}^nK(x_l, x_y)w_l(x)w_m(x)
     \end{flalign*}
+
+    with coefficients $w_l(x)$ and $w_m(x)$. The bbFMM uses first kind Chebyshev polynomials, $T_n$ to interpolate the kernel, defined as,
+
+    \begin{flalign*}
+        T_n(x) = \cos(n \theta), \> \> \text{where } x = \cos(\theta)
+    \end{flalign*}
+
+    over the closed interval $x \in [-1, 1]$. The roots, $\{ \bar{x}_m \}$ , known as Chebyshev nodes are defined as,
+
+    \begin{flalign*}
+        \bar{x}_m = \cos(\theta_m) = \cos(\frac{(2m-1\pi)}{2n}) \\
+    \end{flalign*}
+    
+    This is a well known, stable, uniformly convergent, interpolation scheme, that doesn't suffer from Runge's phenomenon \cite{fong2009black}. An $n$ point Chebyshev approximation to a given function, $g(x)$ with $p_{n-1(x)}$, can be written as,
+
+    \begin{flalign*}
+        &p_{n-1}(x) = \sum_{k=1}^{n-1}c_k T_k(x) \\
+        \text{where, } &c_k = \begin{cases}
+            \frac{2}{n} \sum_{l=1}^ng(\bar{x}_l)T_k(\bar{x}_l), \text{ if } k > 0\\
+            \frac{1}{n} \sum_{l=1}^ng(\bar{x}_l), \text{ if } k = 0
+        \end{cases}
+    \end{flalign*}
+
+    we recognise,
+
+    \begin{flalign*}
+        &p_{n-1}(x) = \sum_{l=1}^ng(\bar{x}_l)S_n(\bar{x}_l, x) \\
+        \text{with, } &S_n(x, y) = \frac{1}{n} + \frac{2}{n}\sum_{k=1}^{n-1}T_k(x)T_k(y)
+    \end{flalign*}
+
+    When applied to our generic interpolation for the kernel,
+
+    \begin{flalign*}
+        K(x, y) &\approx\\
+        &\sum_{l=1}^n\sum_{m=1}^n K(\bar{x}_l, \bar{y}_m) S_n(\bar{x}_l, x) S_n(\bar{y_m}, y)
+    \end{flalign*}
+
+    which can be substituted into (\ref{eq:two_box_calc:sec_1_2}), recovering linear complexity as long as the number of Chebyshev nodes is small, $n \ll N$.
+
+    % Returning to the low-rank decomposition of the kernel (\ref{eq:low_rank_decomposition_of_kernel:sec_1_2}),
+    
+    % \begin{flalign*}
+    %     K(x,y) \approx \sum_{p=0}^{P-1}B_p(x)C_p(y)
+    % \end{flalign*}
     \end{tcolorbox}
-    % \end{figure}
+
 \end{multicols}
 \noindent\begin{minipage}{\textwidth}
-    \captionof{figure}{The formulations of the kernel-independent FMM (KIFMM) \cite{Ying:2004:JCP} compared to the black-box FMM (bbFMM) \cite{fong2009black}.}
+    \captionof{figure}{The formulations of the kernel-independent FMM methods, the KIFMM \cite{Ying:2004:JCP} and the bbFMM \cite{fong2009black}.}
     \label{box:kifmm_vs_bbfmm:sec_1_2} 
 \end{minipage}
 
     
-
-Black box approaches are preferable from a software standpoint for three reasons: (1) generic interfaces can be built for a variety of kernels, (2) they have reduced storage requirements in comparison to purely algebraic approaches, and (3) the majority of computations are simple matrix vector products that are readily expressed with BLAS L2 operations. However, few studies \cite{yokota2015fast} have directly compared the efficacy of analytical, semi-analytical and algebraic FMM variants. Further comparison is restricted by the limited availability of open-source high-performance software implementing different approaches for distributed memory machines. However the trend in computing architectures is towards systems with relatively cheap computations and significantly more expensive memory movements \cite{dongarra2017extreme}. This is especially the case in large scale distributed systems, where memory movements between nodes dominate compute times.
-
-Available black box approaches differ in their representation and calculation of translation operators. Fong et al. introduce a Chebyshev FMM \cite{fong2009black}, which approximates the kernel using a Chebyshev expansion over each box [CHEBYSHEV FIGURE]. We prefer the kernel-independent FMM introduced by Ying et. al \cite{Ying:2004:JCP}. Here, we are able to represent translations as in figure [YING FIGURE]. Here translations can be readily accelerated with randomized techniques for matrix compression \cite{halko2011finding}. Consider the $T^{M2L}$ operator, this dominates the cost of an FMM as its interaction list, $V$,  for a given non-leaf node is $|V| = 189$ in $\mathbb{R}^3$ and $|V|=27$ in $\mathbb{R}^2$.
-
-... Digression on the acceleration of the M2L operator using randomized svd
-
-Numerous techniques have emerged to accelerate the calculation of $T^{M2L}$ in a black box setting. By focussing on the rotational symettry of interactions (see figure [M2L SYMETTRY FIGURE), and their translational invariance, we can avoid redundant calculations, while pre-computing and storing the remainder.
-
-We conclude by mentioning that the \gls{FMM} and its variants are not the only technique available to accelerate (\ref{eq:n_body:sec:1_1}), for problems in which only uniform resolution is required the \gls{FFT}, which has corresponding distributed memory implementations [FAST FFT REFERENCE SOFTWARE]. However, we are commonly interested in multiscale problems in which neighbouring nodes can be of differing sizes, in which case multigrid approaches have shown similar efficacy to the FMM \cite{gholami2016fft}, however has an unfavourable communication cost (see appendix [FFT COMMUNICATION COST]). However, a multigrid approach does not allow for a re-use of FMM data structures (sec. \ref{sec:3_2}) for other fast algorithms we are interested in implementing, and aim to present as a unified framework with maximum code re-use.
-
 % - FMM vs other methods (FFT, Multigrid)
 % - Uniform resolution use FFT, introduce FFT as first 'fast algorithm', however has unfavourable communication cost.
 % - For non-uniform global problems also have multigrid methods as an alternative, also O(N) cost for elliptic/hyperbolic PDE problems. Gholami, Malhotra, Sundar, Biros (2016) - multigrid decent.
