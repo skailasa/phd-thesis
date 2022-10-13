@@ -179,9 +179,14 @@ From a computational perspective, the trade-off between these analytical and alg
 
 A third `semi-analytical' method, combining the best of the purely analytical and algebraic methods are known as `black box', or `kernel independent', \gls{FMM}s \cite{Ying:2004:JCP,fong2009black,martinsson2007accelerated}. These methods mimic the algorithmic structure of the analytical FMM, with its matrix free nature, however the low rank representations they construct are done so independently of the kernel, hence the name `black box'. We contrast two common black box methods in figure (\ref{box:kifmm_vs_bbfmm:sec_1_2}), the underlying difference being in their representation of translation operators.
 
-Black box methods are preferable from a software standpoint for three reasons: (1) generic interfaces can be built for a variety of kernels, (2) they have reduced storage requirements in comparison to purely algebraic approaches, and (3) the majority of computations are simple matrix vector products that are readily expressed with BLAS L2 operations. However, few studies have directly compared the efficacy of analytical, semi-analytical and algebraic FMM variants. Yokota et. al \cite{yokota2015fast}, find similar single node performance between ...
+Black box methods are preferable from a software standpoint for three reasons: (1) generic interfaces can be built for a variety of kernels, (2) they have reduced storage requirements in comparison to purely algebraic approaches, and (3) the majority of computations are simple matrix vector products that are readily expressed with BLAS L2 operations. 
 
-Further comparison is restricted by the limited availability of open-source high-performance software implementing different approaches for distributed memory machines. However the trend in computing architectures is towards systems with relatively cheap computations and significantly more expensive memory movements \cite{dongarra2017extreme}. This is especially the case in large scale distributed systems, where memory movements between nodes dominate compute times.
+Few studies have directly compared the efficacy of analytical, semi-analytical and algebraic FMM variants. Yokota et. al. compare the matrix vector products of (\ref{eq:n_body:sec:1_1}) performed by the \gls{FMM} using the ExaFMM package \cite{exafmm} and HSS factorisations using the STRUMPACK package \cite{rouet2016distributed}. Thet
+
+
+Yokota et. al \cite{yokota2015fast}, find similar single node performance between ...
+
+. However the trend in computing architectures is towards systems with relatively cheap computations and significantly more expensive memory movements \cite{dongarra2017extreme}. This is especially the case in large scale distributed systems, where memory movements between nodes dominate compute times. More on the architectures of exascale systems here ...
 
 We prefer the kernel-independent FMM introduced by Ying et. al \cite{Ying:2004:JCP}. Here, we are able to represent translations as in figure [YING FIGURE]. Here translations can be readily accelerated with randomized techniques for matrix compression \cite{halko2011finding}. Consider the $T^{M2L}$ operator, this dominates the cost of an FMM as its interaction list, $V$,  for a given non-leaf node is $|V| = 189$ in $\mathbb{R}^3$ and $|V|=27$ in $\mathbb{R}^2$.
 
