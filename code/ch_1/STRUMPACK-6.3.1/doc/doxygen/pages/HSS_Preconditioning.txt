@@ -1,0 +1,145 @@
+/*! \page HSS_Preconditioning HSS Preconditioning
+
+The sparse multifrontal solver can optionally use Hierarchically
+Semi-Separable, rank-structured matrices to compress the fill-in. In
+the multifrontal method, computations are performed on dense matrices
+called frontal matrices. A frontal matrix can be approximated as an
+HSS matrix, but this will only be beneficial (compared to storing the
+frontal as a standard dense matrix and operating on it with
+BLAS/LAPACK routines) if the frontal matrix is large enough.
+
+\image html SPOptions_Interface.png width=18%
+
+__Figure 3__ illustrates the HSS matrix format. The matrix is
+partitioned as a 2x2 block matrix, with the partitioning recursively
+applied on the diagonal blocks, until diagonal blocks are smaller than
+a specified leaf size. The off-diagonal block on each level of the
+hierarchy are approximated by a low-rank product. This low-rank
+storage format asymptotically reduces memory usage and floating point
+operations, while introducing approximation errors. HSS compression is
+not used by default in the STRUMPACK sparse solver (the default is to
+perform exact LU factorization), but can be turned on/off via the
+command line:
+
+\code {.bash}
+  --sp_compression hss
+  --sp_compression none    (disable HSS)
+\endcode
+
+or via the C++ API as follows
+
+\code {.cpp}
+void strumpack::SPOptions::set_compression(CompressionType::HSS);
+void strumpack::SPOptions::set_compression(CompressionType::NONE);
+CompressionType strumpack::SPOptions::compression() const;  // get compression type (none/hss/blr/hodlr)
+\endcode
+
+When compression is enabled, the default STRUMPACK behavior is to use
+the approximate LU factorization as a preconditioner within
+GMRES. This behavior can also be changed, see \link solve
+Solve\endlink.
+
+However, HSS compression has a considerable overhead and only pays off
+for sufficiently large matrices. Therefore STRUMPACK has a tuning
+parameter to specify the minimum size a dense matrix needs to be to be
+considered a candidate for HSS compression. The minimum dense matrix
+size for HSS compression is set via the command line via
+
+\code {.bash}
+  --sp_compression_min_sep_size int
+\endcode
+
+or via the C++ API as follows
+
+\code {.cpp}
+void strumpack::SPOptions::set_compression_min_sep_size(int s);
+int strumpack::SPOptions::compression_min_sep_size() const;
+\endcode
+
+The routine \link
+strumpack::SPOptions::set_compression_min_sep_size(int s)
+set_compression_min_sep_size(int s)\endlink refers to the size of the
+top-left block of the front only. This top-left block is the part that
+corresponds to a separator, as given by the nested dissection
+reordering algorithm. This top-left block is also referred to as the
+block containing the fully-summed variables. Factorization (LU in the
+dense case, ULV in the HSS case) is only applied to this top-left
+block. __Tuning the value for the minimum separator size can have a
+big impact on performance and memory usage!__
+
+The above options affect the use of HSS within the multifrontal
+solver. There are more, HSS specific, options which are stored in an
+object of type \link strumpack::HSS
+HSS::HSSOptions<scalar>\endlink. An object of this type is stored in
+the \link strumpack::SPOptions SPOptions<scalar>\endlink object stored
+in the \link strumpack::StrumpackSparseSolver
+StrumpackSparseSolver\endlink. It can be accessed via the
+HSS_options() routine as follows:
+
+\code {.cpp}
+strumpack::StrumpackSparseSolver<double> sp;        // create solver object
+sp.options().set_compression(CompressionType::HSS); // enable HSS compression in the multifrontal solver
+sp.options().HSS_options().set_leaf_size(256);      // set the HSS leaf size
+\endcode
+
+In STRUMPACK, HSS matrices are constructed using a randomized sampling
+algorithm [6]. To construct an HSS approximation for a matrix A,
+sampling of the rows and columns of A is computed by multiplication
+with a tall and skinny random matrix R as follows: S^r = AR and S^c =
+A^*R. Ideally, the number of columns in the matrix R is d = r + p,
+with r the maximum off-diagonal block rank in the HSS matrix and p a
+small oversampling parameter. Unfortunately, the HSS rank is not known
+a-priori, so it needs to determined adaptively. The adaptive sampling
+scheme used in STRUMPACK starts with an initial number of random
+vector d_0, and increases this in steps of \Delta d, until the
+compression quality reaches the desired user specified tolerance, or
+until the maximum rank is reached. __The compression tolerances can
+greatly impact performance.__ They can be set using:
+
+\code
+  --hss_rel_tol real (default 0.01)
+  --hss_abs_tol real (default 1e-08)
+\endcode
+
+or via the C++ API
+
+\code
+void strumpack::HSS::HSSOptions<scalar>::set_rel_tol(real rel_tol);
+void strumpack::HSS::HSSOptions<scalar>::set_abs_tol(real abs_tol);
+real strumpack::HSS::HSSOptions<scalar>::rel_tol() const;              // get the current value
+real strumpack::HSS::HSSOptions<scalar>::abs_tol() const;
+\endcode
+____
+
+Other options are available to tune for instance the initial number of
+random vectors d_0, the increment \Delta d, the random number
+generator or the random number distribution. See the documentation of
+\link strumpack::HSS::HSSOptions HSSOptions<scalar>\endlink for more
+detailed information.  The corresponding HSS specific command line
+options are:
+
+\code {.bash}
+# HSS Options:
+#   --hss_rel_tol real_t (default 0.01)
+#   --hss_abs_tol real_t (default 1e-08)
+#   --hss_leaf_size int (default 128)
+#   --hss_d0 int (default 128)
+#   --hss_dd int (default 64)
+#   --hss_p int (default 10)
+#   --hss_max_rank int (default 5000)
+#   --hss_random_distribution normal|uniform (default normal(0,1))
+#   --hss_random_engine linear|mersenne (default minstd_rand)
+#   --hss_compression_algorithm original|stable|hard_restart (default stable)
+#   --hss_clustering_algorithm natural|2means|kdtree|pca|cobble (default 2means)
+#   --hss_user_defined_random (default false)
+#   --hss_approximate_neighbors int (default 64)
+#   --hss_ann_iterations int (default 5)
+#   --hss_enable_sync (default true)
+#   --hss_disable_sync (default false)
+#   --hss_log_ranks (default false)
+#   --hss_verbose or -v (default false)
+#   --hss_quiet or -q (default true)
+#   --help or -h
+\endcode
+
+*/
