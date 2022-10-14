@@ -1,4 +1,5 @@
 - Monograph on the complexities involved in designing software that is performant \& usable for the majority of researchers who may not be software experts.
+Yokota et. al. compare the matrix vector products of (\ref{eq:two_box_calc:sec_1_2}) performed by the \gls{FMM} using the ExaFMM package \cite{exafmm} and HSS factorisations using the STRUMPACK package \cite{rouet2016distributed}. These methods are not directly comparable, as the HSS method is only weakly admissible, however it constitutes on of the few studies to directly compare the efficacy of analytical and algebraic methods. They observe that the FMM converges approximately O(10) faster, with up to $O(1000)$ smaller memory footprint for (\ref{eq:eq:two_box_calc:sec_1_2}) in $R^3$ when computed on a single node.
 
 - Get more examples and data on the difficulties faced by researchers for research software.
 
