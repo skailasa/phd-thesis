@@ -1,10 +1,15 @@
 - Case study for Rusty tree on different HPC environments and architectures. 
 
-- briefly introduce algorithms (parallel sorting, tree construction).
+- Explain criticality of tree for FMM, where the global reductions are comms bottlenecks in the FMM.
 
-- The novelty isn't the fact that it's a parallel octree, it's that it's one that you can use easily from Python, and deploy to different HPC environments and architectures.
+- introduce tree algorithms (parallel sorting, parallel tree construction, load balancing) as well as idea and reasoning behind morton encoding. How do we do this fast? 
 
-Talk about the ease of writing a Python interface, and how this interoperability works. Talk about rSMPI project, it's important as this is an example that makes installation harder than it needs to be as it's a C shim - and that this is an example of a (relative) pitfall as an early adopter.
+- The novelty isn't the fact that it's a parallel octree, of which there are many, it's that it's one that you can use easily from Python, and deploy to different HPC environments and architectures, with a simple API.
 
-- contrast with existing libraries, their performance on different architectures, and how easy they are to install and edit - how malleable are they?
+- Scaling test on a large HPC system (Myriad/Archer2) scale to a very large tree (O(1e9)) points, use as a Python package. 
 
+- Talk about the ease of writing a Python interface, and how this interoperability works. Talk about rsMPI project, it's important as this is an example that makes installation harder than it needs to be as it's a C shim - and that this is an example of a (relative) pitfall as an early adopter.
+
+- Contrast with existing tree libraries, their performance on different architectures, and how easy they are to install and edit. i.e. contrast how malleable they are.
+
+- Conclude with vindication of Rust as a HPC language, due to its positive features.

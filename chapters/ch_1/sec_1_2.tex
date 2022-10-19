@@ -191,13 +191,13 @@ In terms of algorithm optimisation significant efforts have gone towards optimis
 
 \begin{flalign*}
     K(x, y) = K(x-y)
-    \label{eq:translational_invariance:sec_1_2}
 \end{flalign*}
 
 which is the case for the kernels mentioned above, we recognise that there are just $7^3-3^3=316$ unique $T^{M2L}$ operators per level. However, Messner et. al \cite{messner2012optimized} show that even these 316 operators are permutations of a subset of only 16 unique operators. Permutations corresponding to reflections across various planes (for example $x = 0$, $y = 0$, $z = 0$, etc). We can therefore write a block matrix of \textit{all} unique $T^{M2L}$ for a given level,
 
 \begin{flalign}
     T^{M2L} = \left [ T^{M2L}_1 | T^{M2L}_2 | ... | T^{M2L}_{16} \right ]
+    \label{eq:sec_1_2:m2l_stacked}
 \end{flalign}
 
 where $T^{M2L}_i$ corresponds to the $i^{\text{th}}$ \textit{transfer vector} describing a unique $T^{M2L}$. This block matrix is efficiently compressed using a truncated SVD, which is known to produce an optimal low rank approximation of a rank $N$ matrix, where the new rank, $r$, is chosen such that $r \ll N$. This is a common optimisation used in both black box \cite{Ying:2004:JCP,fong2009black} and analytical \gls{FMM}s \cite{gimbutas2003generalized}. By precomputing and storing a compressed $T^{M2L}$ for each level, the $T^{M2L}$ operator for each node can be formed as a single BLAS level 2 operation at runtime by looking up the relevant compressed operators corresponding to its $V$ list. The $T^{M2M}$, $T^{L2L}$ can be similarly stored on a level by level basis, reducing the pre-computation time for operators to $O(d)$, where $d$ is the depth of an quad/octree. For homogenous kernels, for which, 
