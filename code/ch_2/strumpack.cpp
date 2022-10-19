@@ -37,10 +37,10 @@ matvec(int nrhs,
   DistributedMatrix<scalar_t> B(A.grid(), H->rows(), 1), X(A.grid(), H->rows(), 1);
 
   // Pick a random exact solution
-  X.random();
+//   X.random();
 
   // Compute the right-hand side B as B=H*X
-  H->mult(Trans::N, X, B);
+//   H->mult(Trans::N, X, B);
 
 }
 
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
         //     return LaplaceMatrix[i][j];
         // };
 
-        // Toeplitz matrix for testing
+        // // Toeplitz matrix for testing
         // auto Laplace = [](int i, int j){
         //     return 1./(i-j + 1);
         // };
@@ -143,8 +143,14 @@ int main(int argc, char* argv[]) {
                 << "  - memory(A2d) = " << A2d.memory() / 1e6 << " MByte"
                 << endl << endl;
 
+        double t1, t2;
+        t1 = MPI_Wtime();
         matvec(nrhs, A2d, H.get());
+        world.barrier();
+        t2 = MPI_Wtime();
 
+        if (rank == 0)
+            printf("Matvec Time is %f \n", t2-t1);
     }
 
     scalapack::Cblacs_exit(1);
