@@ -37,10 +37,10 @@ matvec(int nrhs,
   DistributedMatrix<scalar_t> B(A.grid(), H->rows(), 1), X(A.grid(), H->rows(), 1);
 
   // Pick a random exact solution
-//   X.random();
+  X.random();
 
   // Compute the right-hand side B as B=H*X
-//   H->mult(Trans::N, X, B);
+  H->mult(Trans::N, X, B);
 
 }
 
