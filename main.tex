@@ -15,6 +15,16 @@
 \usepackage{etoolbox}
 \usepackage{subfig}
 
+\usepackage{listings}
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Python style for highlighting
+
+
 \AtBeginEnvironment{tcolorbox}{\footnotesize}
 
 \newdateformat{monthyeardate}{%
@@ -59,18 +69,16 @@
 \definecolor{deepgreen}{rgb}{0,0.5,0}
 
 \usepackage{listings}
-
-% Python style for highlighting
 \newcommand\pythonstyle{\lstset{
 language=Python,
 basicstyle=\ttm,
-otherkeywords={self},             % Add keywords here
+morekeywords={self},              % Add keywords here
 keywordstyle=\ttb\color{deepblue},
 emph={MyClass,__init__},          % Custom highlighting
 emphstyle=\ttb\color{deepred},    % Custom highlighting style
 stringstyle=\color{deepgreen},
 frame=tb,                         % Any extra options here
-showstringspaces=false            %
+showstringspaces=false
 }}
 
 
