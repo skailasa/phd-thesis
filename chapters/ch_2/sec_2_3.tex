@@ -1,11 +1,76 @@
-- Summary of Rust's core features for computational science.
+Interpreted languages, such as Python, Matlab or Julia, offer great usability benefits. They each support large ecosystems of numerical libraries, and offer rapid prototyping due to their interpreted nature. The tools to build software with these languages is designed for portability across a large variety of platforms, from different hardware architectures to operating systems. However, as we have observed in section \ref{sec:2_2}, this comes with the overhead of having to deal with an interpreter, and impacts the kind of software that can realistically be built with interpreted languages.
 
-- cargo, code organisation features, traits system, python interfacing.
+For problems in which this overhead is untenable, compiled languages, such as C, C++ and Fortran are preferred. These languages require greater software engineering expertise, as developers are responsible for allocating memory, installing third party libraries, as well as building their software to target different hardware. These languages in a sense allow a developer to `do anything', of course only if one knows how to do it. This flexibility allows users to develop fine grained optimisations, however the software engineering barrier is significantly higher. This manifests in a dizzying array of compilers, build systems, package managers, testing and documentation libraries and code organisation techniques. The notable thing about all of these optional choices is that it is relatively unclear which is the \textit{preferred} way of doing things, with novice developers likely to find a development strategy that `simply works' and stick to it. Rust stands in contrast to these traditionally preferred languages for high performance scientific computing, although it is fast, it is relatively \textit{inflexible}, with a strongly preferred way of organising, writing, testing, documenting and deploying software. This leads to significantly more uniform Rust code across projects, and a steep, though relatively shorter, learning curve. Importantly, this uniformity makes Rust code easier to share, and port to different operating systems and hardware targets.
 
-- Rebuke common misconceptions: safety (bounds checking), lack of appropriate libraries for numerical data.
+\subsection*{Package Managers and Build Systems}
 
-- Highlight what actually is missing, e.g. rust-native tools (linear algebra, MPI etc) - and what's being done about it.
+For simple programs, it's tempting to use a compiler directly to create an executable, as in listing (\ref{code:sec_2_3:simple_compilation}). However, as a project's code expands, with files defined in multiple directories and calls to external libraries, potentially written in other programming languages, this simple one line appeal to a compiler will no longer be sufficient. One could always download their requisite software, and install globally over the machine using a system package manager, and attempt to recompile. However, this quickly becomes untenable if one is developing for a range of hardware and operating system targets, or one needs to use different versions of external binaries and libraries. Therefore, software is usually constructed using a `build system'. This is catch all term that refers to a program that takes source files as input and produces a deployable set of binaries or libraries as an output. Classically, build systems were based on `Make' and `Autotools', these softwares generate `Makefiles' - which are recipes for constructing a piece of software given a set of source files and external dependencies. These are robust tools, but the onus is squarely with a developer for ensuring that all dependent libraries are visible to Make, and that the external packages are all of compatible versions.
 
-- When is using rust appropriate? When is it not?
+To manage this complexity compiled software is managed with CMake. CMake is a scripting language that defines a so called `meta build system', this means that it allows you to specify local and third party dependencies and hardware targets, and uses a valid set of build scripts to generate Makefiles for a given system. CMake gives developers a great deal of flexibility, it is multiplatform, and language agnostic, however using it directly is not straightforward. Textbooks [CITE CMAKE TEXTBOOK], and courses [CITE CMAKE COURSE] have been developed to encourage best practices with CMake, however as CMake is not responsible for downloading and installing third party packages, or verifying their relative compatibility.
 
-- Why are we turning to rust for this project?
+Approaches for reliable builds are inconsistent among projects, ranging from `low tech' solutions [REFER TO LOW TECH BUILDS BOX], to more modern solutions [REFER TO HIGH TECH SOLUTIONS BOX]. However, many important projects go as far as to completely re-implement their own custom build systems, such as the Boost library's BJam [REFERENCE FOR BJAM].
+
+Keeping on top of packages, which are constantly being iterated upon independently, and may support different features with each release, is nearly impossible to do manually. Furthermore, one may want to support a specific set of packages, and respectively versions, for a given hardware/software target, but a different set for a different build of the same software. This has led to the development of `package managers', which are a catch all term for softwares that can download, and install required software for you, and often verify whether version constraints are satisfied too. Package managers can be delineated into `system package managers', which download operating system specific packages written in any language globally on your machine, and `language specific package managers' which focus only on packages written in a given target language.
+
+In terms of system package managers Linux examples include apt, yum and debian, for MacOS there is Homebrew. These can handle both source installations, in which source code is compiled upon download, as well as binary installation, in which pre-built binaries matching your hardware constraints are installed. Binary installation is often preferred, as it is faster, and often reflects a stable release. Language specific package managers, such as pip for Python, which can handle dependencies written in these languages only. Developing your own packages for system package managers is not developer friendly, official package repositories of Linux package managers, apt, yum and pacman, are moderated by their respective maintainers, though it is possible to set up a personal repository this is quite a sophisticated approach for simple research outputs. The simple alternative, pursued by many scientific projects [LIST OF SCIENTIFIC PROJECTS THAT DO THIS], is to simply add third party software as a submodule [SEE BOX FOR LOW TECH APPROACHES], and for library code develop header only implementations [HEADER ONLY LIBRARIES FOR C++]. These alternatives force users to compile from source on each new machine, which can be a painstakingly slow process. As an example, a large C++ project taking O(1e6) lines of source code, with multiple dependencies, can take several hours to compile for a given hardware architecture.
+
+With the exception of Fortran, which has made recent strides to develop a standardised modern package manager and build system, inspired by Rust's Cargo \footnote{https://github.com/fortran-lang/fpm}, C and C++ do not have a single officially supported package manager or build system. The resulting landscape is a dizzying multitude of package managers, build systems, meta build systems, all of which replicate each others functionality [C++ BUILD SYSTEM UNIVERSE BOX], none of which are universally accepted or implemented across projects, nor officially supported by the C++ software foundation.
+
+\bashexternal[basicstyle=\footnotesize, caption={Compiling a simple \texttt{source\_code.cpp} into a \texttt{compiled\_binary} file from a terminal.}\label{code:sec_2_3:simple_compilation}]{simple_compilation.sh}
+
+Recent years have seen the bundling of package managers \textit{with} build systems, resulting in softwares that can simply take source files, and a set of dependencies, and resolve a single binary output for a given hardware and software target. Examples include Conda for Python, and Rust's Cargo system. These modern efforts are able to compile both source and binary packages for all operating systems, and can target a wide range of hardware architectures. Furthermore, the trend has been towards the specification of project dependencies in a single text file [EXAMPLE OF A TOML FILE], which is then handled by the package manager with no further user effort. Efforts have been in this direction for older compiled languages, the most notable examples being Spack and Conan [SPACK VS CONAN BOX]. Importantly, in the case of Rust, Cargo is officially supported and shipped as a core part of its runtime. In contrast to C, C++ and Fortran, Rust has a \textit{single} officially supported compiler, rustc. By taking global decisions for all software written in Rust, a significant burden is removed from developers of Rust software, similar to the situation in many interpreted languages [COMPILING WITH CARGO BOX].
+
+% make
+% CMake
+% xmake
+% meson - can only handle source builds
+
+% package managers
+% fortran package manager
+% system package managers
+% conan 
+
+% cmake
+% scons
+% conan
+% vcpkg
+% poac
+% pacm
+% buckaroo
+% hunter
+% cpm (no longer maintained)
+% ninja
+% bazel
+% CMake
+% genie
+% git submodules
+% system package managers + cmake
+
+\subsection*{Code Organisation and Quality}
+
+Rust introduces many ergonomic features for code organization. The most novel features, which may not be familiar to those coming from other compiled languages, are the concepts of traits and lifetimes.
+
+\subsubsection*{Traits}
+
+- traits, lifetimes
+
+c++ 20 has these features (concepts) (const expr), contrast c++/rust code generation, and how this can lead to radically different outcomes despite similar / same machine code - blog about rust myths (russian blog).
+
+\subsubsection*{Lifetimes and the Borrow Checker}
+Rust is opinionated, this is a key benefit for scientific software development. C/C++ and Fortran have too much choice, build system, compiler, doc system, traits (concepts in C++20) vs object orientation, lifetime vs no-lifetime (compile time checks in c++20 copy Rust's lifetimes). C++ is simply too big.
+
+\subsubsection*{Code Quality}
+Rust's runtime includes a test runner, a documentation generator, and a code formatter. As with other Rust features, these are maintained as a core part of the runtime system, and therefore impose a universal standard on all Rust projects. [LINKS TO ALL OF THESE TOOLS]
+
+\subsection*{Ecosystem}
+
+Despite being a young language, Rust already supports a mature ecosystem of libraries for scientific computing. It has, multithreading, numerical data containers, and tools for generating interfaces to Python. 
+
+- Go through each library, and what they add.
+
+There are also bindings to popular numerical libraries written in other langueages, including BLAS, LAPACK and MPI, these are built via the `build.rs' crate, EXAMPLE OF HOW TO USE BUILD RS.
+
+The most significant missing components are GPU code generation, and Rust native linear algebra libraries, however these are under active development [CITE ACTIVE DEVELOPMENT].
+
+\subsection*{Conclusion}
+Rust will provide us with the malleability and portability. Easy to maintain and deploy with only a small team, can maximise the hardware and platforms we develop software for. This will encourage widespread adoption of our software, as researchers with wide ranging hardware and software requirements. We envision researchers being able to use our software from an interpreted language to integrate into their own experiments, locally, and deploy their application to a supercomputing cluster with minimal configuration.

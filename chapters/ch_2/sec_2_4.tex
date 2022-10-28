@@ -1,15 +1,26 @@
-- Case study for Rusty tree on different HPC environments and architectures. 
+Robust parallel tree data structures are critical for high performance fast algorithms. The tree is the defining 
 
 - Explain criticality of tree for FMM, where the global reductions are comms bottlenecks in the FMM.
 
-- introduce tree algorithms (parallel sorting, parallel tree construction, load balancing) as well as idea and reasoning behind morton encoding. How do we do this fast? 
-
 - The novelty isn't the fact that it's a parallel octree, of which there are many, it's that it's one that you can use easily from Python, and deploy to different HPC environments and architectures, with a simple API.
 
-- Scaling test on a large HPC system (Myriad/Archer2) scale to a very large tree (O(1e9)) points, use as a Python package. 
+- What do we want from an octree library? load balancing, simple API, MPI distributed.
 
+\subsection*{Parallel Octrees}
+
+- Construction algorithms, briefly, sorting algorithm (key), sketch.
+
+- introduce tree algorithms (parallel sorting, parallel tree construction, load balancing) as well as idea and reasoning behind morton encoding. How do we do this fast? 
+
+\subsection*{Developing a Python Interface}
 - Talk about the ease of writing a Python interface, and how this interoperability works. Talk about rsMPI project, it's important as this is an example that makes installation harder than it needs to be as it's a C shim - and that this is an example of a (relative) pitfall as an early adopter.
 
-- Contrast with existing tree libraries, their performance on different architectures, and how easy they are to install and edit. i.e. contrast how malleable they are.
+\subsection*{Scaling Experiments}
 
-- Conclude with vindication of Rust as a HPC language, due to its positive features.
+- Scaling test on a large HPC system (Myriad/Archer2) scale to a very large tree (O(1e9)) points, use as a Python package.  O(billions of points)
+
+- Compare to existing tree libraries if possible and time permits.
+
+\subsection*{Conclusion}
+
+- Contrast with existing tree libraries, their performance on different architectures, and how easy they are to install and edit. i.e. contrast how malleable they are.
