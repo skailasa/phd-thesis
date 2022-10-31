@@ -94,6 +94,20 @@ frame=tb,                         % Any extra options here
 showstringspaces=false
 }}
 
+\usepackage{listings}
+\newcommand\ruststyle{\lstset{
+% language=python,
+basicstyle=\ttm,
+morekeywords={pub, fn, println!, format!},              % Add keywords here
+keywordstyle=\ttb\color{deepblue},
+emph={trait, struct, impl},          % Custom highlighting
+emphstyle=\ttb\color{deepred},    % Custom highlighting style
+stringstyle=\color{deepgreen},
+frame=tb,                         % Any extra options here
+showstringspaces=false
+}}
+
+
 % Python environment
 \lstnewenvironment{python}[1][]
 {
@@ -107,17 +121,27 @@ showstringspaces=false
 \pythonstyle
 \lstinputlisting[#1]{#2}}}
 
+% Bash external files
+\newcommand\bashexternal[2][]{{
+  \bashstyle
+  \lstinputlisting[#1]{#2}
+}}
+
+% Rust external files
+\newcommand\rustexternal[2][]{{
+  \ruststyle
+  \lstinputlisting[#1]{#2}
+}}
+
 % Python for inline
 \newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
 
 % Bash inline
 \newcommand\bashinline[1]{{\bashstyle\lstinline!#1!}}
 
-% Bash external files
-\newcommand\bashexternal[2][]{{
-  \bashstyle
-  \lstinputlisting[#1]{#2}
-}}
+% Rust inline
+\newcommand\rustinline[1]{{\ruststyle\lstinline!#1!}}
+
 
 % Remove excess double page
 \let\cleardoublepage\clearpage
