@@ -1,26 +1,98 @@
-Robust parallel tree data structures are critical for high performance fast algorithms. The tree is the defining 
-
-- Explain criticality of tree for FMM, where the global reductions are comms bottlenecks in the FMM.
-
-- The novelty isn't the fact that it's a parallel octree, of which there are many, it's that it's one that you can use easily from Python, and deploy to different HPC environments and architectures, with a simple API.
-
-- What do we want from an octree library? load balancing, simple API, MPI distributed.
+Octrees are a foundational data structure for fast algorithms in $\mathbb{R}^3$. Writing software for octrees that can be distributed across parallel computing systems is challenging, demonstrated by the limited availability of open-source software \cite{BursteddeWilcoxGhattas11,fernando2020github}. This is inspite of their ubiquity in scientific computing applications from adaptive finite-element methods to many-body algorithms \cite{sundar2008bottom}. We present Rusty Tree, an implementation of MPI-distributed octrees with a complete Python interface. Rusty Tree is a proof of concept for Rust as a tool for high-performance computational science. We document our experience in developing Rusty Tree, and use it as a tool to explore the current landscape of scientific computing with Rust. From multithreading, and developing a Python interface, to distributing applications with MPI, writing Rusty Tree involved using much of Rust's scientific computing ecosystem. 
 
 \subsection*{Parallel Octrees}
 
-- Construction algorithms, briefly, sorting algorithm (key), sketch.
+As mentioned in section \ref{sec:2_2}, there are multiple representations of octrees. We choose a linear octree representation, in which we discard interior nodes and store a list of leaves, as in our previous work PyExaFMM \cite{kailasa2022pyexafmm}. These lie in contrast to pointer based octrees, which have a relatively higher storage cost, in addition to a synchronisation and communication overhead for parallel implementations that must keep track of pointers across nodes \cite{tu2005scalable}. 
 
-- introduce tree algorithms (parallel sorting, parallel tree construction, load balancing) as well as idea and reasoning behind morton encoding. How do we do this fast? 
+Octrees are usually constructed `top down'. A user specifies a threshold for the maximum number of particles in a leaf node, $n_{\text{crit}}$, and a unit cube encapsulating the problem domain is refined until this is satisfied. After refinement, one can optionally `balance' adjacent leaf nodes such that adjacent nodes obey a relative size constraint. However, translating this logic to a parallel setting is challenging. Constructing octrees `top down' involve a significant data communication that come from having to synchronise nodes across processors during refinement. For example,
 
-\subsection*{Developing a Python Interface}
-- Talk about the ease of writing a Python interface, and how this interoperability works.
+\begin{itemize}
+    \item Balancing requires updating a chain of relationships, that can `ripple' across processors.
+    \item As the data distribution is not known a priori, load balancing must be done as a post-processing step.
+\end{itemize}
+
+Sundar et al \cite{sundar2008bottom}, therefore introduce `bottom up' tree construction. The strategy relies on a `space filling curve' that passes through each octant in an octree, for which they choose a Morton encoding. Morton encoding have excellent properties for spatial decompositions. Once sorted, adjacent Morton keys encode spatial locality. Indeed traversing a sorted list of Morton keys from smallest to greatest is equivalent to a level by level traversal of an octree, starting at its root node. Similarly, a reverse order traversal is equivalent to a level by level traversal of an octree starting at its leaf level. We show how to calculate the Morton encoded key for a given octant in figure (\ref{fig:sec_2_4:morton}). This process is accelerated in RustyTree using the Rayon library for parallel multithreading, see box [TODO: RAYON AND MORTON ENCODING BOX].
+
+Given a set of evenly distributed point data across $N$ processors, Sundar et. al's strategy is to:
+
+\begin{enumerate}
+    \item Generate a Morton key for each point corresponding to a user defined octree depth.
+    \item Perform a parallel sort of these leaf octants using MPI, such that processors with adjacent MPI ranks have adjacent data.
+    \item \textit{Linearise} leaves on each processor, such that their leaves do not overlap, in a manner that favours larger leaves over smaller ones, as in algorithm [TODO: LINEARISATION ALGORITHM].
+    \item \textit{Complete} the space defined by the leaves on each processor, to find the domain occupied by their leaves, see figure [TODO: COMPLETE REGION].
+    \item Find the minimum spanning set of nodes that occupies the space defined by the leaves in a given processor, and define the coarsest nodes of this set as \textit{seeds}.
+    \item Construct a \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes. The nodes of this block tree are referred to as \textit{blocks}. This gives us a distributed coarse complete linear octree that is based on the underlying data distribution.
+    \item The load of each block is calculated by using the number of original octants calculated in step (1). The blocks are then redistributed so that each processor contains an approximately equal load.
+    \item Point data is communicated to the processor containing its associated block, and the blocks are refined based on $n_{\text{crit}}$, providing the final, load balanced, linear octree tree.
+    \item Optionally, the tree is balanced. This can be done for the local subtree on each processor using algorithm [TODO: BALANCING ALGORITHM]. The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3).
+\end{enumerate}
+
+The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). Making the parallel sort's efficiency a bottleneck for tree construction.
+
+\begin{figure}
+    \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
+    \caption{How to Morton encode a node in an octree.}
+    \label{fig:sec_2_4:morton}
+\end{figure}
+
+\subsection*{Efficient Parallel Sorts}
+
+Designing and implementing an efficient sorting algorithm that can scale to thousands of cores is difficult since it requires irregular data access, communication, and load-balance. In the original paper \cite{sundar2008bottom}, Sundar et. al use a variant of sample sort. Briefly, this approach samples elements at each processor to create a set of $n_p - 1 $ ordered `splitters', which are shared across all processors and define a set of $n_p$ buckets. This is followed by a global all-to-all communication call over all $n_p$ processors to assign elements to their corresponding bucket. Finally, a local sort is performed at each bucket to produce a globally sorted array. SampleSort is well understood. However, its performance is quite sensitive to the selection of splitters, which can result in load imbalance. Most important, the all-to-all key redistribution scales linearly with the number of tasks and can congest the network. As a result SampleSort may scale suboptimally, especially when the communication volume approaches the available hardware limits \cite{sundar2013hyksort}. Indeed, when tested at the largest experimental values involving $~1e9$ particles, and $n_p \geq 10^2$, the library defined \pythoninline{MPI_Alltoallv()} is not able to cope with the volume of data being sent across the network, and results in a segfault. We compare HykSort to a Rust implementation of Sample Sort in figure [TODO: Comparison of Hyksort and Samplesort (naive)], noting that HykSort provides a [TODO: performance improvement], and scales to [TODO: Max scale comparison].
+
+An alternative approach is provided by Sundar et. al's `HykSort' \cite{sundar2013hyksort}. Here they reduce the communication overhead with the following improvement to sample sort. Instead of splitting the global array into $n_p$ buckets, they split into $k < n_p$, and recursively sort for each bucket. This situation is sketched in figure [TODO: Figure of sample sort]. We notice that at each recursion step, each task communicates with just $k$ other tasks. Indeed, for $k=2$ we recover Quicksort over a hypercube. 
+
+Sundar et. al. also provide an algorithm to optimally select splitters, see algorithm [TODO: splitter algorithm], and a SIMD optimised local merge-sort, see algorithm [TODO: merge sort algorithm]. Upon comparison between their implementation to Rust's inbuilt sorting function in figure [TODO: Comparison of Rust with usort for local sort] we decided to use Rust's sort method in our implementation.
+
+\subsection*{Rusty Tree}
+
+Rusty Tree can consumed as either a Rust crate or as a Python package distributed via Conda, with uniform installation steps on different platforms. We have so far tested Rusty Tree on MacOS, RedHat [TODO: Lookup what Timo's machine uses] and [TODO: Lookup what Myriad uses].
+
+- docs system and tests
+
+
+\subsubsection*{Interface and Example Usage}
+
+Example usage in Python mirrors the Rust interface [TODO: Python Vs Rust experiment]. Users are able use point data generated at runtime, or provide a HDF5 file for Rusty Tree to consume. Rusty Tree is also capable of outputting a VTK file for visualisation.
+
+\subsubsection*{Creating Python Interfaces}
+
+We create Python interfaces using Maturin, a tool for building and publishing Rust-based Python packages. It can do this in different ways, including the popular PyO3 \cite{pyo32022github} and rust-cpython \cite{rustcpython2022github} crates, which offer Rust bindings for Python to use Rust libraries as native extension modules, as well as interacting with Python code from Rust binaries. However, Maturin also supports creating bindings using Rust's C Foreign Function Interface (CFFI). An example of exposing a Rust type using the CFFI is shown in listing [TODO: exposing a Rust type to Python, perhaps just link to Rust -> Python iterator]. We choose the CFFI as to expose Rust types into Python, as the types we wish to expose into Rust are relatively simple arrays and we also wish to be able to pass the pointer corresponding to an MPI communicator between Python and Rust with relative ease (see section next section for more details). The syntax is relatively simple [TODO: syntax for CFFI]:
+
+
+
+can generate a native shared library using a C foreign function interface defined for a Rust library.
+
+Maturin works by \dots
+- How does Maturin work
+- What are the implications of using it for performance?
+- An example of how to expose a Rust type to Python, and how to use a Python type in Rust.
+- How do you expose a Rust iterator? [TODO: Rust iterator in Python box].
+
+\subsubsection*{Using MPI from Rust and Python}
+
+MPI, via the rsMPI crate, constitutes the most complex dependency in Rusty Tree. The MPI bindings are built on top of C shim library, and simply expose an interface in Rust which covers most of MPI's core functionality \footnote{This is an area of active development, and a list of currently supported features can be found here \url{https://github.com/rsmpi/rsmpi/blob/main/README.md}}. 
+
+- MPI, and difficulties in getting it to compile
+    - forced to fork, and write a custom build script.
+
+- HDF5, incompatibilities, and being force to install from source.
+- Python interface for Rusty tree, and how this is done in practice, can use some examples from the pyrustmpi crate, for how to pass Rust iterators into Python.
 
 \subsection*{Scaling Experiments}
 
 - Scaling test on a large HPC system (Myriad/Archer2) scale to a very large tree (O(1e9)) points, use as a Python package.  O(billions of points)
 
-- Compare to existing tree libraries if possible and time permits.
+- Compare to existing tree libraries
+    - p4est, should have some example code that can run
 
 \subsection*{Conclusion}
 
 - Contrast with existing tree libraries, their performance on different architectures, and how easy they are to install and edit. i.e. contrast how malleable they are.
+
+- Conclude that we hope to publish this work soon, and why this would be of interest to the wide community.
+
+- Impact of Rusty Tree
+    - How is the pursuit of existing research questions improved?
+    - How can new research questions be pursued?
+    - How will software change daily practice of its users?
+        - Obviously a comparison to P4est and Dendro is required for this.
