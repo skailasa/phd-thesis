@@ -2,18 +2,20 @@ Octrees are a foundational data structure for fast algorithms in $\mathbb{R}^3$.
 
 \subsection*{Parallel Octrees}
 
-As mentioned in section \ref{sec:2_2}, there are multiple representations of octrees. We choose a linear octree representation, in which we discard interior nodes and store a list of leaves, as in our previous work PyExaFMM \cite{kailasa2022pyexafmm}. These lie in contrast to pointer based octrees, which have a relatively higher storage cost, in addition to a synchronisation and communication overhead for parallel implementations that must keep track of pointers across nodes \cite{tu2005scalable}. 
+As mentioned in section \ref{sec:2_2}, there are multiple representations of octrees. We choose a linear octree representation, in which we discard interior nodes and store a list of leaves, as in our previous work PyExaFMM \cite{kailasa2022pyexafmm}. These lie in contrast to pointer based octrees in which each node stores pointers to its parent as well as children, which have a relatively higher storage cost, in addition to a synchronisation and communication overhead for parallel implementations that must keep track of pointers across nodes \cite{tu2005scalable}. 
 
-Octrees are usually constructed `top down'. A user specifies a threshold for the maximum number of particles in a leaf node, $n_{\text{crit}}$, and a unit cube encapsulating the problem domain is refined until this is satisfied. After refinement, one can optionally `balance' adjacent leaf nodes such that adjacent nodes obey a relative size constraint. However, translating this logic to a parallel setting is challenging. Constructing octrees `top down' involve a significant data communication that come from having to synchronise nodes across processors during refinement. For example,
+Octrees are usually constructed `top down'. A user specifies a threshold for the maximum number of particles in a leaf node, $n_{\text{crit}}$, and a unit cube encapsulating the problem domain is refined until this is satisfied. After refinement, one can optionally `balance' adjacent leaf nodes such that adjacent nodes obey a relative size constraint. However, translating this logic to a parallel setting is challenging. Constructing octrees `top down' involve a significant data communication that come from having to synchronise nodes across processors during refinement. Balancing requires updating a chain of relationships, that can `ripple' across processors. Furthermore, as the data distribution is not known a priori, load balancing must be done as a post-processing step.
 
-\begin{itemize}
-    \item Balancing requires updating a chain of relationships, that can `ripple' across processors.
-    \item As the data distribution is not known a priori, load balancing must be done as a post-processing step.
-\end{itemize}
+Sundar et al introduce `bottom up' tree construction \cite{sundar2008bottom}. The strategy relies on a `space filling curve' that passes through each octant in an octree, for which they choose a Morton encoding (see fig. (\ref{fig:sec_2_4:morton}) for a description of Morton encoding for an octant). Morton encodings have excellent properties for spatial decompositions. Once sorted, adjacent Morton keys encode spatial locality. Indeed traversing a sorted list of Morton keys from smallest to greatest is equivalent to a level by level traversal of an octree, starting at its root node. Similarly, a reverse order traversal is equivalent to a level by level traversal of an octree starting at its leaf level. This process is accelerated in RustyTree using the Rayon library for parallel multithreading which we examine in figure (\ref{fig:sec_2_4:rayon}).
 
-Sundar et al \cite{sundar2008bottom}, therefore introduce `bottom up' tree construction. The strategy relies on a `space filling curve' that passes through each octant in an octree, for which they choose a Morton encoding. Morton encoding have excellent properties for spatial decompositions. Once sorted, adjacent Morton keys encode spatial locality. Indeed traversing a sorted list of Morton keys from smallest to greatest is equivalent to a level by level traversal of an octree, starting at its root node. Similarly, a reverse order traversal is equivalent to a level by level traversal of an octree starting at its leaf level. We show how to calculate the Morton encoded key for a given octant in figure (\ref{fig:sec_2_4:morton}). This process is accelerated in RustyTree using the Rayon library for parallel multithreading, see box [TODO: RAYON AND MORTON ENCODING BOX].
 
-Given a set of evenly distributed point data across $N$ processors, Sundar et. al's strategy is to:
+\begin{figure}
+    \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
+    \caption{How to Morton encode a node in an octree.}
+    \label{fig:sec_2_4:morton}
+\end{figure}
+
+Given a set of distributed point data spread across $n_p$ processors, Sundar et. al's strategy is to:
 
 \begin{enumerate}
     \item Generate a Morton key for each point corresponding to a user defined octree depth.
@@ -27,17 +29,18 @@ Given a set of evenly distributed point data across $N$ processors, Sundar et. a
     \item Optionally, the tree is balanced. This can be done for the local subtree on each processor using algorithm [TODO: BALANCING ALGORITHM]. The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3).
 \end{enumerate}
 
-The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). Making the parallel sort's efficiency a bottleneck for tree construction.
+The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). This makes the efficiency of the parallel sort a bottleneck in tree construction.
 
 \begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
-    \caption{How to Morton encode a node in an octree.}
-    \label{fig:sec_2_4:morton}
+    \centerline{\includegraphics[width=\linewidth]{ch_2/rayon.pdf}}
+    \caption{Optimising Morton encodings using shared memory parallelism and lookup tables.}
+    \label{fig:sec_2_4:rayon}
 \end{figure}
+
 
 \subsection*{Efficient Parallel Sorts}
 
-Designing and implementing an efficient sorting algorithm that can scale to thousands of cores is difficult since it requires irregular data access, communication, and load-balance. In the original paper \cite{sundar2008bottom}, Sundar et. al use a variant of sample sort. Briefly, this approach samples elements at each processor to create a set of $n_p - 1 $ ordered `splitters', which are shared across all processors and define a set of $n_p$ buckets. This is followed by a global all-to-all communication call over all $n_p$ processors to assign elements to their corresponding bucket. Finally, a local sort is performed at each bucket to produce a globally sorted array. SampleSort is well understood. However, its performance is quite sensitive to the selection of splitters, which can result in load imbalance. Most important, the all-to-all key redistribution scales linearly with the number of tasks and can congest the network. As a result SampleSort may scale suboptimally, especially when the communication volume approaches the available hardware limits \cite{sundar2013hyksort}. Indeed, when tested at the largest experimental values involving $~1e9$ particles, and $n_p \geq 10^2$, the library defined \pythoninline{MPI_Alltoallv()} is not able to cope with the volume of data being sent across the network, and results in a segfault. We compare HykSort to a Rust implementation of Sample Sort in figure [TODO: Comparison of Hyksort and Samplesort (naive)], noting that HykSort provides a [TODO: performance improvement], and scales to [TODO: Max scale comparison].
+Designing and implementing an efficient sorting algorithm that can scale to thousands of cores is difficult since it requires irregular data access, communication, and load-balance. In the original paper \cite{sundar2008bottom}, Sundar et. al use a variant of sample sort. Briefly, this approach samples elements at each processor to create a set of $n_p - 1 $ ordered `splitters', which are shared across all processors and define a set of $n_p$ buckets. This is followed by a global all-to-all communication call over all $n_p$ processors to assign elements to their corresponding bucket. Finally, a local sort is performed at each bucket to produce a globally sorted array. SampleSort is well understood. However, its performance is quite sensitive to the selection of splitters, which can result in load imbalance. Most importantly, the all-to-all key redistribution scales linearly with the number of tasks and can congest the network. As a result SampleSort may scale suboptimally, especially when the communication volume approaches the available hardware limits \cite{sundar2013hyksort}. Indeed, when tested at the largest experimental values involving $~1e9$ particles, and $n_p \geq 10^2$, the library defined \pythoninline{MPI_Alltoallv()} is not able to cope with the volume of data being sent across the network, and results in a segfault. We compare HykSort to a Rust implementation of Sample Sort in figure [TODO: Comparison of Hyksort and Samplesort (naive)], noting that HykSort provides a [TODO: performance improvement], and scales to [TODO: Max scale comparison].
 
 An alternative approach is provided by Sundar et. al's `HykSort' \cite{sundar2013hyksort}. Here they reduce the communication overhead with the following improvement to sample sort. Instead of splitting the global array into $n_p$ buckets, they split into $k < n_p$, and recursively sort for each bucket. This situation is sketched in figure [TODO: Figure of sample sort]. We notice that at each recursion step, each task communicates with just $k$ other tasks. Indeed, for $k=2$ we recover Quicksort over a hypercube. 
 
@@ -50,8 +53,6 @@ Rusty Tree can consumed as either a Rust crate or as a Python package distribute
 Example usage in Python mirrors the Rust interface [TODO: Python Vs Rust experiment]. Users are able use point data generated at runtime, or provide a HDF5 file for Rusty Tree to consume. Rusty Tree is also capable of outputting a VTK file for visualisation.
 
 We follow data oriented principles in Rusty Tree's design, with a shallow abstraction layer that acts as an interface to operations on point data, and encoded Morton indices. In terms of lines of code, this translates into just 2565 lines of Rust and 707 lines of Python with less than 90 lines of configuration code in terms of Toml and Yaml files specifying the Rust and Python builds. This Rust and Python figure is also inclusive of all test code, and documentation. 
-
-% Dendro, a C++ library with comparable functionality, runs to 33144 lines of code and 25962 lines of C++ header files and an additional 4550 lines of Make and CMake configuration files.
 
 \subsubsection*{Creating Python Interfaces}
 
