@@ -1,4 +1,4 @@
-Python\footnote{We use `Python' to refer to CPython, the popular C language implementation of Python, which is dominant in computational science.}, is designed for memory safety and programmer productivity. Its simplicity allows Computational Scientists to spend more time exploring their science, and less time being confused by software quirks, memory errors, and the nightmare of incompatible dependencies, which conspire to drain productivity in lower level languages.
+The work in this section is adapted from a paper recently submitted to Computing in Science and Engineering \cite{kailasa2022pyexafmm}. Python\footnote{We use `Python' to refer to CPython, the popular C language implementation of Python, which is dominant in computational science.}, is designed for memory safety and programmer productivity. Its simplicity allows Computational Scientists to spend more time exploring their science, and less time being confused by software quirks, memory errors, and the nightmare of incompatible dependencies, which conspire to drain productivity in lower level languages.
 
 Python fulfills many of the key usability criteria for scientific software. Cross platform builds are trivial with open source build systems such as Conda, and its simple syntax and large scientific computing ecosystem of numerical libraries allows for rapid dissemination amongst the wider community.
 
@@ -112,9 +112,9 @@ Resultantly, we wish to find a middle way, that would retain the usability of a 
     \label{fig:sec_2_2:numba_runtime}
 \end{figure}
 
-\pythonexternal[basicstyle=\footnotesize, caption={An example of parallel multithreading.}\label{code:sec_2_2:parallel_multithreading}]{parallel_multithreading.py}
-\pythonexternal[basicstyle=\footnotesize, caption={An example of using Numba in a Python function operating on ndarrays.}\label{code:sec_2_2:loop_fusion}]{loop_fusion.py}
+\pythonexternal[basicstyle=\footnotesize, caption={An example of parallel multithreading.}\label{code:sec_2_2:parallel_multithreading}]{snippets/parallel_multithreading.py}
+\pythonexternal[basicstyle=\footnotesize, caption={An example of using Numba in a Python function operating on ndarrays.}\label{code:sec_2_2:loop_fusion}]{snippets/loop_fusion.py}
 
-\pythonexternal[basicstyle=\footnotesize,caption={Three ways of writing a trivial algorithm that passes around a vector, while performing some computations.}\label{code:sec_2_2:nested_function}]{nested_function.py}
+\pythonexternal[basicstyle=\footnotesize,caption={Three ways of writing a trivial algorithm that passes around a vector, while performing some computations.}\label{code:sec_2_2:nested_function}]{snippets/nested_function.py}
 % \pythonexternal[float=t, floatplacement=tbp,  abovecaptionskip=-5pt, basicstyle=\footnotesize, firstline=50]{nested_function.py}
 \clearpage

@@ -20,9 +20,9 @@ Given a set of evenly distributed point data across $N$ processors, Sundar et. a
     \item Perform a parallel sort of these leaf octants using MPI, such that processors with adjacent MPI ranks have adjacent data.
     \item \textit{Linearise} leaves on each processor, such that their leaves do not overlap, in a manner that favours larger leaves over smaller ones, as in algorithm [TODO: LINEARISATION ALGORITHM].
     \item \textit{Complete} the space defined by the leaves on each processor, to find the domain occupied by their leaves, see figure [TODO: COMPLETE REGION].
-    \item Find the minimum spanning set of nodes that occupies the space defined by the leaves in a given processor, and define the coarsest nodes of this set as \textit{seeds}.
-    \item Construct a \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes. The nodes of this block tree are referred to as \textit{blocks}. This gives us a distributed coarse complete linear octree that is based on the underlying data distribution.
-    \item The load of each block is calculated by using the number of original octants calculated in step (1). The blocks are then redistributed so that each processor contains an approximately equal load.
+    \item Find the minimum spanning set of nodes that occupies the space defined by the leaves in a given processor, and define the coarsest nodes of this set as \textit{seeds}, as in algorithm [TODO: seed finding algorithm].
+    \item Construct a \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes. The nodes of this block tree are referred to as \textit{blocks}. This gives us a distributed coarse complete linear octree that is based on the underlying data distribution, and is described in algorithm [TODO: block tree algorithm].
+    \item The load of each block is calculated by using the number of original octants calculated in step (1). The blocks are then redistributed so that each processor contains an approximately equal load, using algorithm [TODO: load balancing algorithm] - ALSO HAVE FORGOTTON TO implement!.
     \item Point data is communicated to the processor containing its associated block, and the blocks are refined based on $n_{\text{crit}}$, providing the final, load balanced, linear octree tree.
     \item Optionally, the tree is balanced. This can be done for the local subtree on each processor using algorithm [TODO: BALANCING ALGORITHM]. The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3).
 \end{enumerate}
@@ -45,54 +45,28 @@ Sundar et. al. also provide an algorithm to optimally select splitters, see algo
 
 \subsection*{Rusty Tree}
 
-Rusty Tree can consumed as either a Rust crate or as a Python package distributed via Conda, with uniform installation steps on different platforms. We have so far tested Rusty Tree on MacOS, RedHat [TODO: Lookup what Timo's machine uses] and [TODO: Lookup what Myriad uses].
-
-- docs system and tests
-
-
-\subsubsection*{Interface and Example Usage}
+Rusty Tree can consumed as either a Rust crate or as a Python package distributed via Conda, with uniform installation steps on different platforms. We have so far tested Rusty Tree on MacOS, RedHat [TODO: Lookup what Timo's machine uses] and [TODO: Lookup what Myriad uses]. Rusty Tree contains a full test suite, and documentation, built using Cargo, and can be found at \url{https://github.com/rusty-fast-solvers/rusty-tree}.
 
 Example usage in Python mirrors the Rust interface [TODO: Python Vs Rust experiment]. Users are able use point data generated at runtime, or provide a HDF5 file for Rusty Tree to consume. Rusty Tree is also capable of outputting a VTK file for visualisation.
 
+We follow data oriented principles in Rusty Tree's design, with a shallow abstraction layer that acts as an interface to operations on point data, and encoded Morton indices. In terms of lines of code, this translates into just 2565 lines of Rust and 707 lines of Python with less than 90 lines of configuration code in terms of Toml and Yaml files specifying the Rust and Python builds. This Rust and Python figure is also inclusive of all test code, and documentation. 
+
+% Dendro, a C++ library with comparable functionality, runs to 33144 lines of code and 25962 lines of C++ header files and an additional 4550 lines of Make and CMake configuration files.
+
 \subsubsection*{Creating Python Interfaces}
 
-We create Python interfaces using Maturin, a tool for building and publishing Rust-based Python packages. It can do this in different ways, including the popular PyO3 \cite{pyo32022github} and rust-cpython \cite{rustcpython2022github} crates, which offer Rust bindings for Python to use Rust libraries as native extension modules, as well as interacting with Python code from Rust binaries. However, Maturin also supports creating bindings using Rust's C Foreign Function Interface (CFFI). An example of exposing a Rust type using the CFFI is shown in listing [TODO: exposing a Rust type to Python, perhaps just link to Rust -> Python iterator]. We choose the CFFI as to expose Rust types into Python, as the types we wish to expose into Rust are relatively simple arrays and we also wish to be able to pass the pointer corresponding to an MPI communicator between Python and Rust with relative ease (see section next section for more details). The syntax is relatively simple [TODO: syntax for CFFI]:
+We create Python interfaces using Maturin, a tool for building and publishing Rust-based Python packages. It can do this in different ways, including the popular PyO3 \cite{pyo32022github} and rust-cpython \cite{rustcpython2022github} crates, which offer Rust bindings for Python to use Rust libraries as native extension modules, as well as interacting with Python code from Rust binaries. However Maturin also supports creating bindings using Rust's C Foreign Function Interface (CFFI), using the \pythoninline{clib} crate to expose Rust types to consumers of the C application binary interface (ABI). An example of exposing a Rust type and building a mixed Python/Rust project using the CFFI is shown in listing [TODO: exposing a Rust type to Python, perhaps just link to Rust -> Python iterator]. We choose the CFFI, as the types we wish to expose into Rust are relatively simple pointers to Rust iterators and the pointer to an MPI communicator created from Python. This also allows for a simple design with minimal external libraries, with our Python interface to be cleanly separated from Rust source code [TODO: Figure of design of Rusty Tree].
 
+\subsubsection*{Using MPI from Rust}
 
+MPI, via the rsMPI crate, constitutes the most complex dependency in Rusty Tree. The MPI bindings are built on top of C shim library, as well as automatically generated C/C++ compatible header files using the \pythoninline{cbindgen} crate. The shim library is used to form an equivalence between underspecified identifiers from the MPI standard, that may not be uniform across MPI implementations, and \pythoninline{cbindgen} is used to automatically generate headers for different MPI implementations. This allows rsMPI to expose an interface in Rust which covers most of MPI's core functionality for most MPI implementations, on most operating systems \footnote{This is an area of active development, and a list of currently supported features can be found here \url{https://github.com/rsmpi/rsmpi/blob/main/README.md}}. However, as it has to target multiple platforms like all other Rust crates its build is fragile, and requires extra configuration from users who might wish to deploy on unsupported or novel hardware and software targets - for example on large clusters which may have custom software environments that are difficult to change. We give an overview of how we have adapted a fork of rsMPI to compile our software on a wider range of targets in figure [TODO: Box on how to compile rsMPI on Archer and Kathleen].
 
-can generate a native shared library using a C foreign function interface defined for a Rust library.
-
-Maturin works by \dots
-- How does Maturin work
-- What are the implications of using it for performance?
-- An example of how to expose a Rust type to Python, and how to use a Python type in Rust.
-- How do you expose a Rust iterator? [TODO: Rust iterator in Python box].
-
-\subsubsection*{Using MPI from Rust and Python}
-
-MPI, via the rsMPI crate, constitutes the most complex dependency in Rusty Tree. The MPI bindings are built on top of C shim library, and simply expose an interface in Rust which covers most of MPI's core functionality \footnote{This is an area of active development, and a list of currently supported features can be found here \url{https://github.com/rsmpi/rsmpi/blob/main/README.md}}. 
-
-- MPI, and difficulties in getting it to compile
-    - forced to fork, and write a custom build script.
-
-- HDF5, incompatibilities, and being force to install from source.
-- Python interface for Rusty tree, and how this is done in practice, can use some examples from the pyrustmpi crate, for how to pass Rust iterators into Python.
+This is an example of fragility in Rust builds when they rely on external libraries, however we note that this is rarely exposed to users, who can continue to consume libraries using a single line from their project's \pythoninline{Cargo.toml}. Therefore, this still marks a significant improvement from the user experience of libraries built in other compiled languages.
 
 \subsection*{Scaling Experiments}
 
-- Scaling test on a large HPC system (Myriad/Archer2) scale to a very large tree (O(1e9)) points, use as a Python package.  O(billions of points)
-
-- Compare to existing tree libraries
-    - p4est, should have some example code that can run
+Figure [TODO: weak scaling of Rusty Tree on Kathleen] shows the weak scaling performance of Rusty Tree in comparison to the popular \pythoninline{p4est} library for parallel octrees, as well as the \pythoninline{dendro} library, both written in C++. In terms of API, Rusty Tree is the only available package that is fully interoperable from Python, and as we see we incur no noticeable performance hit. We therefore see that Rusty Tree provides us with malleable software, with a high-level language interface, that can be inserted into existing research projects with minimal configuration. Rusty Tree multi-platform,
 
 \subsection*{Conclusion}
 
-- Contrast with existing tree libraries, their performance on different architectures, and how easy they are to install and edit. i.e. contrast how malleable they are.
-
-- Conclude that we hope to publish this work soon, and why this would be of interest to the wide community.
-
-- Impact of Rusty Tree
-    - How is the pursuit of existing research questions improved?
-    - How can new research questions be pursued?
-    - How will software change daily practice of its users?
-        - Obviously a comparison to P4est and Dendro is required for this.
+Rusty Tree is an example of Rust software that fulfills our usability criteria for scientific software. It has high-level interfaces, is designed around data and is simple to read, and importantly can be built for a variety of software and hardware environments. It's a demonstration of Rust as a viable alternative to development in Rust as opposed to C++ or Fortran, and the performance of the library using the Python interface is an example of the final interface we hope to expose to users of our fast solvers infrastructure. Users are able to access high-performance code from the comfort of Python, and if they need to add or extend functionality have a relatively simple Rust backend to read. We believe that this will encourage the widespread adoption of our library, and we hope to publish these results in an upcoming paper.
