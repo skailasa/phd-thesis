@@ -1,8 +1,9 @@
+As mentioned in chapter \ref{chpt:1}, the FMM and other fast algorithms can be optimised by their field translations, some of which were discussed in that chapter. As it stands there is a gap in the literature that quantitatively compares and contrasts the relative merits of different approaches to field translation. We summarise some of the popular strategies in more detail below.
+
 - Translation operators, what are they, and what are the different approaches currently used.
 
 - What are the trade-offs of different approaches?
 
 - Can I write some quick software for the quick comparison of translation operators - maybe in Python, on top of RustyTree? This would allow me to get some graphs to compare between approaches. If this is too much work, I will have to just compare the approaches in words.
 
-
-
+As translation operators are agnostic to the actual methods used to approximate fields, whether by a multipole expansions, or a black box method, a trait based library would provide the perfect interface for users to configure different operators to their particular geometries. We provide an example of how this interface could look in figure [TODO: translation library trait syntax]. A future vector of research would be to complete this study, and release this library, \pythoninline{rusty-field}, as a component software of our fast solver infrastructure.
