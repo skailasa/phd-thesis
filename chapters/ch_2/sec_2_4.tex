@@ -6,30 +6,28 @@ As mentioned in section \ref{sec:2_2}, there are multiple representations of oct
 
 Octrees are usually constructed `top down'. A user specifies a threshold for the maximum number of particles in a leaf node, $n_{\text{crit}}$, and a unit cube encapsulating the problem domain is refined until this is satisfied. After refinement, one can optionally `balance' adjacent leaf nodes such that adjacent nodes obey a relative size constraint. However, translating this logic to a parallel setting is challenging. Constructing octrees `top down' involve a significant data communication that come from having to synchronise nodes across processors during refinement. Balancing requires updating a chain of relationships, that can `ripple' across processors. Furthermore, as the data distribution is not known a priori, load balancing must be done as a post-processing step.
 
-Sundar et al introduce `bottom up' tree construction \cite{sundar2008bottom}. The strategy relies on a `space filling curve' that passes through each octant in an octree, for which they choose a Morton encoding (see fig. (\ref{fig:sec_2_4:morton}) for a description of Morton encoding for an octant). Morton encodings have excellent properties for spatial decompositions. Once sorted, adjacent Morton keys encode spatial locality. Indeed traversing a sorted list of Morton keys from smallest to greatest is equivalent to a level by level traversal of an octree, starting at its root node. Similarly, a reverse order traversal is equivalent to a level by level traversal of an octree starting at its leaf level. This process is accelerated in RustyTree using the Rayon library for parallel multithreading which we examine in figure (\ref{fig:sec_2_4:rayon}).
-
+Sundar et al introduce `bottom up' tree construction \cite{sundar2008bottom}. The strategy relies on a `space filling curve' that passes through each octant in an octree, for which they choose a Morton encoding (see fig. (\ref{fig:sec_2_4:morton}) for a description of Morton encoding for an octant). Morton encodings have excellent properties for spatial decompositions. Once sorted, adjacent Morton keys encode spatial locality. Indeed traversing a sorted list of Morton keys from smallest to greatest is equivalent to a level by level traversal of an octree, starting at its root node. Similarly, a reverse order traversal is equivalent to a level by level traversal of an octree starting at its leaf level. This process is accelerated in RustyTree using the Rayon library for parallel multithreading which we examine in figure (\ref{fig:sec_2_4:rayon}). We build on Sundar et. al's original paper in two key ways. Firstly, we use HykSort \cite{sundar2013hyksort}, which reduces global data communication cost in comparison to a naive \pythoninline{MPIAllToAllv}, and use a combination of local balancing (alg. (\ref{alg:sec_2_4:balance_octree})) and parallel sorting \textit{avoid} their complex `ripple propagation' scheme to balance a distributed tree.
 
 \begin{figure}
     \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
-    \caption{How to Morton encode a node in an octree.}
+    \caption{How to Morton encode a node in an octree. [TODO: Extend graphic to explain Morton ordering]}
     \label{fig:sec_2_4:morton}
 \end{figure}
 
-Given a set of distributed point data spread across $n_p$ processors, Sundar et. al's strategy is to:
+Given a set of distributed point data spread across $n_p$ processors, our strategy is as follows:
 
 \begin{enumerate}
     \item Generate a Morton key for each point corresponding to a user defined octree depth.
     \item Perform a parallel sort of these leaf octants using MPI, such that processors with adjacent MPI ranks have adjacent data.
-    \item \textit{Linearise} leaves on each processor, such that their leaves do not overlap, in a manner that favours larger leaves over smaller ones, as in algorithm [TODO: LINEARISATION ALGORITHM].
-    \item \textit{Complete} the space defined by the leaves on each processor, to find the domain occupied by their leaves, see figure [TODO: COMPLETE REGION].
-    \item Find the minimum spanning set of nodes that occupies the space defined by the leaves in a given processor, and define the coarsest nodes of this set as \textit{seeds}, as in algorithm [TODO: seed finding algorithm].
-    \item Construct a \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes. The nodes of this block tree are referred to as \textit{blocks}. This gives us a distributed coarse complete linear octree that is based on the underlying data distribution, and is described in algorithm [TODO: block tree algorithm].
-    \item The load of each block is calculated by using the number of original octants calculated in step (1). The blocks are then redistributed so that each processor contains an approximately equal load, using algorithm [TODO: load balancing algorithm] - ALSO HAVE FORGOTTON TO implement!.
+    \item \textit{Linearise} leaves on each processor, such that their leaves do not overlap, in a manner that favours larger leaves over smaller ones, as in algorithm (\ref{alg:sec_2_4:linearise_octree}). 
+    \item \textit{Complete} the space defined by the leaves on each processor, and find the domain occupied by their leaves, see figure [TODO: COMPLETE REGION] and algorithm (\ref{alg:sec_2_4:complete_region}). Define the coarsest nodes of this set as \textit{seeds}.
+    \item Construct a \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes, described in algorithm (\ref{alg:sec_2_4:complete_octree}). The nodes of this block tree are referred to as \textit{blocks}. This gives us a distributed coarse complete linear octree that is based on the underlying data distribution, and is described in algorithm.
+    \item The load of each block is calculated by using the number of original octants calculated in step (1). The blocks are then redistributed so that each processor contains an approximately equal load, using algorithm (\ref{alg:sec_2_4:partition}).
     \item Point data is communicated to the processor containing its associated block, and the blocks are refined based on $n_{\text{crit}}$, providing the final, load balanced, linear octree tree.
-    \item Optionally, the tree is balanced. This can be done for the local subtree on each processor using algorithm [TODO: BALANCING ALGORITHM]. The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3).
+    \item Optionally, the tree is \textit{balanced}. This can be done for the local subtree on each processor using algorithm (\ref{alg:sec_2_4:balance_octree}) The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3).
 \end{enumerate}
 
-The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). This makes the efficiency of the parallel sort a bottleneck in tree construction.
+This is summarised in algorithm (\ref{alg:sec_2_4:point2octree}). The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). This makes the efficiency of the parallel sort a bottleneck in tree construction.
 
 \begin{figure}
     \centerline{\includegraphics[width=\linewidth]{ch_2/rayon.pdf}}
@@ -37,6 +35,198 @@ The complexity of this process is bounded by the parallel sorts, which for rando
     \label{fig:sec_2_4:rayon}
 \end{figure}
 
+\begin{algorithm}
+    \caption{\textbf{Remove Overlaps From Sorted List of Octants (Sequential)}: We refer to this as \textit{Linearization}.}
+    \label{alg:sec_2_4:linearise_octree}
+    \begin{algorithmic}
+    
+        \STATE \textbf{Input}: A sorted list of octants, $W$.
+        \STATE \textbf{Output}: $R$, an octree with no overlaps.
+        \STATE \textbf{Work}: $O(n)$, where $n$=len($W$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+    
+
+        \FOR{i $\gets$ 1 to len($W$)}
+            \IF {$W[i] \notin \{ \text{Ancestors}(W[i+1])\}$}
+                \STATE $R \gets R + W[i]$  
+            \ENDIF
+        \ENDFOR
+        \STATE $R\gets R+W$[len($i$)]
+    \end{algorithmic}
+\end{algorithm}
+    
+
+\begin{algorithm}
+    \caption{\textbf{Construct a Minimal Linear Octree Between Two Octants (Sequential)}: We refer to this as \textit{Completion}.}
+    \label{alg:sec_2_4:complete_region}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: Two octants $a$ and $b$, where $a > b$ in Morton order. 
+        \STATE \textbf{Output}: $R$, minimal linear octree between $a$ and $b$. 
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+
+        \FOR {$w \in W$}
+            \IF {$a < w < b$ \textbf{and} $w \notin \{ \text{Ancestors}(b)\}$}
+                \STATE $R \gets R + w$
+            \ELSIF {$w \notin \{\text{Ancestors}(a), \text{Ancestors}(b)\}$}
+                \STATE $W \gets W - w + \text{Children}(w)$
+            \ENDIF
+        \ENDFOR
+        \STATE \text{Sort}($R$)
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+    \caption{\textbf{Balance a Local Octree (Sequential)}: A 2:1 balancing is enforced, such that adjacent octants are at most twice as large as each other.}
+    \label{alg:sec_2_4:balance_octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A local octree $W$, on a given node.
+        \STATE \textbf{Output}: $R$, a 2:1 balanced octree. 
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+
+        \STATE $R = \text{RemoveOverlaps}(W)$
+        \FOR {$l \gets \text{Depth } \text{to } {1} $}
+            \STATE $Q \gets \{ x \in W | \text{Level}(x) = l \}$
+            \FOR {$q \in Q$}
+                \FOR {$n \in \{\text{Neighbours}(q), q\}$}
+                    \IF {$n \notin R$ and $\text{Parent}(n) \notin R$}
+                        \STATE $R \gets R + \text{Parent}(n)$
+                        \STATE $R \gets R + \text{Siblings}(\text{Parent}(n))$
+                    \ENDIF
+                \ENDFOR
+            \ENDFOR
+        \ENDFOR
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+    \caption{\textbf{Partition a Distributed List of Octants (Parallel)}.}
+    \label{alg:sec_2_4:partition}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed list of octants, $W$. 
+        \STATE \textbf{Output}: The octants redistributed across processors such that the total weight on each processor is roughly the same. 
+        \STATE \textbf{Work}: $O(n)$, where $n$=len($W$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+
+        \STATE $S \gets$ Scan(Weight($W$))
+        \IF {rank = $n_p-1$}
+            TotalWeight $\gets$ max($S$)
+        \ENDIF
+        \STATE $\bar{w} \gets \frac{\text{TotalWeight}}{n_p}$
+        \STATE $k \gets \text{TotalWeight} \mod n_p$
+        $Q_{tot} \gets \emptyset$
+        \FOR { $p \gets 1$ to $n_p$}
+            \IF {$p \leq k$}
+                \STATE $Q \gets \{ x \in W | (p-1)(\bar{w} + 1) \leq S(x) < p (\bar{w}+1) \}$
+            \ELSE
+                \STATE $Q \gets \{ x \in W | (p-1)\bar{w} + k < S(x) < p \bar{w} + k \}$
+            \ENDIF
+
+            \STATE $Q_{tot} \gets Q_{tot} + Q$
+        \ENDFOR
+        \STATE $R \gets$ Receive()
+        \STATE $W \gets W-Q_{tot}+R$
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{Construct a Complete Linear Octree From a Set of Seed Octants Spread Across Processors (Parallel)}}
+    \label{alg:sec_2_4:complete_octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed sorted list of seeds $L$.
+        \STATE \textbf{Output}: $R$, a complete linear octree. 
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+
+        \STATE $R = \text{RemoveOverlaps}(L)$
+        \STATE $L \gets \text{Linearise}(L)$, using algorithm (\ref{alg:sec_2_4:linearise_octree}).
+        \STATE $\text{Partition}(L)$, using algorithm (\ref{alg:sec_2_4:partition}) 
+
+        \IF {rank == 0}
+            \STATE $L$.push\_front(FirstChild(FinestAncestors(DeepestFirstDescendent(root), $L$[1])))
+        \ENDIF
+        
+        \IF {rank == $n_p-1$ }
+            \STATE $L$.push\_back(LastChild(FinestAncestors(DeepestLastDescendent(root), $L$[len($L$)])))
+        \ENDIF
+
+        \IF {rank > 0}
+            \STATE Send($L$[1], (rank-1))
+        \ENDIF
+
+        \IF {rank < ($n_p-1$)}
+            \STATE $L$.push\_back(Receive())
+        \ENDIF
+
+        \FOR {$i \gets 1$ to (len($L$)-1)} 
+            \STATE $A \gets$ CompleteRegion($L[i]$, $L[i+1]$), using algorithm (\ref{alg:sec_2_4:complete_region})
+        \ENDFOR
+        
+        \IF {rank = $n_p-1$}
+            \STATE $R \gets R+L[\text{L}]$
+        \ENDIF
+
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{Partitioning Octants Into Large Parallel Blocks (Parallel)}}
+    \label{alg:sec_2_4:block_partition}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed list of octants $F$.
+        \STATE \textbf{Output}: A list of blocks $G$, $F$ redistributed but the relative order of the octants is preserved. 
+        \STATE \textbf{Work}: $O(n)$, where $n$=len($F$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($F$).
+
+        \STATE $T \gets $ CompleteRegion($F$[1], $F$[len($F$)]), using algorithm (\ref{alg:sec_2_4:complete_region})
+        \STATE $C \gets \{ x \in T | \forall y \in T, \text{Level}(x) \leq \text{Level}(y) \}$
+        \STATE $G \gets $ CompleteOctree($C$), using algorithm (\ref{alg:sec_2_4:complete_octree})
+        \FOR {$g \in G$} 
+            weight($g$) $\gets $ len($F_{global} \cap \{ g,  \{ \text{Descendents (g)} \} \}$)
+        \ENDFOR
+
+        \STATE Partition($G$), using algorithm (\ref{alg:sec_2_4:partition})
+        \STATE $F \gets F_{global} \cap \{ g, \{ \text{Descendants}(g) \} \forall g \in G \}$
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{Construct Distributed Octree (Parallel)}}
+    \label{alg:sec_2_4:point2octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed list of points $L$, and a parameter $n_{crit}$ specifying the maximum number of points per octant.
+        \STATE \textbf{Output}: A complete linear octree, $B$. 
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($L$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($L$).
+        
+        \STATE $F \gets $ [Octant($p$, MaxDepth), $\forall p \in L$]
+        \STATE ParallelSort(F)
+        \STATE $B \gets $ BlockPartition($F$), using algorithm (\ref{alg:sec_2_4:block_partition})
+        \FOR {$b \in B$}
+            \IF {NumberOfPoints($b$) $>$ $n_{crit}$}
+                \STATE $B \gets B - b + $ Children($b$)
+            \ENDIF
+        \ENDFOR
+
+        \STATE \\\# Optional Balancing over subtrees, $f$.
+
+        \IF {Balance = True}
+            \FOR {$f \in F$}
+                \STATE Balance($f$), using algorithm (\ref{alg:sec_2_4:balance_octree})
+            \ENDFOR
+
+            \STATE ParallelSort($F$)
+            
+            \FOR {$f \in F$}
+                \STATE Linearise($f$), using algorithm (\ref{alg:sec_2_4:linearise_octree})
+            \ENDFOR
+        \ENDIF
+
+    \end{algorithmic}
+\end{algorithm}
 
 \subsection*{Efficient Parallel Sorts}
 

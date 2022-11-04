@@ -104,41 +104,41 @@ In addition to the $\mathsf{T}^{P2M}$, $\mathsf{T}^{M2L}$ and $\mathsf{T}^{L2P}$
 \label{alg:fmm:sec_1_2}
 \begin{algorithmic}
 
-    \State $N$ is the total number of points
-    \State $s$ is the maximum number of points in a leaf node.
+    \STATE $N$ is the total number of points
+    \STATE $s$ is the maximum number of points in a leaf node.
 
-    \State
-    \State \textbf{Step 1: Tree construction}
+    \STATE
+    \STATE \textbf{Step 1: Tree construction}
     
-    \For{each node $B$ in \textit{preorder} traversal of tree}
-        \State subdivide $B$ if it contains more than $s$ points.
-    \EndFor
-    \For{each node $B$ in \textit{preorder} traversal of tree}
-        \State construct \textit{interaction lists}, $U$, $V$, $X$, $W$
-    \EndFor
+    \FOR{each node $B$ in \textit{preorder} traversal of tree}
+        \STATE subdivide $B$ if it contains more than $s$ points.
+    \ENDFOR
+    \FOR{each node $B$ in \textit{preorder} traversal of tree}
+        \STATE construct \textit{interaction lists}, $U$, $V$, $X$, $W$
+    \ENDFOR
     
-    \State 
-    \State \textbf{Step 2: Upward Pass}
-    \For{each leaf node $B$ in \textit{postorder} traversal of the tree}
-    \State \textbf{P2M}: compute multipole expansion for the particles they contain.
-    \EndFor
-    \For{each non leaf node $B$ in \textit{postorder} traversal of the tree}
-    \State \textbf{M2M}: form a multipole expansion by translating the expansion centre of its children to its centre and summing their multipole expansion coefficients.
-    \EndFor
+    \STATE 
+    \STATE \textbf{Step 2: Upward Pass}
+    \FOR{each leaf node $B$ in \textit{postorder} traversal of the tree}
+    \STATE \textbf{P2M}: compute multipole expansion for the particles they contain.
+    \ENDFOR
+    \FOR{each non leaf node $B$ in \textit{postorder} traversal of the tree}
+    \STATE \textbf{M2M}: form a multipole expansion by translating the expansion centre of its children to its centre and summing their multipole expansion coefficients.
+    \ENDFOR
 
-    \State
-    \State \textbf{Step 3: Downward Pass}
-    \For{each non-root node $B$ in \textit{preorder} traversal of the tree}
-    \State \textbf{M2L}: translate multipole expansions of nodes in $B$'s $V$ list to a local expansion at $B$.
-    \State \textbf{P2L}: translate the charges of particles in $B$'s $X$ to the local expansion at $B$.
-    \State \textbf{L2L}: translate $B$'s local expansion to its children by translating its expansion centre to the centre of its children, and assigning the same coefficients.
-    \EndFor 
+    \STATE
+    \STATE \textbf{Step 3: Downward Pass}
+    \FOR{each non-root node $B$ in \textit{preorder} traversal of the tree}
+    \STATE \textbf{M2L}: translate multipole expansions of nodes in $B$'s $V$ list to a local expansion at $B$.
+    \STATE \textbf{P2L}: translate the charges of particles in $B$'s $X$ to the local expansion at $B$.
+    \STATE \textbf{L2L}: translate $B$'s local expansion to its children by translating its expansion centre to the centre of its children, and assigning the same coefficients.
+    \ENDFOR 
 
-    \For{each leaf node $B$ in \textit{preorder} traversal of the tree}
-    \State \textbf{P2P}: directly compute the local interactions using the kernel between the particles in $B$ and its $U$ list.
-    \State \textbf{L2P}: translate local expansions for nodes in $B$'s $W$ list to the particles in $B$.
-    \State \textbf{M2P}: translate the multipole expansions for nodes in $B$'s $W$ list to the particles in $B$.
-    \EndFor
+    \FOR{each leaf node $B$ in \textit{preorder} traversal of the tree}
+    \STATE \textbf{P2P}: directly compute the local interactions using the kernel between the particles in $B$ and its $U$ list.
+    \STATE \textbf{L2P}: translate local expansions for nodes in $B$'s $W$ list to the particles in $B$.
+    \STATE \textbf{M2P}: translate the multipole expansions for nodes in $B$'s $W$ list to the particles in $B$.
+    \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
