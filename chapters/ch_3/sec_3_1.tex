@@ -66,9 +66,9 @@ Where $S$ and $R$ are the skeleton and redundant points respectively. Plugging b
 
 Therefore, we see that we can get away with a cheap ID to reconstruct the far-field operator, involving the proxy points rather than the full far field of $B$.
 
-\subsection{$\mathcal{T}$}
+\*subsection{$\mathcal{T}$}
 
-\subsubsection{Outgoing Skeletonization}
+\*subsubsection{Outgoing Skeletonization}
 
 A double-layer potential, due to some unknown density $\psi$, supported on $\tau$,
 
@@ -136,7 +136,7 @@ This is the matrix we will attempt to compress. Similar analysis follows for the
 
 We see that $B_{\mathcal{F} \gamma }$ is never explicitly formed, we just require its existence. When we calculate an approximation of $A_{\mathcal{F}B}$ using (\ref{eq:compressed}), we only need to know the ID of the $C_{\gamma B}$.
 
-\subsubsection{Incoming Skeletonization}
+\*subsubsection{Incoming Skeletonization}
 
 For the incoming skeletonization, were again we're considering the same representation with a hypersingular operator, we observe that we're just looking for,
 
@@ -146,9 +146,9 @@ For the incoming skeletonization, were again we're considering the same represen
 
 with the formation of an associated boundary integral equation taking place in much the same way as for the outgoing problem. However, the hypersingular operator is self-adjoint, therefore it leads to the same expressions for $C_{\gamma B}$.
 
-\subsection{$\mathcal{K}'$}
+\*subsection{$\mathcal{K}'$}
 
-\subsubsection{Outgoing Skeletonization}
+\*subsubsection{Outgoing Skeletonization}
 
 If we choose to represent our potential with a single-layer potential,
 
@@ -170,7 +170,7 @@ We observe the same problem as in the $\mathcal{T}$ case, where this expression 
 
 Using the previous analysis for $\mathcal{T}$, we immediately recognise that the components we must compress are $C_{\gamma B} = \nabla_1 \mathcal{S}_{\gamma B}$, giving us $[\nabla_1 \mathcal{S}_{\gamma B}, \nabla_2 \mathcal{S}_{\gamma B}, \nabla_3 \mathcal{S}_{\gamma B}]$ to compress in total for the outgoing problem.
 
-\subsubsection{Incoming Skeletonization}
+\*subsubsection{Incoming Skeletonization}
 
 Noticing that,
 
@@ -180,10 +180,10 @@ Noticing that,
 
 already satisfies our PDE without any further work, we can save a lot of work, and simply use it as our Dirichlet data in the associated boundary value problem. The matrix to compress being $C_{\gamma B} = \mathcal{D}_{\gamma B}$.
 
-\subsection{$\mathcal{S}$}
+\*subsection{$\mathcal{S}$}
 
 
-\subsubsection{Outgoing Skeletonization}
+\*subsubsection{Outgoing Skeletonization}
 
 We now choose to represent our scattered solution with a single-layer operator,
 
@@ -201,7 +201,7 @@ This satisfies the underlying PDE everywhere. We can now set up an associated ex
 
 where $\phi$ is some unknown density supported on $\tau$. As before, we can form a boundary integral equation for this associated problem, and solve, recognising that the matrix to compress $C_{\gamma B} = \mathcal{S}_{\gamma B}$
 
-\subsubsection{Incoming Skeletonization}
+\*subsubsection{Incoming Skeletonization}
 
 The single-layer operator is self-adjoint, leading to the same operator to compress. Spelling this out, consider the associated interior boundary value problem,
 
@@ -231,9 +231,9 @@ Solving with the representation gives,
 
 where we recognize the matrix to compress as $C_{B\gamma} = \mathcal{S}_{B\gamma}$ in our proxy framework.
 
-\subsection{$\mathcal{D}$}
+\*subsection{$\mathcal{D}$}
 
-\subsubsection{Outgoing Skeletonization}
+\*subsubsection{Outgoing Skeletonization}
 
 A double-layer potential, due to some unknown density $\psi$, supported on $\tau$,
 
@@ -243,7 +243,7 @@ A double-layer potential, due to some unknown density $\psi$, supported on $\tau
 
 solves the Helmholtz equation everywhere it's valid. Therefore it can be used as Dirichlet data for the associated boundary value problem for the outgoing skeletonization. Applying similar analysis to above, we identify the kernel to compress as $C_{\gamma B} = \mathcal{D}_{\gamma B}$.
 
-\subsubsection{Incoming Skeletonization}
+\*subsubsection{Incoming Skeletonization}
 
 We notice that the transpose of the double layer operator is,
 
@@ -258,7 +258,7 @@ This in general does not satisfy our PDE everywhere, we again separate out the n
 
 Let's now apply our fast direct solver framework, with proxy compression to some example problems. We begin with acoustic sound-hard scattering, which is a didactic example.
 
-\subsection{Acoustic Sound Hard Scattering}
+\*subsection{Acoustic Sound Hard Scattering}
 
 Consider a scattered field $u^s$, that bounces off an object $\Omega$ and satisfies the Helmholtz equation in the exterior,
 

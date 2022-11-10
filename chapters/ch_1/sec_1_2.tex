@@ -210,6 +210,25 @@ A significant challenge in practical FMM implementations is handling the global 
 
 We conclude by mentioning that the \gls{FMM} and its variants are not the only technique available to accelerate (\ref{eq:n_body:sec:1_1}), for problems in which only uniform resolution is required the \gls{FFT}, which has corresponding distributed memory implementations \cite{gholami2015accfft}. However, we are commonly interested in multiscale problems in which neighbouring nodes can be of differing sizes. In this setting, multigrid methods have shown slower convergence in comparison to the FMM \cite{yokota2015fast,gholami2016fft}. Furthermore, a multigrid approach does not allow for a re-use of FMM data structures (sec. \ref{sec:3_2}) for other fast algorithms we are interested in implementing, and aim to present as a unified framework with maximum code re-use. We observe that the choice between analytical, semi-analytical and algebraic FMM variants may have a significant impact on the ultimate implementation, and performance, this is something we explicitly measure in section \ref{sec:2_1}. We conclude that the semi-analytical Kernel-Independent FMM of Ying et. al \cite{Ying:2004:JCP}, offers a good compromise between ease of of software design, mathematical simplicity, and problem generality.
 
+\subsection*{Computational Considerations for the KIFMM}
+
+[TODO: Come back and fix up this section]
+
+The computational complexities of KIFMM operators are defined by a user specified $n_{crit}$, which is the maximum allowed number of particles in a leaf node, $n_e$ and $n_c$ which are the numbers of quadrature points on the \textit{check} and \textit{equivalent} surfaces respectively (see sec. 3 \cite{Ying2004}). The parameters $n_e$ and $n_c$ are quadratically related to the expansion order, i.e. $n_e = 6(p-1)^2 + 2$ \cite{Ying:2004:JCP}. Typical values for $n_{crit}$ used are $\sim 100$. Notice the depth of the octree is defined $n_{crit}$, and hence by the particle distribution.
+
+The near field, P2M, P2L, M2P, and L2P operate independently over the leaf nodes. The M2L and L2L operate independently on all nodes at a given level, from level 2 to the leaf level, during the top-down traversal. The M2M is applied to each node during the bottom-up traversal.
+
+All operators, except the M2L M2M and L2L, rely on the P2P. The inputs for the P2P are vectors for the source and target positions, and the source charges or expansion coefficients; the output is a vector of potentials.
+
+The inputs to the M2L, M2P, P2L and near field operators are defined by `interaction lists' called the V, W, X and U lists respectively. These interaction lists define the nodes a target node interacts with when an operator is applied to it. We can restrict the size of these interaction lists by demanding that neighboring nodes at the leaf level are at most twice as large as each other \cite{sundar2008bottom}. Using this `balance condition', the V, X, W and U lists in 3D contain at most 189, 19, 148 and 60 nodes, respectively.
+
+The near field operator applies the P2P between the charges contained in the target and the source particles of nodes in its U list, in $O(60 \cdot n_{crit}^2)$. The M2P applies the P2P between multipole expansion coefficients of source nodes in the target's W list and the charges it contains internally in $O(148 \cdot n_e \cdot n_{crit})$. Similarly, the L2P applies the P2P between a target's own local expansion coefficients and the charges it contains in $O(n_e \cdot n_{crit})$.
+
+The P2L, P2M and M2L involve creating local and multipole expansions, and rely on a matrix vector product related to the number of source nodes being compressed, which for the P2L and M2L are defined by the size of the target node's interaction lists. These matrix vector products have complexities of the form $O(k \cdot n_e^2)$ where $k = |X| = 19$ for the P2L, $k = |V| = 189$ for the M2L, and $k = 1$ for the P2M. Additionally, the P2L and P2M have to calculate `check potentials' (see sec. box (\ref{box:kifmm_vs_bbfmm:sec_1_2})) which require $O(19 \cdot n_{crit} \cdot n_c)$ and $O(n_{crit} \cdot n_c)$ calculations respectively. The M2M and L2L operators both involve translating expansions between nodes their eight children, and rely on a matrix vector product of $O(n_e^2)$.
+
+The structure of the FMM's operators expose natural parallelism. The P2P is embarrassingly parallel over each target. As are the M2L, M2P, P2L and near field operators over their interaction lists. The near field, L2P, M2P, P2L and P2M operators are also embarrassingly parallel over the leaf nodes, as are the M2L, M2M and L2L over the nodes at a given level.
+
+
 \newpage
 \begin{multicols}{2}
     % \begin{figure}
