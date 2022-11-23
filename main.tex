@@ -25,6 +25,23 @@
 
 % Python style for highlighting
 
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{problem}[theorem]{Problem}
+
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4
+		\end{array}
+	\right.
+}
 
 \AtBeginEnvironment{tcolorbox}{\footnotesize}
 
@@ -56,8 +73,8 @@
 \usepackage{lipsum}
 \usepackage[toc]{glossaries}
 
-\makeglossaries
-\input{pages/glossary.tex}
+% \makeglossaries
+% \input{pages/glossary.tex}
 
 % Default fixed font does not support bold face
 \DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
