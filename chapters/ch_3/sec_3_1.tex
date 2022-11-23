@@ -238,11 +238,9 @@ Using this decomposition we can rapidly compute $A^{-1}$, and hence our `fast di
     A^{-1} \approx (W_1^{-1} \dots W_M^{-1}) P_t D^{-1}P_t^T (V_M^{-1} \dots V_1^{-1})
 \end{flalign*}
 
-
-
 \subsection*{The Proxy Trick}
 
-The complexity of the fast direct solver described by the RS-S technique is determined by the cost of computing the ID for the far-field interactions of a given box in the octree, $B$. This will in general contain $O(N)$ points. Therefore computing the ID with respect to far field interactions as we've done above will scale as $O(N^2)$ for each box. The authors of \cite{minden2017recursive} employ the so called `proxy trick' to reduce this complexity, and recover an $O(N \log (N))$ scaling for their fast direct solver. Our contribution in this work is the explicit formulation of the proxy trick for acoustic scattering problems, and their application to the sound hard scattering problem.
+The complexity of the fast direct solver described by the RS-S technique is determined by the cost of computing the ID for the far-field interactions of a given box in the octree, $B$. This will in general contain $O(N)$ points. Therefore computing the ID with respect to far field interactions as we've done above will scale as $O(N^2)$ for each box. The authors of \cite{minden2017recursive} employ the so called `proxy trick' to reduce this complexity, and recover an $O(N \log (N))$ scaling for their fast direct solver. Our contribution in this work is the explicit formulation of the proxy trick for a variety of integral equation kernels that appear in scattering problems, with specific application to  acoustic scattering problems.
 
 The main idea of the proxy trick rests on the principle of representing the far-field particles of a given box $B$, which may contain $O(N)$ particles, with a set of `proxy points' contained on a proxy surface that encloses $B$. This surface is often chosen to be a sphere. By choosing $O(1)$ proxy points, without getting into the details yet of how exactly they are sampled, we are able to obtain the linear complexity we desire.
 
@@ -447,7 +445,6 @@ where $\phi$ is some unknown density supported on $\tau$. As before, we can form
 
 The single-layer operator is self-adjoint, leading to the same operator to compress. Spelling this out, consider the associated interior boundary value problem,
 
-
 \begin{flalign}
     (\Delta + k^2)w= 0\> \> \text{in } D \\
     w = \mathcal{S}\phi \> \> \text{on } \gamma
@@ -585,9 +582,47 @@ This system matrix remains numerically low-rank, and therefore can fit into our 
 
 \subsection*{Preliminary Numerical Experiments}
 
-- note on the quadrature used, and how proxy points are sampled, and how to pick the far-field points for this solver, not too much detail.
+The paper on which we base our work \cite{sushnikova2022fmm} builds on the original RS-S algorithm \cite{minden2017recursive} by:
+
+\begin{enumerate}
+    \item Implementing generalized Gaussian quadratures for computing near-field interactions \cite{bremer2013numerical}.
+    \item Determining a properly sampled discretisation of the proxy surface which depends on the box size in the octree, so as to sufficiently sample oscillatory kernels without oversampling.
+    \item Handling the construction of the far-field partition into $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$
+\end{enumerate}
+
+We defer to to the original paper for a discussion of these aspects \cite{sushnikova2022fmm}. For our simulations we use these algorithms and quadrature rules as a black box in as implemented by the FMM3D-BIE software \cite{fmm3dbie}. To demonstrate the accuracy of the solver in light of our proxy trick formulation, we suppose that the sound hard condition is generated from a set of 50 test points placed at random locations on the surface of a test geometry, for which we choose the `wiggly torus' displayed in figure (\ref{fig:octree_example:sec_1_2}). The results of our solve are then compared to the potential expected from using a combined field representation at 50 random test locations in the exterior of the geometry.
+
+\begin{flalign*}
+    \text{error} = \frac{\sqrt{\sum_{j=1}^{50}|\tilde{u}(t_j)-u(t_j)|^2}}{\sqrt{\int_\Gamma|\sigma(x)|^2 da(x)}}
+\end{flalign*}
+
+where $\tilde{u}$ is our approximated potential, $u$ is the exact potential calculated from our test points, $t_j$, and $\sigma$ is the calculated charge density from the boundary integral equation. The torus is taken to be in a bounding box, each dimension of which is fixed at $1 \lambda$ where $\lambda$ is the wavelength of the incident wave, and we fix the error of the ID at $\epsilon = 5 \times 10^{-7}$, and the wavenumber $k=0.97$. Experiments are taken on a single-node of the Rusty Cluster at the Flatiron Institute, which consists of 240 28-core Intel Broadwell nodes with 512GB of RAM.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{||c c c c c c c c||} 
+        \hline
+        $p$ & $N_{patch}$ & $N$  & $t_f$ (s) & $t_s$ (s)  & $t_q$ (s) & $m_f$ (GB) & $\epsilon$ \\ [0.5ex]
+        \hline\hline
+        4 & 50  & 750  & 0.8 & 0.03 & 0.8 & 0.04 & $4.7 \times 10^{-3}$ \\
+        4 & 200 & 3000 & 6.6 & 0.08 & 1.4 & 0.6  & $3.3 \times 10^{-4}$ \\
+        4 & 450 & 6750 & 84.9 & 0.2 & 2.5 & 2.9 & $5.2 \times 10^{-5}$ \\
+        4 & 800 & 12000 & 324.9 & 0.6 & 4.2 & 7.5 & $1.6 \times 10^{-5}$ \\
+        4 & 1250 & 18750 & 1138.8 & 1.1 & 6.2 & 15.2 & $5.8 \times 10^{-6}$ \\
+        4 & 1800 & 27000 & 1839.7 & 1.7 & 8.8 & 25.2 & $2.4 \times 10^{-6}$ \\
+        4 & 2450 & 36750 & 3322.6 & 2.4 & 11.8 & 41.1 & $1.2 \times 10^{-6}$ \\
+        \hline
+    \end{tabular}
+    \caption{We measure the $L^2$ error with respect to the density  ($\epsilon$), time for solution ($t_s$), factorisation ($t_f$), quadrature computation ($t_q$) and memory required for factorisation ($m_f$) as a function of quadrature expansion order ($p$) and number of patches used to discretise the geometry ($N_{patch}$).}
+    \label{table:sec_3_2:sh}
+\end{table}
+
+
+From table (\ref{table:sec_3_2:sh}), we observe linear scaling for $t_f$. However we observe sub-linear scaling for for $m_f$ and $t_s$, the authors of \cite{sushnikova2022fmm} suggest that this is due to the fixed wavenumber for increasing $N$. Meaning that the additional degrees of freedom introduced beyond a certain sampling in points per wavelength are more easily compressed. In order to make further observations about the convergence rate of our method more data is required, for higher order quadratures. We note that amount of memory used, even for the modest problem sizes tested, can be quite considerable. With our experiment where the number of quadrature points $N=36750$ consuming over 40GB of memory. This demonstrates the main trade-off of fast direct solvers in comparisons to iterative solvers.
 
 \subsection*{Exposing Parallelism}
+
+The RS-S algorithm exposes natural parallelism when applied to non-adaptive octrees. Consider figure ([todo: parallelism figure])
 
 % \subsection*{Example Problems}
 
