@@ -1,8 +1,6 @@
 In section (\ref{sec:1_1_motivation}) we introduced boundary integral equations (\ref{eq:generic_int_equation:sec:1_1}) and their matrix representation (\ref{eq:linear_system:sec:1_1}), noting that it could alternatively be represented using hierarchical matrices. As we have seen, these matrix representations (HSS, $\mathcal{H}^2$ etc.) allow us to rapidly \textit{apply} the system matrix (\ref{eq:linear_system:sec:1_1}) with linear or near linear time complexity. In combination with modern \textit{iterative} methods, such as GMRES \cite{saad1986gmres}, with $O(n_k)$ iterations such that $n_k \ll N$ where $N$ is the number of unknowns in the system, the solution of such problems is brought into practical reach. However, there are situations in which iterative methods fall short. For example for problems which have \textit{multiple} right hand sides we wish to solve for. In such cases, recently developed \textit{fast direct} methods offer a promising alternative. The inversion of a dense linear system by classical direct methods, such as Gaussian Elimination or LU decomposition, have a complexity of $O(N^3)$. Fast direct methods however take advantage of the low-rank structure implicit in the matrix of (\ref{eq:generic_int_equation:sec:1_1}) to find an approximation for the inverse in a similar manner to the FMM. The main trade-off between fast direct methods and the iterative alternative is the relatively greater memory cost in having to pre-compute and store the matrix factorization.
 
-Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in section (\ref{sec:1_1_motivation}). 
-
-Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, which incorporates strong admissibility and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
+Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in section (\ref{sec:1_1_motivation}). Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, which incorporates strong admissibility and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
 
 \subsection*{Problem Formulation}
 
@@ -199,7 +197,7 @@ Then
         X_{\mathcal{R} \mathcal{R}} & 0 & 0 & 0 \\
         0 &  X_{\mathcal{S} \mathcal{S}}& X_{\mathcal{S} \mathcal{N}} & A_{\mathcal{S} \mathcal{F}} \\ 
         0 &  X_{\mathcal{N} \mathcal{S}}& X_{\mathcal{N} \mathcal{N}} & A_{\mathcal{N} \mathcal{F}}  \\
-        0 &  X_{\mathcal{F} \mathcal{S}}& X_{\mathcal{F} \mathcal{N}} & A_{\mathcal{F} \mathcal{F}}  
+        0 &  A_{\mathcal{F} \mathcal{S}}& A_{\mathcal{F} \mathcal{N}} & A_{\mathcal{F} \mathcal{F}}  
     \end{bmatrix}
 \end{flalign*}
 
@@ -622,75 +620,11 @@ From table (\ref{table:sec_3_2:sh}), we observe linear scaling for $t_f$. Howeve
 
 \subsection*{Exposing Parallelism}
 
-The RS-S algorithm exposes natural parallelism when applied to non-adaptive octrees. Consider figure ([todo: parallelism figure])
+The RS-S algorithm exposes natural parallelism. Consider figure (\ref{fig:sec_3_1:rss_parallel}) which shows a four-colouring for a non-adaptive octree in $\mathbb{R}^2$ for simplicity, each colour can be independently skeletonised as skeletonisation only updates matrix entries corresponding to a box's near field. The same logic can be applied to the adaptive case, as well as the $\mathbb{R}^3$ case, albeit with more colours. As of writing there are no parallel implementations of the RS-S algorithms available as open-source packages.
 
-% \subsection*{Example Problems}
-
-% \subsection{Acoustic Transmission}
-
-% The sound-hard problem is not particularly realistic, the transmission problem accounts for different material properties in the scatterer.
-
-% This time, we get two Helmholtz equations, for the interior of the scatterer $\Omega$, and unbounded exterior.
-
-% \begin{flalign}
-%     &(\Delta + k^2)u(x) = 0, \> \> x \in \mathbb{R}^3 \setminus \Omega \\
-%     &(\Delta + k_0^2)u_0(x) = 0, \> \> x \in \Omega
-% \end{flalign}
-
-% The boundary conditions are,
-
-% \begin{flalign}
-%     &\mu u - \mu_0 u_0 = f, \> \> \text{on } \partial \Omega \\
-%     &\frac{\partial u}{\partial \nu} - \frac{\partial u_0}{\partial \nu} = g, \> \> \text{on  } \partial \Omega
-% \end{flalign}
-
-% Consider the exterior scattering problem. We seek a solution in terms of combined single and double layer surface potentials,
-
-% \begin{flalign}
-%     u = \mathcal{K}\psi + \mu \mathcal{S}\phi, \> \> \text{in } \mathbb{R}^3 \setminus \Omega \\
-%     u_0 = \mathcal{K}_0\psi + \mu_0 \mathcal{S}_0\phi, \> \> \text{in } \Omega \\
-% \end{flalign}
-
-% Where the subscript, 0, denotes that the fundamental solution has been calculated with a different values of wave number, $k_0$.
-
-% Using the jump relations, we can form a linear system from the resulting boundary integral equations. First, we obtain two simultaneous boundary integral equations,
-
-% \begin{flalign}
-%     (\mu + \mu_0)\psi + (\mu \mathcal{K} - \mu_0 \mathcal{K}_0)\psi + (\mu^2 \mathcal{S} - \mu_0^2 \mathcal{S}_0)\phi = 2f \\
-%     (\mu + \mu_0)\phi - (\mathcal{T}  - \mathcal{T}_0)\psi - (\mu \mathcal{K}' - \mu_0 \mathcal{K}'_0)\phi = -2g
-% \end{flalign}
-
-% Defining a system matrix,
-
-% \begin{flalign}
-%     \mathbf{A}' := \begin{pmatrix}
-%         -(\mu \mathcal{K} - \mu_0 \mathcal{K}_0) && -(\mu^2 \mathcal{S} - \mu_0^2 \mathcal{S}_0) \\ \mathcal{T} - \mathcal{T}_0 && (\mu\mathcal{K}'-\mu_0\mathcal{K}'_0)
-%     \end{pmatrix}
-% \end{flalign}
-
-% and we can write out the linear system to be solved as,
-
-% \begin{flalign}
-%     (\mu + \mu_0)\xi - \mathbf{A}'\xi = 2h
-% \end{flalign}
-
-% where,
-
-% \begin{flalign}
-% \xi =\begin{pmatrix}
-%     \psi \\ \phi
-% \end{pmatrix} \text{  and  } h = \begin{pmatrix}
-%     f\\ -g
-% \end{pmatrix}
-% \end{flalign}
-
-% This is of the form $I+ \text{compact}$ and can therefore be inserted into Fredholm theory. In practice, it may be easier to work with the system matrix written as,
-
-% \begin{flalign}
-%     \mathbf{A} := \begin{pmatrix}
-%         (\mu + \mu_0) + (\mu \mathcal{K} - \mu_0 \mathcal{K}_0) && (\mu^2 \mathcal{S} - \mu_0^2 \mathcal{S}_0) \\ -(\mathcal{T} - \mathcal{T}_0) && (\mu + \mu_0) -(\mu\mathcal{K}'-\mu_0\mathcal{K}'_0)
-%     \end{pmatrix}
-% \end{flalign}
-
-% We're now in a position to start considering how we may apply proxy compression to this block matrix. We already know how to compress all the blocks separately, so we can now proceed as we did for the sound-hard problem.
-
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{ch_3/rss-parallel.pdf}
+    \caption{A four-colouring of a non-adaptive quadtree in $\mathbb{R}^2$, where the colouring is chosen such that no box shares a colour with its neighbours. All boxes of a given colour can then be skeletonised independently. This figure is adapted from \cite{minden2017recursive}.}
+    \label{fig:sec_3_1:rss_parallel}
+\end{figure}
