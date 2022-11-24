@@ -1,300 +1,75 @@
-Octrees are a foundational data structure for fast algorithms in $\mathbb{R}^3$, for which Writing software that can be distributed across parallel computing systems is challenging. This is demonstrated by the limited availability of open-source software for parallel octree construction \cite{BursteddeWilcoxGhattas11,fernando2020github}. This is in spite of their ubiquity in scientific computing applications from finite-element methods to many-body algorithms \cite{sundar2008bottom}. We present Rusty Tree, an implementation of parallel octrees, distributed with MPI, with a complete Python interface. Rusty Tree is a proof of concept for Rust as a tool for high-performance computational science. We document our experience in developing Rusty Tree, and use it as a tool to explore the current landscape of scientific computing with Rust. From multithreading, and developing a Python interface, to distributing applications with MPI, writing Rusty Tree involved using many tools from Rust's scientific computing ecosystem. 
+Interpreted languages, such as Python, Matlab or Julia, offer great usability benefits. They each support large ecosystems of numerical libraries, and offer rapid prototyping due to their interpreted nature. The tools to build software with these languages is designed for portability across a large variety of platforms, from different hardware architectures to operating systems. However, as we have observed in chapter \ref{chpt:4:pyexafmm}, this comes with the overhead of having to deal with an interpreter, and impacts the kind of software that can realistically be built with interpreted languages.
 
-\subsection*{Parallel Octrees}
+For problems in which this overhead is untenable, compiled languages, such as C, C++ and Fortran are preferred. These languages require greater software engineering expertise, as developers are responsible for allocating memory, installing third party libraries, as well as building their software to target different hardware. These languages in a sense allow a developer to `do anything', of course only if one knows how to do it. The higher software engineering barrier manifests in a dizzying array of compilers, build systems, package managers, testing and documentation libraries and code organisation techniques. The notable thing about all of these optional choices is that it is relatively unclear which is the \textit{preferred} way of doing things, with novice developers likely to find a development strategy that `simply works' and stick to it. Rust stands in contrast to these traditionally preferred compiled languages for high performance scientific computing. Although it is comparably fast it is relatively \textit{inflexible}, with a strongly preferred way of organising, testing, documenting and deploying software. This leads to significantly more uniform Rust code across projects, and a steep, though relatively shorter, learning curve. Importantly, this uniformity makes Rust code easier to share, and port to different operating systems and hardware targets.
 
-As mentioned in chapter \ref{chpt:3} there are multiple representations of octrees. We choose a linear octree representation, in which we discard interior nodes and store a list of leaves, as in our previous work PyExaFMM \cite{kailasa2022pyexafmm}. These lie in contrast to pointer based octrees in which each node stores pointers to its parent as well as children, which have a relatively higher storage cost, in addition to a synchronisation and communication overhead for parallel implementations that must keep track of pointers across nodes \cite{tu2005scalable}. 
+\subsection*{Package Managers and Build Systems}
 
-Additionally, pointer based octrees are often constructed `top down'. A user specifies a threshold for the maximum number of particles in a leaf node, $n_{\text{crit}}$, and a unit cube encapsulating the problem domain is refined until this is satisfied. After refinement, one can optionally `balance' adjacent leaf nodes such that adjacent nodes obey a relative size constraint. Balancing is useful, as it allows us to restrict the number of pre-computed translational operators for fast algorithms (see sec. (\ref{sec:1_2})). However, translating this logic to a parallel setting is challenging. Constructing octrees `top down' involve significant data communication. As the point distribution on each processor isn't known a priori, each processor is responsible for constructing its own octree from a random batch of points, reconciling the trees across nodes then requiring a global parallel merge. Furthermore, there are likely to be significant overlaps and duplicates in the nodes of each processor's octree, which would result further refinement after the parallel merge in order to satisfy the $n_{\text{crit}}$ constraint. Balancing the octree, as well as load-balancing the work assigned to each processor, must be done as post-processing steps.
+For simple programs, it's tempting to use a compiler directly to create an executable, as in listing (\ref{code:sec_2_3:simple_compilation}). However, as a project's codebase expands, with files defined in multiple directories and calls to external libraries often written in other programming languages, this simple one line appeal to a compiler will no longer be sufficient. One could always download their requisite software, and install globally over the machine using a system package manager, and attempt to recompile. However, this quickly becomes untenable if one is developing for a range of hardware and operating system targets, or one needs to use different versions of external binaries and libraries. Therefore, software is usually constructed using a `build system'. This is catch all term that refers to a program that takes source files as input and produces a deployable set of binaries or libraries as an output. Classically, build systems were based on `Make' and `Autotools', these softwares generate `Makefiles' - which are recipes for constructing a piece of software given a set of source files and external dependencies. These are robust tools, but the onus is squarely with a developer for ensuring that all dependent libraries are visible to Make, and that the external packages are all of compatible versions.
 
-For these reasons, Sundar et al developed `bottom up' tree construction \cite{sundar2008bottom}. `Bottom up' refers to the fact that octrees are constructed from the leaf level upwards, which allows us to incorporate the initial data distribution into our algorithms. In order to do this they use a space-filling curve that passes through each octant, for which they choose a Morton encoding. Figure (\ref{fig:sec_2_4:morton}) describes how a Morton encoding can be found for a given octree node, and figure (\ref{fig:sec_2_4:rayon}) describes how we optimise the calculation of Morton encodings in practice, using lookup tables and shared memory parallelism. Morton encoded nodes are referred to as `Morton keys', and their ordering is enforced by algorithm (\ref{alg:sec_2_4:morton_ordering}) when they do not share an `anchor' (see. fig (\ref{fig:sec_2_4:morton}) for the definition of an anchor). If they do share an anchor, the finer node is defined to be greater. Appendix (\ref{app:a_4:morton}) describes further properties of Morton encodings that are useful for spatial decompositions. The main `relations' of a given Morton key are summarised in table (\ref{table:sec_2_4:morton})
+To manage this complexity, builds are often defined using a metabuild system, most commonly CMake. CMake is a scripting language, and as a meta build system it takes a specification of local and third party dependencies and hardware targets, and generates Makefiles. CMake gives developers a great deal of flexibility, it is multi-platform, and language agnostic, however using it directly is not straightforward. Indeed, there is a significant body of literature discussing best practices with CMake \cite{scott2018professional}, however CMake is not responsible for downloading and installing third party packages, or verifying their relative compatibility, implementing its best practices are again left to users.
 
-\begin{table}[h!]
-    \centering
-    \begin{tabular}{||c c||} 
-        \hline
-        Relation & Definition \\ [0.5ex]
-        \hline\hline
-        Siblings($N$) & Keys that share a parent with $N$  \\
-        Descendants($N$) & All descendants of $N$  \\
-        Ancestors($N$) & All ancestors of $N$  \\
-        FinestAncestors($N$, $M$) & Finest shared ancestor of $N$ and $M$.  \\
-        FirstChild($N$) & The `first', in Morton order, child of $N$  \\
-        LastChild($N$) & The `last', in Morton order, child of $N$  \\
-        DeepestFirstDescendent($N$) & The `first', in Morton order,  \\ 
-         &  descendant of $N$ at the leaf level \\
-        DeepestLastDescendent($N$) & The `last', in Morton order, \\
-         & descendant of $N$ at the leaf level \\
-        
-        \hline
-    \end{tabular}
-    \caption{Definitions of Morton key relations.}
-    \label{table:sec_2_4:morton}
-\end{table}
+Approaches for reliable builds vary amongst projects, ranging from `low tech' readme driven solutions, in which a user follows a recipe of instructions, to more modern automated solutions. Figure (\ref{fig:sec_2_3:builds}) provides an overview of the different approaches taken. The lack of a uniform standard means that some projects go as far as to implement a custom build system, such as the Boost library \cite{boostbuild2022github}.
 
-For octree construction, our starting point is a set of distributed point data spread across $n_p$ processors. Our strategy is then as follows:
+Keeping on top of packages, which are constantly being iterated upon independently, and may support different features with each release, is nearly impossible to do manually. Furthermore, one may want to support a specific set of packages, and respectively versions, for a given hardware or operating system target, but a different set for a different build of the same software. This has led to the development of `package managers' which are a catch all term for softwares that can download and install required software for you, and often verify whether version constraints are satisfied too. Package managers can be delineated into `system package managers', which download operating system specific packages written in any language globally on your machine, and `language specific package managers' which focus only on packages written in a given target language, but are operating system agnostic from a user's perspective.
 
-\begin{enumerate}
-    \item Generate a Morton key for each point at the leaf level corresponding to a user defined octree depth.
-    \item Perform a parallel sort of these leaf octants using MPI, such that processors with adjacent MPI ranks have adjacent data.
-    \item \textit{Linearise} leaves on each processor, such that their leaves do not overlap, in a manner that favours smaller leaves over larger ones, as in algorithm (\ref{alg:sec_2_4:linearise_octree}). 
-    \item \textit{Complete} the space defined by the leaves on each processor, and find the domain occupied by their leaves, see figure (\ref{fig:sec_2_4:complete}) and algorithm (\ref{alg:sec_2_4:complete_region}). Define the coarsest nodes of this set as \textit{seeds}.
-    \item Construct a coarse \textit{block tree}, by completing the space between the seeds with the minimum spanning set of nodes, described in algorithm (\ref{alg:sec_2_4:complete_octree}). The nodes of this block tree are referred to as \textit{blocks}. This gives us a coarse distributed complete linear octree that is based on the underlying data distribution.
-    \item Point data is communicated to the processor containing its associated block, and the blocks are refined based on $n_{\text{crit}}$, providing the final linear octree tree.
-    \item Optionally, the tree is \textit{balanced}. This can be done for the local subtree on each processor using algorithm (\ref{alg:sec_2_4:balance_octree}). The locally balanced trees can then be sorted in parallel again, and locally linearized as in step (3), to provide a globally balanced tree.
-\end{enumerate}
-
-This approach is summarised in algorithm (\ref{alg:sec_2_4:point2octree}). The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). This makes the efficiency of the parallel sort a bottleneck in tree construction.
+In terms of system package managers Linux examples include apt, yum and debian, for MacOS there is Homebrew, and Chocolatey for Windows. These can handle both source installations, in which source code is compiled upon download, as well as binary installation, in which pre-built binaries matching your hardware constraints are installed. Binary installation is often preferred, as it is faster, and often reflects a stable release. Language specific package managers, such as pip for Python, which can handle dependencies written in these languages only. Developing your own packages for system package managers is not developer friendly, official package repositories of Linux package managers are moderated by their respective maintainers, though it is possible to set up a personal repository this is quite a sophisticated approach for simple research outputs. The simple alternative, pursued by up to 26 \% of surveyed C++ softwares (see fig. (\ref{fig:sec_2_3:builds})), is to simply add third party software as a submodule. Often to ease installation, C++ libraries are shipped as `header only' libraries, this makes them easy to install, requiring only an \pythoninline{#include}. However by using such techniques a project can quickly grow to contain thousands, to millions of lines of code, much of it in dependencies. Compiling from source has the potential to be a painstakingly slow process, and must be repeated for every combination of hardware and operating system targets one wants to run on.
 
 \begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
-    \caption{How to Morton encode a node in an octree. The node is described by an `anchor' coordinate.}
-    \label{fig:sec_2_4:morton}
+    \centerline{\includegraphics[width=0.95\linewidth]{ch_2/builds.pdf}}
+    \caption{An overview of building software in other compiled languages.}
+    \label{fig:sec_2_3:builds}
 \end{figure}
 
-\begin{algorithm}
-    \caption{\textbf{Construct Distributed Octree (Parallel)}}
-    \label{alg:sec_2_4:point2octree}
-    \begin{algorithmic}
-        \STATE \textbf{Input}: A distributed list of points $L$, and a parameter $n_{\text{crit}}$ specifying the maximum number of points per octant.
-        \STATE \textbf{Output}: A complete linear octree, $B$. 
-        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($L$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($L$).
-        
-        \STATE $F \gets $ [Octant($p$, MaxDepth), $\forall p \in L$]
-        \STATE ParallelSort(F)
-        \STATE $B \gets $ BlockPartition($F$), using algorithm (\ref{alg:sec_2_4:block_partition})
-        \FOR {$b \in B$}
-            \IF {NumberOfPoints($b$) $>$ $n_{\text{crit}}$}
-                \STATE $B \gets B - b + $ Children($b$)
-            \ENDIF
-        \ENDFOR
+With the exception of Fortran, which has made recent strides to develop a standardised modern package manager and build system, inspired by Rust's Cargo \cite{fpm2022github}, C and C++ do not have a single officially supported package manager or build system. The resulting landscape is a multitude of package managers \cite{spack2022github, vcpkg2022github, conan2022github} and build systems \cite{meson2022github, bazel2022github, scons2022github} a few of which we have cited here, all of which replicate each others functionality, none of which are universally accepted or implemented across projects nor officially supported by the C++ software foundation.
 
-        \STATE \\\# Optional Balancing over subtrees, $f$.
+\bashexternal[basicstyle=\footnotesize, caption={Compiling a simple \texttt{source\_code.cpp} into a \texttt{compiled\_binary} file from a terminal.}\label{code:sec_2_3:simple_compilation}]{simple_compilation.sh}
 
-        \IF {Balance = True}
-            \FOR {$f \in F$}
-                \STATE Balance($f$), using algorithm (\ref{alg:sec_2_4:balance_octree})
-            \ENDFOR
+Recent years have seen the bundling of package managers \textit{with} build systems, resulting in softwares that can simply take source files, and a set of dependencies, and resolve a single binary output for a given hardware and software target. Examples include Conda for Python, and Rust's Cargo system. These modern efforts are able to compile both source and binary packages for all operating systems, and can target a wide range of hardware architectures. Furthermore, the trend has been towards the specification of project dependencies in a single structured text file (see listing (\ref{code:sec_2_3:simple_cargo})), which is then handled by the package manager with no further user effort. Efforts have been in this direction for older compiled languages, the most notable examples being Spack and Conan (see fig. (\ref{fig:sec_2_3:builds})). Importantly, in the case of Rust, Cargo is officially supported and shipped as a core part of its runtime. In contrast to C, C++ and Fortran, Rust has a \textit{single} officially supported compiler, rustc. By taking global decisions for all software written in Rust, a significant burden is removed from developers of Rust software, similar to the situation in many interpreted languages. Indeed Cargo builds are often executed in a \textit{single line}, eradicating the complex readme driven builds common in other compiled languages. For the project specified by listing (\ref{code:sec_2_3:simple_cargo}) can be compiled from a terminal with the command: \texttt{cargo build}.
 
-            \STATE ParallelSort($F$)
-            
-            \FOR {$f \in F$}
-                \STATE Linearise($f$), using algorithm (\ref{alg:sec_2_4:linearise_octree})
-            \ENDFOR
-        \ENDIF
+\bashexternal[basicstyle=\footnotesize, caption={An example of a simple \texttt{Cargo.toml} file for a Rust project, with source as well as binary dependencies.}\label{code:sec_2_3:simple_cargo}]{snippets/Cargo.toml}
 
-    \end{algorithmic}
-\end{algorithm}
+\subsection*{Code Organisation and Quality}
 
-\begin{figure}
-    \centerline{\includegraphics[width=0.9\linewidth]{ch_2/complete_region.pdf}}
-    \caption{Adapted from \cite{sundar2008bottom}, describing the algorithms in $\mathbb{R}^2$ for clarity. Figure (b) shows the minimal tree constructed using algorithm (\ref{alg:sec_2_4:complete_region}) where the two octants in (a) are used as an input. Figure (c) shows a selection of \textit{seeds}, which are used as an input to algorithm (\ref{alg:sec_2_4:complete_octree}), resulting in (d). Figure (d) also shows two octants generated to complete the domain.  The first one is the coarsest ancestor of the least input octant which does not overlap with the least octant in the input. The second is the coarsest ancestor of the greatest possible octant, which doesn't overlap with it.}
-    \label{fig:sec_2_4:complete}
-\end{figure}
+Rust introduces many ergonomic features for code organization. The most novel features, which may not be familiar to those coming from other compiled languages, are the concepts of traits, lifetimes and the borrow checker.
 
-Our strategy extends the original approach presented by Sundar et al in two ways. Firstly, we use HykSort \cite{sundar2013hyksort}, a variant of parallel hypercube sort, which reduces global data communication cost in comparison to a parallel sample sort based on \pythoninline{MPIAllToAllv}. We cover the relative merits of HykSort in the next subsection. Secondly, balancing algorithms in the original implementation are based on a `ripple propagation scheme'. The `ripple effect' is the phenomenon that describes how octants can effect immediately adjacent octants if they are split, or combined, which can trigger further changes that must then be propagated across the tree. In distributed trees these changes must be communicated across the network, the communication patterns for which are relatively complex communication \cite{tu2005scalable,sundar2008bottom}. We therefore replace this with an algorithm which, starting with an unbalanced tree, finds the locally balanced tree on each processor using algorithm (\ref{alg:sec_2_4:balance_octree}), performs another parallel sort using HykSort, and removes overlaps, favouring smaller octants, using algorithm (\ref{alg:sec_2_4:linearise_octree}). This guarantees that the balance condition is maintained. This logic will recover a globally balanced tree, with a significantly simpler communication pattern. This strategy has been previously been implemented in large scale parallel octree construction \cite{malhotra2015pvfmm}, and has been shown to obtain similar runtimes for balancing in comparison to ripple propagation based schemes \cite{suh2020evaluation}.
+\subsubsection*{Traits}
 
-Load balancing across processors, while maintaining Morton order is challenging. Currently, the data partitioning imposed by the parallel sort imposes an approximate load balance, even for irregular geometries, which we explore in figure (\ref{fig:sec_2_4:tree_comparison}c). However, in future we would like to extend our work to incorporate an explicit load balancing step. Our current idea is based on a modified sample sort, with splitter selection and bucket sizes chosen to reflect the mean load we wish to assign to each processor.
+Traits are Rust's system for specifying shared behaviour and building abstraction, constituting a wholesale replacement of object oriented programming, with its inheritance based hierarchies. Traits only enforce \textit{behaviour}, and therefore are strictly less brittle than object orientation which enforces a type. We provide some example syntax in listing (\ref{code:sec_2_3:simple_traits}), and contrast it to equivalent object oriented code in ;listing (\ref{code:sec_2_3:simple_class}). We notice that the object oriented code has a built in hierarchy, which means that adding shared behaviour will effect our \pythoninline{MyType} type, and everything that subsequently depends on it, in contrast to the trait based code in which we can inject new behaviour into MyType, its subsequent dependents we only need to know about the traits and their associated interfaces that they themselves rely on. This means that one can focus solely on the behaviour implicit in a given Trait, rather than having to comb through a potentially complex hierarchy of objects and inheritance to understand what a given line of code is doing, making large Rust projects significantly more readable than their object oriented equivalents.
 
-\begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/rayon.pdf}}
-    \caption{Optimising Morton encodings using shared memory parallelism and lookup tables.}
-    \label{fig:sec_2_4:rayon}
-\end{figure}
+Traits can be seen to specify shared behaviour in a bottom up manner, as opposed to top down object orientation, new features can be injected into existing types. This is useful for scientific programming, as we are usually concerned with data oriented programming. As we saw in chapter \ref{chpt:3} exploring data oriented programming in Python, object oriented design obfuscates operations on the data itself behind abstraction.
 
-\begin{algorithm}
-    \caption{\textbf{Morton Order (Sequential)}: Find the lesser of wo Morton keys with different anchors.}
-    \label{alg:sec_2_4:morton_ordering}
-    \begin{algorithmic}
-    
-        \STATE \textbf{Input}: Two Morton ids, $A$ and $B$, with different anchors.
-        \STATE \textbf{Output}: $R$, the lesser Morton key.
-        
-        \STATE $X_i \gets (A_i \bigoplus B_i)$, $i \in {x, y, z}$
-        \STATE $e \gets \arg \max \left ( \left \lfloor \log_2(X_i) \right \rfloor \right )$
-        \IF { $A_e < B_e$ }
-            \STATE $R \gets A$
-        \ELSE
-            \STATE $R \gets B$
-        \ENDIF
-    \end{algorithmic}
-\end{algorithm}
-    
+\rustexternal[basicstyle=\footnotesize, caption={An example of a trait implemented on a custom type.}\label{code:sec_2_3:simple_traits}]{snippets/trait.rs}
 
-\begin{algorithm}
-    \caption{\textbf{Remove Overlaps From Sorted List of Octants (Sequential)} - \texttt{Linearise}. Favour smaller octants over larger overlapping octants.}
-    \label{alg:sec_2_4:linearise_octree}
-    \begin{algorithmic}
-    
-        \STATE \textbf{Input}: A sorted list of octants, $W$.
-        \STATE \textbf{Output}: $R$, an octree with no overlaps.
-        \STATE \textbf{Work}: $O(n)$, where $n$=len($W$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
-    
-        \FOR{i $\gets$ 1 to len($W$)}
-            \IF {$W[i] \notin \{ \text{Ancestors}(W[i+1]), W[i+1] \}$}
-                \STATE $R \gets R + W[i]$  
-            \ENDIF
-        \ENDFOR
-        \STATE $R\gets R+W$[len($i$)]
-    \end{algorithmic}
-\end{algorithm}
-    
+\pythonexternal[basicstyle=\footnotesize, caption={An example of behaviour in listing (\ref{code:sec_2_3:simple_class}) implemented in an object oriented manner}\label{code:sec_2_3:simple_class}]{snippets/pyclass.py}
 
-\begin{algorithm}
-    \caption{\textbf{Construct a Minimal Linear Octree Between Two Octants (Sequential)} - \texttt{CompleteRegion}.}
-    \label{alg:sec_2_4:complete_region}
-    \begin{algorithmic}
-        \STATE \textbf{Input}: Two octants $a$ and $b$, where $a > b$ in Morton order. 
-        \STATE \textbf{Output}: $R$, minimal linear octree between $a$ and $b$. 
-        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+This isn't to say similar syntax isn't available in other compiled languages. In C++20, `concepts' were introduced as a trait like mechanism to specify interfaces. However, as with many things in C++, this isn't enforced and it is up to a user to choose to implement their code in this manner. This is borne out in the fact that concepts are \textit{nominally typeed}, and therefore don't enforce behaviour as in Rust's \textit{structurally typed} traits. The implication of this being that a type may `accidentally' implement a concept, if it happens to define its relevant methods. A consequence of this is that a valid C++ program can contain a confusing mix of trait based, and object oriented code, with a a reader then dependent on documentation to understand a software's behaviour, and what has been enforced and where, by the developer.
 
-        \FOR {$w \in W$}
-            \IF {$a < w < b$ \textbf{and} $w \notin \{ \text{Ancestors}(b)\}$}
-                \STATE $R \gets R + w$
-            \ELSIF {$w \notin \{\text{Ancestors}(a), \text{Ancestors}(b)\}$}
-                \STATE $W \gets W - w + \text{Children}(w)$
-            \ENDIF
-        \ENDFOR
-        \STATE \text{Sort}($R$)
-    \end{algorithmic}
-\end{algorithm}
+\subsubsection*{Lifetimes and the Borrow Checker}
 
-\begin{algorithm}
-    \caption{\textbf{Balance a Local Octree (Sequential)} - \texttt{Balance}. A 2:1 balancing is enforced, such that adjacent octants are at most twice as large as each other.}
-    \label{alg:sec_2_4:balance_octree}
-    \begin{algorithmic}
-        \STATE \textbf{Input}: A local octree $W$, on a given node.
-        \STATE \textbf{Output}: $R$, a 2:1 balanced octree. 
-        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+Another new Rust concept for developers coming from other compiled languages is the idea of `lifetimes' and `ownership'. Every reference in Rust has an associated lifetime, and a singular `owner'. Which enforce the programming pattern of `resource allocation is initialisation' (RAII) as a feature of the Rust compiler. The basic rule is that references are owned within a scope, and dropped when out of scope. We provide a basic example in listing (\ref{code:sec_2_3:borrowing}), in a Rust context RAII is better encapsulated by another acronym `destructors run at exit scope' (DRES). 
 
-        \STATE $R = \text{Linearize}(W)$
-        \FOR {$l \gets \text{Depth } \text{to } {1} $}
-            \STATE $Q \gets \{ x \in W | \text{Level}(x) = l \}$
-            \FOR {$q \in Q$}
-                \FOR {$n \in \{\text{Neighbours}(q), q\}$}
-                    \IF {$n \notin R$ and $\text{Parent}(n) \notin R$}
-                        \STATE $R \gets R + \text{Parent}(n)$
-                        \STATE $R \gets R + \text{Siblings}(\text{Parent}(n))$
-                    \ENDIF
-                \ENDFOR
-            \ENDFOR
-        \ENDFOR
-    \end{algorithmic}
-\end{algorithm}
+\rustexternal[basicstyle=\footnotesize, caption={A demonstration of basic rules of borrowing and ownership.}\label{code:sec_2_3:borrowing}]{snippets/ownership.rs}
 
-\begin{algorithm}
-    \caption{\textbf{Construct a Complete Linear Octree From a Set of Seed Octants Spread Across Processors (Parallel)} - \texttt{CompleteOctree}}
-    \label{alg:sec_2_4:complete_octree}
-    \begin{algorithmic}
-        \STATE \textbf{Input}: A distributed sorted list of seeds $L$.
-        \STATE \textbf{Output}: $R$, a complete linear octree. 
-        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+Lifetimes are a Rust concept that guarantees that any references to a resource live at least as long as the resource itself. The main aim of this to prevent dangling references, whereby references to unintended data, or de-allocated data, are not present in the compiled binary. This removes a large class of common bugs from Rust software such as dangling pointers, and double free errors. We illustrate this in listing (\ref{code:sec_2_3:lifetimes}), which won't compile as the inner scope defines a value \pythoninline{x}, which doesn't survive into the outer scope. 
 
-        \STATE $L \gets \text{Linearise}(L)$, using algorithm (\ref{alg:sec_2_4:linearise_octree}).
+\rustexternal[basicstyle=\footnotesize, caption={A demonstration of lifetimes as a function of scope. This example is adapted from the Cargo book \cite{klabnik2019rust}.}\label{code:sec_2_3:lifetimes}]{snippets/lifetimes.rs}
 
-        \IF {rank = 0}
-            \STATE $L$.push\_front(FirstChild(FinestAncestors(DeepestFirstDescendent(root), $L$[1])))
-        \ENDIF
-        
-        \IF {rank = $n_p-1$ }
-            \STATE $L$.push\_back(LastChild(FinestAncestors(DeepestLastDescendent(root), $L$[len($L$)])))
-        \ENDIF
+Rust's compiler enforces ownership and lifetime rules uses a program called the `borrow checker' to ensure that all references, and lifetimes, are referring to valid memory locations at \textit{compile time} without the need for a runtime garbage collector. This is a huge advantage over other compiled languages, for example memory related bugs have been found to constitute as much as 70 \% of all security bugs at Microsoft \cite{microsoft2019}. From a scientific programming perspective, handling memory additionally bogs down algorithm development, iteration, and ultimately publication, and was one of the major contributing factors in the push towards interpreted languages in recent decades. Again, this is not to say similar features do not exist in other compiled languages. C++ has its notion of `smart pointers', which enforce RAII principles too, however as with other features in C++, this is a library feature rather than a core part of its compiler, or language specification, making it optional and unenforced. 
 
-        \IF {rank > 0}
-            \STATE Send($L$[1], (rank-1))
-        \ENDIF
+The benefits of Rust's memory system extend to parallel code too. A wide variety of programming paradigms for parallel computation with threads exist, in scientific software we often use OpenMP, which uses the shared memory paradigm, such that all threads operate on the same data. In this setting one of the most common bugs is a data race condition, whereby multiple threads attempt to write to the same memory location. Rust's ownership system enforces the atomicity of all memory operations, by passing ownership between threads, as only a single mutable reference can exist to a piece of memory Rust is able to prevent data races at compile time. Although atomic operations are available in OpenMP, or other shared memory systems, the benefit of Rust is that we know that our compiled code \textit{cannot} contain this bug, without having to rely on unit tests for expected behaviour.
 
-        \IF {rank < ($n_p-1$)}
-            \STATE $L$.push\_back(Receive())
-        \ENDIF
+\subsubsection*{Code Quality}
 
-        \FOR {$i \gets 1$ to (len($L$)-1)} 
-            \STATE $A \gets$ CompleteRegion($L[i]$, $L[i+1]$), using algorithm (\ref{alg:sec_2_4:complete_region})
-        \ENDFOR
-        
-        \IF {rank = $n_p-1$}
-            \STATE $R \gets R+L[\text{L}]$
-        \ENDIF
+Rust's runtime includes a test runner, a documentation generator, and a code formatter. As with other Rust features, these are maintained in lock step with the language specification, and with reference to other Rust developments. This imposes universal constraints on all Rust projects, allowing for objectively defined `good' Rust code, rather than relying on various standards of best practices that vary between projects and organisations.
 
-    \end{algorithmic}
-\end{algorithm}
+\subsection*{Rust's Scientific Ecosystem and Foreign Libraries}
 
-\begin{algorithm}
-    \caption{\textbf{Partitioning Octants Into Coarse Parallel Blocks (Parallel)} - \texttt{BlockPartition}.}
-    \label{alg:sec_2_4:block_partition}
-    \begin{algorithmic}
-        \STATE \textbf{Input}: A distributed list of octants $F$.
-        \STATE \textbf{Output}: A list of blocks $G$, $F$ redistributed but the relative order of the octants is preserved. 
-        \STATE \textbf{Work}: $O(n)$, where $n$=len($F$).
-        \STATE \textbf{Storage}: $O(n)$, where $n$=len($F$).
+Despite being a young language, Rust already supports a mature ecosystem of libraries for scientific computing with high-level multithreading support \cite{rayon2018github}, numerical data containers \cite{ndarray2022github}, and tools for generating interfaces to Python \cite{maturin2022github}.
 
-        \STATE $T \gets $ CompleteRegion($F$[1], $F$[len($F$)]), using algorithm (\ref{alg:sec_2_4:complete_region})
-        \STATE $C \gets \{ x \in T | \forall y \in T, \text{Level}(x) \leq \text{Level}(y) \}$
-        \STATE $G \gets $ CompleteOctree($C$), using algorithm (\ref{alg:sec_2_4:complete_octree})
-        \FOR {$g \in G$} 
-            weight($g$) $\gets $ len($F_{global} \cap \{ g,  \{ \text{Descendents (g)} \} \}$)
-        \ENDFOR
+Many tools are yet to be ported into native Rust, however high quality bindings exist for core tools such as MPI \cite{rsmpi2018github}, BLAS and LAPACK \cite{blaslapackrust2022github}. The problem with interfacing with tools written in other languages is again related to building software, however Cargo offers tools to build software written in other languages and integrate it with Rust code via the \pythoninline{build} crate, which allows one to leverage existing build systems written for software written in foreign languages. This detracts from the benefits offered by Cargo as a unified package manager and build system, raising similar problems to those encountered when building software in other compiled languages. However, we observe that this remains a concern of the software's developer, who is responsible for providing build scripts for the operating systems and hardware platforms that they wish to support, and from a downstream user perspective their build process remains the same as with pure Rust packages, where the dependency is defined in their \pythoninline{Cargo.toml} file.
 
-        \STATE $F \gets F_{global} \cap \{ g, \{ \text{Descendants}(g) \} \forall g \in G \}$
-    \end{algorithmic}
-\end{algorithm}
-
-
-\subsection*{Efficient Parallel Sorts}
-
-Designing and implementing an efficient sorting algorithm that can scale to thousands of cores is difficult since it requires irregular data access, communication, and equal load-balance. As first presented by Sundar et al, parallel sorts in the creation of octrees are implemented using a variant of Sample Sort \cite{sundar2008bottom}. Briefly, this approach samples elements at each processor to create a set of $n_p - 1 $ ordered `splitters', which are shared across all processors and define a set of $n_p$ buckets. This is followed by a global all-to-all communication call over all $n_p$ processors to assign elements to their corresponding bucket. Finally, a local sort is performed at each bucket to produce a globally sorted array. SampleSort is well understood. However, its performance is quite sensitive to the selection of splitters, which can result in load imbalance. Most importantly, the all-to-all key redistribution scales linearly with the number of tasks and can congest the network. As a result sample sort may scale sub-optimally, especially when the communication volume approaches the available hardware limits \cite{sundar2013hyksort}.
-
-An alternative approach is provided by HykSort \cite{sundar2013hyksort}, which is a generalisation of Quicksort over a hypercube \cite{wagar1987hyperquicksort} from 2-way splits, to $k$-way splits, with the addition of an optimised algorithm to select splitters. Quicksort, Hyksort and Sample Sort are compared in figure (\ref{fig:sec_2_4:hyksort}). Instead of splitting the global array into $n_p$ buckets, Hyksort splits it into $k < n_p$, and recursively sorts for each bucket. We notice that at each recursion step, each task communicates with just $k$ other tasks. Indeed, for $k=2$ we recover Quicksort over a hypercube. Both Hyksort, and the parallel splitter selection algorithm are provided in appendix (\ref{app:a_3:hyksort}), alongside complexity comparisons between Hyksort and Sample Sort. We note that Hyksort has a lower asymptotic complexity, with no terms that scale linearly in number of tasks in the MPI communicator, $p$, unlike Sample Sort.
-
-\begin{figure}
-    \centerline{\includegraphics[width=0.7\linewidth]{ch_2/hyksort.pdf}}
-    \caption{Communication pattern of Hyksort algorithm compared to a parallel Sample Sort, as well as a Quicksort over a hypercube, adapted from \cite{sundar2013hyksort}. We see that HykSort results in a lower communication overhead than Sample Sort.}
-    \label{fig:sec_2_4:hyksort}
-\end{figure}
-
-\subsection*{Rusty Tree}
-
-Developed using the algorithms described in the previous sections, Rusty Tree can be found at \url{https://github.com/rusty-fast-solvers/rusty-tree}. It is consumed either as a Rust crate or a Python package, with binaries distributed via Conda and Rust's crates.io. We have so far tested Rusty Tree on Intel and Arm MacOS as well as various Linux platforms including Cray HPC systems running RHEL, and locally on Ubuntu workstations. With a fully developed suite of tests, documentation and Python interfaces, Rusty Tree represents a model example of our final software infrastructure for fast solvers. Example usage in Python mirrors the Rust interface as shown in listings (\ref{code:sec_2_4:rusty_py}) and (\ref{code:sec_2_4:rusty_rs}). Users are able use point data generated at runtime, or provide a HDF5 file for Rusty Tree to consume. Rusty Tree is also capable of outputting a VTK file for visualisation.  We follow data oriented principles in Rusty Tree's design, with a shallow abstraction layer that acts as an interface to operations on point data, and encoded Morton indices. An abridged software architecture in UML style is shown in figure (\ref{fig:sec_2_4:design}). In terms of lines of code, this translates into just 2578 lines of Rust and 688 lines of Python, including test code, with less than 100 lines of configuration code in terms of Toml and Yaml files specifying the Rust and Python builds.
-
-The Python interfaces are built using Maturin, a tool for building and publishing Rust-based Python packages. It can do this in different ways, including the popular PyO3 \cite{pyo32022github} and rust-cpython \cite{rustcpython2022github} crates both of which offer Rust bindings for Python, allowing one to use Rust libraries as native extension modules as well as interacting with Python code from Rust binaries. However Maturin also supports creating bindings using Rust's C Foreign Function Interface (CFFI), using the \pythoninline{clib} crate to expose Rust types to consumers of the C application binary interface (ABI). We choose the CFFI, as the types we wish to expose into Rust are relatively simple pointers to Rust iterators and the pointer to an MPI communicator created from Python. This also allows for a simple design with minimal external libraries, with our Python interface to be cleanly separated from Rust source code.
-
-\pythonexternal[basicstyle=\footnotesize, caption={Using Rusty Tree from its Python package.}\label{code:sec_2_4:rusty_py}]{snippets/rusty.py}
-
-\rustexternal[basicstyle=\footnotesize, caption={Using Rusty Tree as a Rust library.}\label{code:sec_2_4:rusty_rs}]{snippets/rusty.rs}
-
-\begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/rusty_tree_design.pdf}}
-    \caption{We see that the shallow hierarchy inherent in Rusty Tree's design, with a `Distributed Tree' interface in both Python and Rust which is a wrapper over functionality that acts directly on data. On the Python side we have an additional \texttt{Iterator} class, that allows us to wrap Rust iterators into Python iterators.}
-    \label{fig:sec_2_4:design}
-\end{figure}
-
-\subsubsection*{Using MPI from Rust}
-
-MPI, via the rsMPI crate, constitutes the most complex dependency in Rusty Tree. The MPI bindings are built on top of C shim library, as well as automatically generated C/C++ compatible header files using the \pythoninline{cbindgen} crate. The shim library is used to form an equivalence between under-specified identifiers from the MPI standard, that may not be uniform across MPI implementations, and \pythoninline{cbindgen} is used to automatically generate headers for different MPI implementations. This allows rsMPI to expose an interface in Rust which covers most of MPI's core functionality for most MPI implementations, on most operating systems \footnote{This is an area of active development, and a list of currently supported features can be found here \url{https://github.com/rsmpi/rsmpi/blob/main/README.md}}. However, as it is designed to target multiple platforms like all other Rust crates, its build is fragile and requires extra configuration from users who might wish to deploy on unsupported or novel hardware and software targets. Specifically we have found to problems arise on Cray machines, such as Archer 2, which have custom installations of MPI and do not support the \texttt{mpicc} compiler wrapper. However, we note that this is an active area of development, and will be accounted for in a future rsMPI release. As a temporary fix, we currently fork of rsMPI with manual configurations to target the HPC systems we wish to run our software on. Consumers of our software will have to follow similar steps if automatic builds do not work, however we note that in the majority of cases this fragility will not be exposed to users, who can continue to who can continue to consume our library using a single line in their project's \pythoninline{Cargo.toml}. 
-
-\subsection*{Scaling Experiments}
-
-Figure (\ref{fig:sec_2_4:tree_comparison}a) shows the weak scaling performance of Rusty Tree\footnote{Experiments were taken on an AMD Ryzen Threadripper 3970X 32-Core processor} for constructing \textit{balanced octrees}. $5e5$ particles, taken from a random uniform distribution in a unit cube are placed on each processor, up to a total of 16 million particles. The parameter $n_{\text{crit}}$ is set to 200. We compare the performance of Rusty Tree with Dendro, a C++ library similarly built on algorithms presented in \cite{sundar2008bottom}. Dendro has a limited API in comparison to Rusty tree, with no Python interface, and no ability to query tree nodes for the points they contain and is therefore not usable for developing fast algorithms. However it does act as a showcase of the algorithms presented in \cite{sundar2008bottom}, allowing for a direct comparison to our own implementation. We observe that both softwares have a similar scaling behaviour for the tested problem sizes, however Rusty Tree is more expensive by a has a fixed constant factor, both in Python and Rust. We observe that this is due to our provision of hashmaps (see fig. (\ref{fig:sec_2_4:design})), that allow users to query tree nodes for the points they contain and vice versa, a functionality not available in Dendro. An experiment confirming this is shown in figure (\ref{fig:sec_2_4:tree_comparison}d).
-
-We observe that Rusty Tree, when called from Python, has a significantly more expensive memory overhead in comparison to the Rust library, displayed in figure (\ref{fig:sec_2_4:tree_comparison}b). Whereas the Rust library, and Dendro, have similar memory profiles. The cause for excess memory overhead in Python is due to the need to assign static lifetimes to all Rust pointers passed to Python, for example for Morton keys and point data, which would be optimised out of a corresponding Rust program at compile time if it was not being used downstream in a program. We observe that the runtime cost of using Rusty Tree from Python is moderate, at between 5 and 25 \% of total runtime in Rust, for the problem sizes tested. 
-
-Figure (\ref{fig:sec_2_4:tree_comparison}c) is a plot of the mean difference of the load on each processor with respect to the mean load for a given geometry and problem size, as we scale a problem weakly. The geometries we choose are the surface of a `wiggly torus', as shown in figure (\ref{fig:octree_example:sec_1_2}), and the interior of a unit cube, where we sample $5e5$ points randomly from each domain at each processor. The parameter $n_{\text{crit}}$ is again set to 200, and each geometry is tested 5 times for statistics. Comparing the results from both geometries, we observe a qualitatively weak dependence between the problem size and an increasing load imbalance. However, the overlapping nature of the error bars in our experiments, and the fact that an experiment with uniform random data shows similar load imbalance to a significantly less uniform data from the surface of a wiggly torus, make it difficult to conclude a correlation without further investigation. We will need to supplement this investigation with results for larger experiment sizes on large scale HPC systems.
+We also note that Rust is missing key tools for scientific computing, such as a code generation for GPUs, as well as for advanced optimised advanced linear algebra routines, especially for sparse matrices. However, both of these applications are an active area of development.
 
 \subsection*{Conclusion}
 
- Rusty Tree has high-level Python interfaces, allowing it to be inserted into existing research projects with minimal configuration with a moderate performance hit. It is designed around data and is simple to read, and importantly can be built for a variety of software and hardware environments. It's a demonstration of Rust as a viable alternative to development in Rust as opposed to C++ or Fortran. We believe that this will encourage the widespread adoption of our library, and we hope to publicise this software, as well as our user experience with Rust for high performance scientific computing, in an upcoming paper.
-
-\begin{figure}
-    \begin{tabular}{cc}
-        \subfloat[\centering Runtime.]{\includegraphics[width=75mm]{ch_2/tree_weak_scaling.pdf}} & \subfloat[\centering Peak memory]{\includegraphics[width=75mm]{ch_2/tree_weak_scaling_mem.pdf}}
-    \end{tabular}
-    \begin{tabular}{cc}
-    \centering \subfloat[\centering Load balancing]{\includegraphics[width=75mm]{ch_2/load_balance.pdf}} & \subfloat[\centering Runtime Breakdown]{\includegraphics[width=75mm]{ch_2/breakdown.pdf}}
-    \end{tabular}
-    \caption{There are $5e5$ points per processor for the weak scaling experiments in (a), with an $n_{\text{crit}}=200$.  Figure (b) shows the peak memory usage of Dendro compared to the Python and Rust interfaces of Rusty Tree. We note that the Python library has a significant overhead. Figure (c) shows the difference in load from the global mean load, as mean over runs, in an experiment that is weakly scaled with the same parameters as in figure (a). Figure (d) shows the breakdown in runtime between the different components of the algorithms for computing balanced and unbalanced trees, experiments are shown for a tree with $2e6$ uniformly randomly distributed points in a unit cube, distributed evenly across 4 processors. We see that the dominant factor in runtime is the creation of the hashmaps. }
-    \label{fig:sec_2_4:tree_comparison}%
-\end{figure}
+Rust's syntax and program structure are strongly opinionated, its build system emphasises simplicity and portability, and its ecosystem for scientific computing is rapidly developing. A small software team, as is common in academic settings, writing in Rust are effectively able to maintain and deploy Rust projects to a wide variety of platforms, from laptops to supercomputers. Rust's simplified build process results in minimal configuration for users, encouraging the widespread adoption of Rust projects.
