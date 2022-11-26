@@ -1,15 +1,15 @@
-Fast direct solvers constitute a fast-matrix inversion - in contrast to the fast matrix-vector product of the FMM. This section describes ongoing work on the formulation of a new fast direct solver for solving low-medium frequency scattering problems that are described by the Helmholtz equation. This is a part of joint work developed in collaboration with researchers at the Flatiron Institute. 
+In this chapter we review a recently developed fast direct solver for the solution of low-medium frequency scattering problems that are described by the Helmholtz equation\footnote{This is a part of joint work developed in collaboration with researchers at the Flatiron Institute.}. Fast direct solvers constitute a fast matrix inversion, in contrast to the fast matrix-vector product of the FMM. Fast direct solvers for strongly admissable oscillatory problems will be a foundational component of our future Rust-based software infrastructure with our key target application being the solution of electromagnetic scattering problems described by the vectorial Maxwell's equations.
 
-In chapter \ref{chpt:1:motivation} we introduced boundary integral equations (\ref{eq:generic_int_equation:sec:1_1}) and their matrix representation (\ref{eq:linear_system:sec:1_1}), noting that it could alternatively be represented using hierarchical matrices. As we have seen, these matrix representations (HSS, $\mathcal{H}^2$ etc.) allow us to rapidly \textit{apply} the system matrix (\ref{eq:linear_system:sec:1_1}) with linear or near linear time complexity. In combination with modern \textit{iterative} methods, such as GMRES \cite{saad1986gmres}, with $O(n_k)$ iterations such that $n_k \ll N$ where $N$ is the number of unknowns in the system, the solution of such problems is brought into practical reach. However, there are situations in which iterative methods fall short. For example for problems which have \textit{multiple} right hand sides we wish to solve for. In such cases, recently developed \textit{fast direct} methods offer a promising alternative. The inversion of a dense linear system by classical direct methods, such as Gaussian Elimination or LU decomposition, have a complexity of $O(N^3)$. Fast direct methods however take advantage of the low-rank structure implicit in the matrix of (\ref{eq:generic_int_equation:sec:1_1}) to find an approximation for the inverse in a similar manner to the FMM. The main trade-off between fast direct methods and the iterative alternative is the relatively greater memory cost in having to pre-compute and store the matrix factorization.
+In chapter \ref{chpt:1:motivation} we introduced boundary integral equations (\ref{eq:ch_1:generic_int_equation}) and their matrix representation (\ref{eq:ch_1:linear_system}), noting that it could alternatively be represented using hierarchical matrices. As we have seen, these matrix representations (HSS, $\mathcal{H}^2$ etc.) allow us to rapidly \textit{apply} the system matrix (\ref{eq:ch_1:linear_system}) with linear or near linear time complexity. In combination with modern \textit{iterative} methods, such as GMRES \cite{saad1986gmres}, with $O(n_k)$ iterations such that $n_k \ll N$ where $N$ is the number of unknowns in the system, the solution of such problems is brought into practical reach. However, there are situations in which iterative methods fall short. For example for problems which have \textit{multiple} right hand sides we wish to solve for. In such cases, recently developed \textit{fast direct} methods offer a promising alternative. The inversion of a dense linear system by classical direct methods, such LU decomposition, have a complexity of $O(N^3)$. Fast direct methods however take advantage of the low-rank structure implicit in the matrix of (\ref{eq:ch_1:generic_int_equation}) to find an approximation for the inverse in a similar manner to the FMM. The main trade-off between fast direct methods and the iterative alternative is the relatively greater memory cost in having to pre-compute and store the matrix factorization.
 
-Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in chapter \ref{chpt:2:fmms}. Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, which incorporates strong admissibility and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
+Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in chapter \ref{chpt:2:fmms} \cite{martinsson2005fast, ambikasaran2013mathcal, ambikasaran2014inverse,ho2012fast,minden2017recursive}. Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, an $O(N)$ method which incorporates strong admissibility and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems described by the Helmholtz equation at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
 
 \subsection*{Problem Formulation}
 
 We start by deriving the boundary integral equation for the boundary value problem described by the Helmholtz equation and an exterior Dirichlet boundary condition,
 
 \begin{flalign}
-    \label{eq:sec_3_1:helmholtz_ext_dir}
+    \label{eq:ch_7:helmholtz_ext_dir}
     (\Delta + k^2) u = 0, \> \> \text{in } \mathbb{R^d} \setminus \Omega \\
     u = f, \> \> \text{on } \Gamma \\ 
     \lim_{r \rightarrow \infty} r \left ( \frac{\partial u}{ \partial r} - iku \right ) = 0
@@ -29,16 +29,16 @@ And defining,
     K(\mathbf{x}, \mathbf{y}) = (\mathbf{n}(y) \cdot \nabla_{\mathbf{y}}\Phi(\mathbf{y}, \mathbf{x})) -ik \Phi(\mathbf{x}, \mathbf{y}) 
 \end{flalign}
 
-where $n(\mathbf{y})$ is the outwardly facing unit normal at $y \in \partial \Gamma$, we define the \textit{combined field representation} of $u$ as,
+where $n(\mathbf{y})$ is the outwardly facing unit normal at $y \in \Gamma$, we define the \textit{combined field representation} of $u$ as,
 
 \begin{flalign}
-    \label{eq:sec_3_1:combined_field_representation}
+    \label{eq:ch_7:combined_field_representation}
     u &= \int_\Gamma K(\mathbf{x}, \mathbf{y}) \sigma(\mathbf{y}) da(\mathbf{y}), \> \> \mathbf{x} \in \mathbb{R}^3 \setminus \Omega \\
     &= \int_\Gamma (\mathbf{n}(y) \cdot \nabla_{\mathbf{y}}\Phi(\mathbf{y}, \mathbf{x})) -ik \Phi(\mathbf{x}, \mathbf{y}) \sigma(\mathbf{y}) da(\mathbf{y}) \\
     &= (\mathcal{D} - ik \mathcal{S}) \sigma
 \end{flalign}
 
-where we also define the double layer, $\mathcal{D}$, and single layer, $\mathcal{S}$ potential operators. Representing $u$ in terms of layer potentials gives us a solution of the the PDE (\ref{eq:sec_3_1:helmholtz_ext_dir}), however the `surface density' $\sigma$ is unknown. Armed with a representation we can proceed to form a \textit{boundary integral equation} defined only along $\Gamma$ in terms of the the unknown $\sigma$,
+where we also define the double layer, $\mathcal{D}$, and single layer, $\mathcal{S}$ potential operators. Representing $u$ in terms of layer potentials gives us a solution of the the PDE (\ref{eq:ch_7:helmholtz_ext_dir}), however the `surface density' $\sigma$ is unknown. Armed with a representation we can proceed to form a \textit{boundary integral equation} defined only along $\Gamma$ in terms of the the unknown $\sigma$,
 
 \begin{flalign*}
     (\mathcal{D} -ik \mathcal{S} + \frac{1}{2})\sigma(\mathbf{x}) = f(\mathbf{x}), \> \> \mathbf{x} \in \Gamma
@@ -50,18 +50,18 @@ Here we have used the well known \textit{jump relations} which describe a discon
     \frac{1}{2} \sigma(\mathbf{x}) + \int_\Gamma K(\mathbf{x}, \mathbf{y}) \sigma(\mathbf{y}) da(\mathbf{y}) = f(\mathbf{x})
 \end{flalign}
 
-we see that it can be discretised using a suitable method, such as the Galerkin or Nyström methods. Using Nyström we arrive at the following linear system,
+we see that it mirrors the integral equation described in chapter \ref{chpt:1:motivation}, and we proceed to discretise using a suitable method, such as the Galerkin or Nyström methods. Using Nyström we arrive at the following linear system,
 
 \begin{flalign}
-    \label{eq:sec_3_1:bie}
+    \label{eq:ch_7:bie}
     \frac{1}{2} \sigma_i + \sum_{j=1, j \neq i}^N K(\mathbf{x}_i, \mathbf{x}_j) \sigma_j w_{ij} = f(x_i)
 \end{flalign}
 
-where $\mathbf{x}_i$ and $w_{ij}$ are the quadrature nodes and weights, respectively, and $\sigma_i$ is the approximation to $\sigma(\mathbf{x}_i)$. Solving this equation for $\sigma$, allows one to find the approximation of the general solution of the scattering problem (\ref{eq:sec_3_1:helmholtz_ext_dir}) in the exterior using (\ref{eq:sec_3_1:combined_field_representation}).
+where $\mathbf{x}_i$ and $w_{ij}$ are the quadrature nodes and weights, respectively, and $\sigma_i$ is the approximation to $\sigma(\mathbf{x}_i)$. Solving this equation for $\sigma$, allows one to find the approximation of the general solution of the scattering problem (\ref{eq:ch_7:helmholtz_ext_dir}) in the exterior using (\ref{eq:ch_7:combined_field_representation}).
 
 \subsection*{Recursive Strong Skeletonisation}
 
-Consider a domain containing the discretisation points of the boundary $\Gamma$, $\mathbf{x}_i \in \Gamma$. We proceed to discretise with an adaptive, 2:1 balanced, octree. The idea of strong skeletonisation is then to use the \textit{interpolative decomposition} (ID) \cite{cheng2005compression}, a dense matrix compression algorithm, to globally compress matrices with low-rank structure for the case in which only particular off-diagonal blocks are low-rank. In our problem of interest, (\ref{eq:sec_3_1:bie}), where the low-rank assumption only applies when two nodes of an octree are strongly admissible with respect to each other, i.e. the far-field interactions via the kernel of the integral equation.
+Consider a domain containing the discretisation points of the boundary $\Gamma$, $\mathbf{x}_i \in \Gamma$. We proceed to discretise with an adaptive, 2:1 balanced, octree. The idea of strong skeletonisation is then to use the \textit{interpolative decomposition} (ID) \cite{cheng2005compression}, a dense matrix compression algorithm, to globally compress matrices with low-rank structure for the case in which only particular off-diagonal blocks are low-rank. In our problem of interest, (\ref{eq:ch_7:bie}), where the low-rank assumption only applies when two nodes of an octree are strongly admissible with respect to each other, i.e. the far-field interactions via the kernel of the integral equation.
 
 \begin{definition}[Interpolative Decomposition (ID)]
     Given a matrix $A_{\mathcal{I} \mathcal{J}} \in \mathbb{C}^{|\mathcal{I}| \times |\mathcal{J}|}$ with rows indexed by $\mathcal{I}$ and columns indexed by $|\mathcal{J}$, an $\epsilon$ accurate interpolative decomposition of $A$ is a partitioning of $\mathcal{J}$ into a set of so-called skeleton columns denoted by $\mathcal{S} \subset \mathcal{J}$ and redundant columns $\mathcal{R} = \mathcal{J} \setminus \mathcal{S}$, and the construction of a corresponding interpolation matrix $T$ such that,
@@ -69,7 +69,7 @@ Consider a domain containing the discretisation points of the boundary $\Gamma$,
     $$\| A_{\mathcal{I} \mathcal{R}} - A_{\mathcal{I} \mathcal{S}} T \| \leq \epsilon \| A_{\mathcal{I} \mathcal{J}} \| $$
 
     Where we take the norms to be defined as the standard spectral norm. The interpretation of the above is that the redundant columns are well approximated by a linear combination of the skeleton columns. We compute the ID using a column-pivoted QR decomposition as in \cite{sushnikova2022fmm}, which has a complexity of $O(|\mathcal{I}| \cdot |\mathcal{J}|^2)$.
-    \label{def:sec_3_1:id}
+    \label{def:ch_7:id}
 \end{definition}
 
 Now we consider a three by three block matrix, $A \in \mathbb{C}^{N \times N}$, taking a partition of the index set such that $[N]= \mathcal{I} \cup \mathcal{J} \cup \mathcal{K}$ with $[N] = {1, 2, ... N}$ such that $A_{\mathcal{I} \mathcal{K}} = 0 = A_{\mathcal{K} \mathcal{I}}$,
@@ -105,7 +105,7 @@ where the block $S_{\mathcal{J} \mathcal{J}} = A_{\mathcal{J} \mathcal{J}} - A_{
 We now attempt to apply this decoupling to the matrix, $A$, that arises from our boundary integral formulation. Taking $\mathcal{B}$ as the set of indices of points $x_i$ contained in box $B$ in the octree, $\mathcal{N}$ as the indices of the points in $B$'s near field and $\mathcal{F}$ as the points contained in its far field, as defined by the strong admissibility condition, upon appropriate permutation by a matrix $P$ we arrive at the following block structure for $A$.
 
 \begin{flalign}
-    \label{eq:sec_3_1:decomp_a}
+    \label{eq:ch_7:decomp_a}
     P^TAP = \begin{bmatrix}
         A_{\mathcal{B} \mathcal{B}} & A_{\mathcal{B} \mathcal{N}} & A_{\mathcal{B} \mathcal{F}} \\ 
         A_{\mathcal{N} \mathcal{B}} & A_{\mathcal{N} \mathcal{N}} & A_{\mathcal{N} \mathcal{F}} \\ 
@@ -130,9 +130,9 @@ We want to numerically compress the far-field interactions, i.e. the blocks corr
     \end{bmatrix}
 \end{flalign*}
 
-where we've applied the ID as an approximation. We've applied the same $T$ interpolation matrix for both blocks, making the assumption that the kernel is symmetric. The authors in \cite{sushnikova2022fmm} note that this in practice can also be done for non-symmetric kernels, at the cost of a small increase in the number of skeleton points. 
+where we've applied the ID as an approximation. We've applied the same interpolation matrix, $T$, for both blocks making the assumption that the kernel is symmetric. The authors in \cite{sushnikova2022fmm} note that this in practice can also be done for non-symmetric kernels, at the cost of a small increase in the number of skeleton points. 
 
-Returning to (\ref{eq:sec_3_1:decomp_a}), and further splitting $\mathcal{B} = \mathcal{R} \cup \mathcal{S}$ and applying the previous approximation for the far-field blocks, we get
+Returning to (\ref{eq:ch_7:decomp_a}), and further splitting $\mathcal{B} = \mathcal{R} \cup \mathcal{S}$ and applying the previous approximation for the far-field blocks, we get
 
 \begin{flalign*}
     P^T A P = \begin{bmatrix}
@@ -240,29 +240,27 @@ Using this decomposition we can rapidly compute $A^{-1}$, and hence our `fast di
 
 \subsection*{The Proxy Trick}
 
-The complexity of the fast direct solver described by the RS-S technique is determined by the cost of computing the ID for the far-field interactions of a given box in the octree, $B$. This will in general contain $O(N)$ points. Therefore computing the ID with respect to far field interactions as we've done above will scale as $O(N^2)$ for each box. The authors of \cite{minden2017recursive} employ the so called `proxy trick' to reduce this complexity, and recover an $O(N)$ scaling for their fast direct solver. Our contribution in this work is the explicit formulation of the proxy trick for a variety of integral equation kernels that appear in scattering problems, with specific application to  acoustic scattering problems.
+The complexity of the fast direct solver described by the RS-S technique is determined by the cost of computing the ID for the far-field interactions of a given box in the octree, $B$. This will in general contain $O(N)$ points. Therefore computing the ID with respect to far field interactions as we've done above will scale as $O(N^2)$ for each box. The authors of \cite{minden2017recursive} employ the so called `proxy trick' to reduce this complexity, and recover an $O(N)$ scaling for their fast direct solver. The complexity analaysis of this algorithm is provided in appendix \ref{app:a_6:rss_complexity}. Our contribution in this work is the explicit formulation of the proxy trick for a variety of integral equation kernels that appear in scattering problems, with specific application to  acoustic scattering problems.
 
-The main idea of the proxy trick rests on the principle of representing the far-field particles of a given box $B$, which may contain $O(N)$ particles, with a set of `proxy points' contained on a proxy surface that encloses $B$. This surface is often chosen to be a sphere. By choosing $O(1)$ proxy points, without getting into the details yet of how exactly they are sampled, we are able to obtain the linear complexity we desire.
+Consider as a setting the boundary integral equation formulation of a Helmholtz scattering problem, the main idea of the proxy trick rests on the principle of representing the far-field particles of a given box $B$, which may contain $O(N)$ particles, with a set of `proxy points' contained on a proxy surface that encloses $B$. This surface is often chosen to be a sphere. By choosing $O(1)$ proxy points, without getting into the details yet of how exactly they are sampled, we are able to obtain the linear complexity we desire.
 
-For a given box $B$, a proxy surface $D$ and its boundary $\gamma$ are chosen such that $B \subset D$. The far-field points of $B$, $\mathcal{F}$ is partitioned such that $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$, where $\mathcal{Q}$ contains $O(1)$ points. $\Gamma$ is the boundary of the entire scatterer, and $\tau = \Gamma \cap B$ is the portion of the scatterer boundary contained in $B$. The situation is sketched in figure (\ref{fig:sec_3_1:proxy_trick}) in 2D.
+For a given box $B$, a proxy surface $D$ and its boundary $\gamma$ are chosen such that $B \subset D$. The far-field points of $B$, $\mathcal{F}$ is partitioned such that $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$, where $\mathcal{Q}$ contains $O(1)$ points. $\Gamma$ is the boundary of the entire scatterer, and $\tau = \Gamma \cap B$ is the portion of the scatterer boundary contained in $B$. The situation is sketched in figure (\ref{fig:ch_7:proxy_trick}) in 2D.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{ch_7/proxy.pdf}
     \caption{Considering the outgoing problem due to charge contained on $\Gamma \cap B$ evaluated in the far-field of $B$ in $\mathbb{R}^2$.}
-    \label{fig:sec_3_1:proxy_trick}
+    \label{fig:ch_7:proxy_trick}
 \end{figure}
 
-We can choose to represent our solution due to the charge in $B$ in $\mathcal{F}$ however we wish. However, our choice will lead to different matrices that we must compress.
-
-Generally, we'll end up with a solution matrix of the form $A_{\mathcal{F}B}$ that maps between the charge contained $B$, $\psi_B$, and potential, $v_\mathcal{F}$, at points in its far-field that can be split up as,
+We can choose to represent our solution due to the charge in $B$ in $\mathcal{F}$ however we wish. However, our choice will lead to different matrices that we must compress. Generally, we'll end up with a solution matrix of the form $A_{\mathcal{F}B}$ that maps between the charge contained $B$, $\psi_B$, and potential, $v_\mathcal{F}$, at points in its far-field that can be split up as,
 
 \begin{flalign}
     v_{\mathcal{F}} &= A_{\mathcal{F}B} \psi_B \\
     &= B_{\mathcal{F}\gamma} C_{\gamma B} \psi_B
 \end{flalign}
 
-the subscripts indicate the domains these operators map between. We desire a split like this as the far field interaction of $B$ can be expressed as an object involving $C_{\gamma B}$ only.
+the subscripts indicate the domains these operators map between, with respect to figure (\ref{fig:ch_7:proxy_trick}). We desire a split like this as the far field interaction of $B$ can be expressed as an object involving $C_{\gamma B}$ only.
 
 To see how such a split can be useful consider the fact that $A_{\mathcal{F}B}$ can be written as,
 
@@ -287,7 +285,7 @@ Our RS-S algorithm relies on a compression of this matrix, however as we noted a
         \end{bmatrix} \begin{bmatrix}T_{SR}  & 1 \end{bmatrix}
 \end{flalign}
 
-Where $S$ and $R$ are the skeleton and redundant points respectively. Plugging back into our expression (\ref{eq:decomposition}),
+Where $S$ and $R$ are the skeleton and redundant points respectively. Placing these back into our expression (\ref{eq:decomposition}),
 
 \begin{flalign}
     \label{eq:compressed}
@@ -307,7 +305,7 @@ Where $S$ and $R$ are the skeleton and redundant points respectively. Plugging b
 
 Therefore, we see that we can get away with a cheap ID to reconstruct the far-field operator, involving the proxy points rather than the full far field of $B$. We are thus left with the task of formulating the proxy trick to compress the correct components of the boundary integral kernel.
 
-Below we consider how to apply the proxy trick for different representations of the far-field potential due to the charges contained in $B$, known as `outgoing skeletonisations', as well the inverse operation in which the proxy trick is applied to calculate the potentials within $B$ due to charges in its far-field, known as `incoming skeletonisations'.
+Below we consider how to apply the proxy trick for different representations of solutions to the Helmholtz equation of the far-field potential due to the charges and dipoles contained in $B$, known as `outgoing skeletonisations', as well the inverse operation in which the proxy trick is applied to calculate the potentials within $B$ due to charges in its far-field, known as `incoming skeletonisations'. We consider the Helmholtz equation here as our prototype as the results can be extended to the time-harmonic Maxwell equations.
 
 \subsubsection*{Hypersingular - $\mathcal{T}$}
 
@@ -337,7 +335,7 @@ The function
     w(x) = \nabla_x \int_{\Gamma \cap B} \frac{\partial \Phi(x, y)}{\partial n(y)} \psi(y)ds(y) := \nabla_x \mathcal{D}\psi
 \end{flalign}
 
-Does satisfy our PDE, everywhere, and we'll exploit this fact in a moment. As an aside, we can see that this is true by considering a double layer potential $v$ that is smooth enough to admit,
+Does satisfy Helmholtz, everywhere, and we'll exploit this fact in a moment. As an aside, we can see that this is true by considering a double layer potential $v$ that is smooth enough to admit,
 
 \begin{flalign}
     (\Delta + k^2)w =(\Delta + k^2)\nabla_x v =\nabla_x (\Delta + k^2) v = 0
@@ -345,7 +343,7 @@ Does satisfy our PDE, everywhere, and we'll exploit this fact in a moment. As an
 
 where the last equality follows as $v$ satisfies the Helmholtz equation. Therefore $w$ is a solution of the Helmholtz equation. Note that $w$ has three components.
 
-In order to find our $C_{\gamma B}$ with this representation, we need to set up an `associated boundary value problem' for each component of $w$. The choice of boundary value problem we choose is free, as we only rely on the existence of its solution.
+In order to find $C_{\gamma B}$ for this representation, we need to set up an `associated boundary value problem' for each component of $w$. The choice of boundary value problem we choose is free, as we only rely on the existence of its solution.
 
 Consider an associated boundary value problem for just a single component of $\tilde{w}$ that satisfies,
 
@@ -355,7 +353,7 @@ Consider an associated boundary value problem for just a single component of $\t
     &\text{A radiation condition at } \infty
 \end{flalign}
 
-A combined field representation might be nice, as we know it has good properties,
+We choose a combined field representation, 
 
 \begin{flalign}
     \tilde{w} = (\mathcal{D} - ik \mathcal{S})_{\mathcal{F}\gamma} \mu
@@ -490,7 +488,7 @@ We notice that the transpose of the double layer operator is,
     [u]^T_{\mathcal{F}B}(x) = \int_{\Gamma \cap B} \frac{\partial \Phi(x,y)}{\partial n(x)}\phi(y)ds(y)= \mathcal{K}'_{\gamma B}\phi
 \end{flalign}
 
-This in general does not satisfy our PDE everywhere, we again separate out the normal component, and as before, recognise that the components to compress are $[\nabla_1 \mathcal{S}_{\gamma B}, \nabla_2 \mathcal{S}_{\gamma B}, \nabla_2 \mathcal{S}_{\gamma B}]$.
+This in general does not satisfy Helmholtz everywhere, we again separate out the normal component, and as before, recognise that the components to compress are $[\nabla_1 \mathcal{S}_{\gamma B}, \nabla_2 \mathcal{S}_{\gamma B}, \nabla_2 \mathcal{S}_{\gamma B}]$.
 
 \subsection*{Acoustic Sound Hard Scattering}
 
@@ -517,7 +515,7 @@ where $k$ and $K$ are complex wave numbers, that may not be the same. We can tak
     (\frac{i \eta}{2} \mathcal{I}- i \eta \mathcal{K}'_k + \mathcal{T}_k \circ \mathcal{S}_K )\mu = g
 \end{flalign}
 
-using the Calder\'{o}n identity,
+using the Calder\'{o}n identity \cite{Bruno2012},
 
 \begin{flalign}
     \mathcal{T}_k\circ \mathcal{S}_k = -\frac{1}{4}\mathcal{I} + \mathcal({K}_k')^2
@@ -590,7 +588,7 @@ The paper on which we base our work \cite{sushnikova2022fmm} builds on the origi
     \item Handling the construction of the far-field partition into $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$
 \end{enumerate}
 
-We defer to to the original paper for a discussion of these aspects \cite{sushnikova2022fmm}. For our simulations we use these algorithms and quadrature rules as a black box in as implemented by the FMM3D-BIE software \cite{fmm3dbie}. To demonstrate the accuracy of the solver in light of our proxy trick formulation, we suppose that the sound hard condition is generated from a set of 50 test points placed at random locations on the surface of a test geometry, for which we choose the `wiggly torus' displayed in figure (\ref{fig:octree_example:sec_1_2}). The results of our solve are then compared to the potential expected from using a combined field representation at 50 random test locations in the exterior of the geometry.
+We defer to to the original paper for a discussion of these aspects \cite{sushnikova2022fmm}. For our simulations we use these algorithms and quadrature rules as a black box in as implemented by the FMM3D-BIE software \cite{fmm3dbie}. To demonstrate the accuracy of the solver in light of our proxy trick formulation, we suppose that the sound hard condition is generated from a set of 50 test points placed at random locations on the surface of a test geometry, for which we choose the `wiggly torus' displayed in figure (\ref{fig:ch_2:octree_example}). The results of our solve are then compared to the potential expected from using a combined field representation at 50 random test locations in the exterior of the geometry.
 
 \begin{flalign*}
     \text{error} = \frac{\sqrt{\sum_{j=1}^{50}|\tilde{u}(t_j)-u(t_j)|^2}}{\sqrt{\int_\Gamma|\sigma(x)|^2 da(x)}}
@@ -602,7 +600,7 @@ where $\tilde{u}$ is our approximated potential, $u$ is the exact potential calc
     \centering
     \begin{tabular}{||c c c c c c c c||} 
         \hline
-        $p$ & $N_{patch}$ & $N$  & $t_f$ (s) & $t_s$ (s)  & $t_q$ (s) & $m_f$ (GB) & $\epsilon$ \\ [0.5ex]
+        $p$ & $N_{patch}$ & $N$  & $t_f$ (s) & $t_s$ (s)  & $t_q$ (s) & $m_f$ (GB) & error \\ [0.5ex]
         \hline\hline
         4 & 50  & 750  & 0.8 & 0.03 & 0.8 & 0.04 & $4.7 \times 10^{-3}$ \\
         4 & 200 & 3000 & 6.6 & 0.08 & 1.4 & 0.6  & $3.3 \times 10^{-4}$ \\
@@ -613,24 +611,24 @@ where $\tilde{u}$ is our approximated potential, $u$ is the exact potential calc
         4 & 2450 & 36750 & 3322.6 & 2.4 & 11.8 & 41.1 & $1.2 \times 10^{-6}$ \\
         \hline
     \end{tabular}
-    \caption{We measure the $L^2$ error with respect to the density  ($\epsilon$), time for solution ($t_s$), factorisation ($t_f$), quadrature computation ($t_q$) and memory required for factorisation ($m_f$) as a function of quadrature expansion order ($p$) and number of patches used to discretise the geometry ($N_{patch}$).}
+    \caption{We measure the $L^2$ error with respect to the density  (error), time for solution ($t_s$), factorisation ($t_f$), quadrature computation ($t_q$) and memory required for factorisation ($m_f$) as a function of quadrature expansion order ($p$) and number of patches used to discretise the geometry ($N_{patch}$).}
     \label{table:sec_3_2:sh}
 \end{table}
 
 
-From table (\ref{table:sec_3_2:sh}), we observe linear scaling for $t_f$. However we observe sub-linear scaling for for $m_f$ and $t_s$, the authors of \cite{sushnikova2022fmm} suggest that this is due to the fixed wavenumber for increasing $N$. Meaning that the additional degrees of freedom introduced beyond a certain sampling in points per wavelength are more easily compressed. In order to make further observations about the convergence rate of our method more data is required, for higher order quadratures. We note that amount of memory used, even for the modest problem sizes tested, can be quite considerable. With our experiment where the number of quadrature points $N=36750$ consuming over 40GB of memory. This demonstrates the main trade-off of fast direct solvers in comparisons to iterative solvers.
+From table (\ref{table:sec_3_2:sh}), we observe linear scaling for $t_f$. However we observe sub-linear scaling for for $m_f$ and $t_s$, the authors of \cite{sushnikova2022fmm} suggest that this is due to the fixed wavenumber for increasing $N$. Meaning that the additional degrees of freedom introduced beyond a certain sampling in points per wavelength are more easily compressed. In order to make further observations about the convergence rate of our method more data is required, for higher order quadratures. We note that amount of memory used, even for the modest problem sizes tested, can be quite considerable. With our experiment where the number of quadrature points $N=36750$ consuming over 40GB of memory. This demonstrates the main trade-off of the increased memory usage of fast direct solvers in comparisons to iterative solvers.
 
 \subsection*{Exposing Parallelism}
 
-The RS-S algorithm exposes natural parallelism. Consider figure (\ref{fig:sec_3_1:rss_parallel}) which shows a four-colouring for a non-adaptive octree in $\mathbb{R}^2$ for simplicity, each colour can be independently skeletonised as skeletonisation only updates matrix entries corresponding to a box's near field. The same logic can be applied to the adaptive case, as well as the $\mathbb{R}^3$ case, albeit with more colours. As of writing there are no parallel implementations of the RS-S algorithms available as open-source packages.
+The RS-S algorithm exposes natural parallelism. Consider figure (\ref{fig:ch_7:rss_parallel}) which shows a four-colouring for a non-adaptive octree in $\mathbb{R}^2$ for simplicity, each colour can be independently skeletonised as skeletonisation only updates matrix entries corresponding to a box's near field. The same logic can be applied to the adaptive case, as well as the $\mathbb{R}^3$ case, albeit with more colours. As of writing there are no parallel implementations of the RS-S algorithms available as open-source packages.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{ch_7/rss-parallel.pdf}
     \caption{A four-colouring of a non-adaptive quadtree in $\mathbb{R}^2$, where the colouring is chosen such that no box shares a colour with its neighbours. All boxes of a given colour can then be skeletonised independently. This figure is adapted from \cite{minden2017recursive}.}
-    \label{fig:sec_3_1:rss_parallel}
+    \label{fig:ch_7:rss_parallel}
 \end{figure}
 
 \subsection*{Conclusion}
 
-We've described a scalar fast direct solver for solving acoustic scattering problems. We've demonstrated the convergence and scaling of our method with some preliminary numerical results, however further numerical testing is required to study the solvers properties. Specifically to understand its convergence behaviour, and scaling behaviour with higher order quadratures. We have only done cursory work on investigating the effect of quadrature choice, as well as the method chosen for sampling the proxy surface, using the default generalized Gaussian quadratures and sampling techniques described in \cite{sushnikova2022fmm}. This is another potential vector of research. The extension of this solver, and proxy formulation, to the full vectorial case which would allow us to tackle electromagnetic scattering problems as described by Maxwell's equations is an ongoing are of investigation.
+We've described a scalar fast direct solver for solving acoustic scattering problems. We've demonstrated the convergence and scaling of our method with some preliminary numerical results, however further numerical testing is required to study the solvers properties. Specifically to understand its convergence behaviour, and scaling behaviour with higher order quadratures. We have only done cursory work on investigating the effect of quadrature choice, as well as the method chosen for sampling the proxy surface, using the default generalized Gaussian quadratures and sampling techniques described in \cite{sushnikova2022fmm}. This is another potential vector of research. The extension of this solver, and proxy formulation, to the full vectorial case which would allow us to tackle electromagnetic scattering problems as described by Maxwell's equations is an ongoing area of investigation.
