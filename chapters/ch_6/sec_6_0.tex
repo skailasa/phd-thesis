@@ -46,7 +46,7 @@ For octree construction, our starting point is a set of distributed point data s
 This approach is summarised in algorithm (\ref{alg:sec_2_4:point2octree}). The complexity of this process is bounded by the parallel sorts, which for randomly distributed point data, run in $O(N_{\text{leaf}} \log (N_{\text{leaf}}))$ work and $O(\frac{N_{\text{leaf}}}{n_p} \log(\frac{N_{\text{leaf}}}{n_p}) + n_p \log (n_p))$ time where $N_{\text{leaf}}$ is the number of leaves in the final octree, and $n_p$ is the number of processors (see appendix \ref{app:a_2_complexity_tree_construction} for a derivation). This makes the efficiency of the parallel sort a bottleneck in tree construction.
 
 \begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/morton.pdf}}
+    \centerline{\includegraphics[width=\linewidth]{ch_6/morton.pdf}}
     \caption{How to Morton encode a node in an octree. The node is described by an `anchor' coordinate.}
     \label{fig:sec_2_4:morton}
 \end{figure}
@@ -87,7 +87,7 @@ This approach is summarised in algorithm (\ref{alg:sec_2_4:point2octree}). The c
 \end{algorithm}
 
 \begin{figure}
-    \centerline{\includegraphics[width=0.9\linewidth]{ch_2/complete_region.pdf}}
+    \centerline{\includegraphics[width=0.9\linewidth]{ch_6/complete_region.pdf}}
     \caption{Adapted from \cite{sundar2008bottom}, describing the algorithms in $\mathbb{R}^2$ for clarity. Figure (b) shows the minimal tree constructed using algorithm (\ref{alg:sec_2_4:complete_region}) where the two octants in (a) are used as an input. Figure (c) shows a selection of \textit{seeds}, which are used as an input to algorithm (\ref{alg:sec_2_4:complete_octree}), resulting in (d). Figure (d) also shows two octants generated to complete the domain.  The first one is the coarsest ancestor of the least input octant which does not overlap with the least octant in the input. The second is the coarsest ancestor of the greatest possible octant, which doesn't overlap with it.}
     \label{fig:sec_2_4:complete}
 \end{figure}
@@ -97,7 +97,7 @@ Our strategy extends the original approach presented by Sundar et al in two ways
 Load balancing across processors, while maintaining Morton order is challenging. Currently, the data partitioning imposed by the parallel sort imposes an approximate load balance, even for irregular geometries, which we explore in figure (\ref{fig:sec_2_4:tree_comparison}c). However, in future we would like to extend our work to incorporate an explicit load balancing step. Our current idea is based on a modified sample sort, with splitter selection and bucket sizes chosen to reflect the mean load we wish to assign to each processor.
 
 \begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/rayon.pdf}}
+    \centerline{\includegraphics[width=\linewidth]{ch_6/rayon.pdf}}
     \caption{Optimising Morton encodings using shared memory parallelism and lookup tables.}
     \label{fig:sec_2_4:rayon}
 \end{figure}
@@ -251,7 +251,7 @@ Designing and implementing an efficient sorting algorithm that can scale to thou
 An alternative approach is provided by HykSort \cite{sundar2013hyksort}, which is a generalisation of Quicksort over a hypercube \cite{wagar1987hyperquicksort} from 2-way splits, to $k$-way splits, with the addition of an optimised algorithm to select splitters. Quicksort, Hyksort and Sample Sort are compared in figure (\ref{fig:sec_2_4:hyksort}). Instead of splitting the global array into $n_p$ buckets, Hyksort splits it into $k < n_p$, and recursively sorts for each bucket. We notice that at each recursion step, each task communicates with just $k$ other tasks. Indeed, for $k=2$ we recover Quicksort over a hypercube. Both Hyksort, and the parallel splitter selection algorithm are provided in appendix (\ref{app:a_3:hyksort}), alongside complexity comparisons between Hyksort and Sample Sort. We note that Hyksort has a lower asymptotic complexity, with no terms that scale linearly in number of tasks in the MPI communicator, $p$, unlike Sample Sort.
 
 \begin{figure}
-    \centerline{\includegraphics[width=0.7\linewidth]{ch_2/hyksort.pdf}}
+    \centerline{\includegraphics[width=0.7\linewidth]{ch_6/hyksort.pdf}}
     \caption{Communication pattern of Hyksort algorithm compared to a parallel Sample Sort, as well as a Quicksort over a hypercube, adapted from \cite{sundar2013hyksort}. We see that HykSort results in a lower communication overhead than Sample Sort.}
     \label{fig:sec_2_4:hyksort}
 \end{figure}
@@ -267,7 +267,7 @@ The Python interfaces are built using Maturin, a tool for building and publishin
 \rustexternal[basicstyle=\footnotesize, caption={Using Rusty Tree as a Rust library.}\label{code:sec_2_4:rusty_rs}]{snippets/rusty.rs}
 
 \begin{figure}
-    \centerline{\includegraphics[width=\linewidth]{ch_2/rusty_tree_design.pdf}}
+    \centerline{\includegraphics[width=\linewidth]{ch_6/rusty_tree_design.pdf}}
     \caption{We see that the shallow hierarchy inherent in Rusty Tree's design, with a `Distributed Tree' interface in both Python and Rust which is a wrapper over functionality that acts directly on data. On the Python side we have an additional \texttt{Iterator} class, that allows us to wrap Rust iterators into Python iterators.}
     \label{fig:sec_2_4:design}
 \end{figure}
@@ -290,10 +290,10 @@ Figure (\ref{fig:sec_2_4:tree_comparison}c) is a plot of the mean difference of 
 
 \begin{figure}
     \begin{tabular}{cc}
-        \subfloat[\centering Runtime.]{\includegraphics[width=75mm]{ch_2/tree_weak_scaling.pdf}} & \subfloat[\centering Peak memory]{\includegraphics[width=75mm]{ch_2/tree_weak_scaling_mem.pdf}}
+        \subfloat[\centering Runtime.]{\includegraphics[width=75mm]{ch_6/tree_weak_scaling.pdf}} & \subfloat[\centering Peak memory]{\includegraphics[width=75mm]{ch_6/tree_weak_scaling_mem.pdf}}
     \end{tabular}
     \begin{tabular}{cc}
-    \centering \subfloat[\centering Load balancing]{\includegraphics[width=75mm]{ch_2/load_balance.pdf}} & \subfloat[\centering Runtime Breakdown]{\includegraphics[width=75mm]{ch_2/breakdown.pdf}}
+    \centering \subfloat[\centering Load balancing]{\includegraphics[width=75mm]{ch_6/load_balance.pdf}} & \subfloat[\centering Runtime Breakdown]{\includegraphics[width=75mm]{ch_6/breakdown.pdf}}
     \end{tabular}
     \caption{There are $5e5$ points per processor for the weak scaling experiments in (a), with an $n_{\text{crit}}=200$.  Figure (b) shows the peak memory usage of Dendro compared to the Python and Rust interfaces of Rusty Tree. We note that the Python library has a significant overhead. Figure (c) shows the difference in load from the global mean load, as mean over runs, in an experiment that is weakly scaled with the same parameters as in figure (a). Figure (d) shows the breakdown in runtime between the different components of the algorithms for computing balanced and unbalanced trees, experiments are shown for a tree with $2e6$ uniformly randomly distributed points in a unit cube, distributed evenly across 4 processors. We see that the dominant factor in runtime is the creation of the hashmaps. }
     \label{fig:sec_2_4:tree_comparison}%
