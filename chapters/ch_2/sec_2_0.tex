@@ -54,13 +54,14 @@ where the series converges for $|y-c_s| < |c-c_s|$. We note (\ref{eq:ch_2:analyt
 The multipole expansion is a representation of the charges in $\Omega_s$ and can be truncated to any required precision. We can use the multipole expansion in place of a direct calculation with the particles in $\Omega_s$. As the potential in $\Omega_t$ can be written as,
 
 \begin{flalign}
-    \phi(x) = \sum_{j \in I_s} K(x, y)q_j = \log(x-c_s)\hat{q}_0^s + \sum_{p=1}^\infty \frac{1}{(x-c_s)^p}\hat{q}_p^\sigma
+    \phi(x) = \sum_{j \in I_s} K(x, y)q_j = \log(x-c_s)\hat{q}_0^s + \sum_{p=1}^\infty \frac{1}{(x-c_s)^p}\hat{q}_p^s
+    \label{eq:ch_2:multipole_expansions}
 \end{flalign}
 
 Greengard and Rokhlin also define a local expansion centered on $\Omega_t$, that represents the potential due to the sources in $\Omega_s$.
 
 \begin{flalign}
-    \phi(x) = \sum_{p=1}^\infty (x-c_t)^p \hat{\phi}^t_p
+    \phi(x) = \sum_{l=1}^\infty (x-c_t)^l \hat{\phi}^t_l
 \end{flalign}
 
 with a simple computation to derive the local expansion coefficients $\{\hat{\phi}^t_p\}_{p=0}^\infty$ from $\{ \hat{q}_p^s \}_{p=0}^{P-1}$ (see app. \ref{app:a_1_fmm_algorithm}).

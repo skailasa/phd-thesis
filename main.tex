@@ -15,6 +15,7 @@
 \usepackage{etoolbox}
 \usepackage{subfig}
 \usepackage{algcompatible}
+\usepackage{algpseudocode}
 
 \usepackage{listings}
 % Custom colors
@@ -202,7 +203,14 @@ string=[b]"
 \newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 
 \begin{document}
-
+% declaration of the new block
+\algblock{PARFOR}{ENDPARFOR}
+% customising the new block
+\algnewcommand\algorithmicparfor{\textbf{parfor}}
+\algnewcommand\algorithmicpardo{\textbf{do}}
+\algnewcommand\algorithmicendparfor{\textbf{end\ parfor}}
+\algrenewtext{PARFOR}[1]{\algorithmicparfor\ #1\ \algorithmicpardo}
+\algrenewtext{ENDPARFOR}{\algorithmicendparfor}
 
     \frontmatter
 
