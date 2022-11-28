@@ -12,13 +12,21 @@ Under the above assumptions, and assuming further that a constant number of poin
     T_s &= O(N) + \sum_{l=1}^{L-2}O(2^{d(L-l)}k_l^2)
 \end{flalign*}
 
-The memory requirement, $m_f = O(t_s)$.
+The memory requirement is $m_f = O(t_s)$. To show this, let $k_0=1$ without loss of generality. Note that for the DOF set $\mathcal{B}_i$ corresponding to the points in a box at level $l$, we have that $|\mathcal{B}_i| = O(k_{l-1})$, the near field degrees of freedom $|\mathcal{N}_i| = O(k_{l-1})$ and the far-field degrees of freedom within the proxy surface $|\mathcal{Q}_i| = O(k_{l-1})$, since for the leaf nodes the number of degrees of freedom is bounded by a constant, and for non-leaf nodes the degrees of freedom are given by aggregating skeleton degrees of freedom of their children at the previous level.
 
-To show this, let $k_0=1$ without loss of generality. Not that for the DOF set $\mathcal{B}_i$ corresponding to the points in a box at level $l$, we have that $|\mathcal{B}_i| = O(k_{l-1})$, the near field degrees of freedom $|\mathcal{N}_i| = O(k_{l-1})$ and the far-field degrees of freedom within the proxy surface $|\mathcal{O}_i| = O(k_{l-1})$, since for the leaf nodes the number of degrees of freedom is bounded by a constant, and for non-leaf nodes the degrees of freedom are given by aggregating skeleton degrees of freedom of their children at the previous level.
-
-Because of the proxy compression, the cost of the ID for the skeletonisation of a given box was found to be reduced as we only needed the ID on a box of size  $O(1) \times O(n_\gamma)$ in chapter \ref{chpt:7:fds}. Using the complexity result of the ID from chapter \ref{chpt:7:fds}, we see that the cost of skeletonisation  with respect to the degrees of freedom $B_i$ corresponding to a node at level $l$ is $O(k_l^3)$. Finally, at each level $l$ there are at most $2^{d(L-l)}$ boxes, which gives the stated complexity for $T_f$ above using the fact the $2^{dL} = O(N)$. The authors of \cite{minden2017recursive} note that the complexity for $T_s$ can be similarly derived, noting that all block unit-triangular matrices can be trivially inverted.
+Because of the proxy compression, the cost of the ID for the skeletonisation of a given box was found to be reduced as we only needed the ID on a box of size  $O(|\mathcal{Q}_i|) \times O(|\mathcal{B}_i|)$ in chapter \ref{chpt:7:fds}. Using the complexity result of the ID from chapter \ref{chpt:7:fds}, we see that the cost of skeletonisation  with respect to the degrees of freedom $B_i$ corresponding to a node at level $l$ is $O(k_l^3)$. Finally, at each level $l$ there are at most $2^{d(L-l)}$ boxes, which gives the stated complexity for $T_f$ above using the fact the $2^{dL} = O(N)$. The authors of \cite{minden2017recursive} note that the complexity for $T_s$ can be similarly derived, noting that all block unit-triangular matrices can be trivially inverted.
 
 We note that the initial tree construction cost will still require an algorithm of $O(N \log N)$ at the least, however the authors note that in practice this is usually a negligible cost in comparison to the factorisation or application themselves.
+
+For kernels that we're interested in, i.e. Green's functions arising from elliptic PDEs at low-moderate frequencies, standard multipole expansions can be used to show that the far field blocks have ranks that depend only weakly on $N$ \cite{minden2017recursive}. In RS-S far-field interaction blocks that have received Schur complement updates to some of their entries from earlier skeletonisation steps, therefore multipole expansions don't strictly apply, but Minden et al indicate that similar rank behaviour still applies which they've confirmed with numerical experiments. Proceeding with this this assumption they observe a stronger complexity bound.
+
+For a fixed tolerance $\epsilon$, we have $k_l = O(l^q)$ for some $q>0$. ie. the skeleton sets grow only as some power of the level index $l$, and $k_{L-2} = O(\log^q N)$, then we obtain
+
+\begin{flalign*}
+    T_f = T_s = m_f = O(N)
+\end{flalign*}
+
+with differing constants depending on the tolerance $\epsilon$ and dimension $d$.
 
 \section*{Deriving Local Expansion Coefficents from Multipole Expansion in $\mathbb{R}^2$}\label{app:a_1_fmm_algorithm}
 
@@ -32,7 +40,7 @@ Working in the setting in which we derived the multipole expansion in equation (
 Deriving the local expansion centered around the origin, where the bounding box of the targets, $\Omega_t$, is well separated from the source box, $\Omega_s$,
 
 \begin{flalign*}
-    \phi(x) = \sum_{l=1}^\infty \hat{\phi}^t_l (x-c_t)^l 
+    \phi(x) = \sum_{l=0}^\infty \hat{\phi}^t_l (x-c_t)^l 
 \end{flalign*}
 
 from the multipole expansion relies on the following expressions,
