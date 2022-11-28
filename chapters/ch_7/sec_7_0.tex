@@ -2,7 +2,7 @@ In this chapter we review a recently developed fast direct solver for the soluti
 
 In chapter \ref{chpt:1:motivation} we introduced boundary integral equations (\ref{eq:ch_1:generic_int_equation}) and their matrix representation (\ref{eq:ch_1:linear_system}), noting that it could alternatively be represented using hierarchical matrices. As we have seen, these matrix representations (HSS, $\mathcal{H}^2$ etc.) allow us to rapidly \textit{apply} the system matrix (\ref{eq:ch_1:linear_system}) with linear or near linear time complexity. In combination with modern \textit{iterative} methods, such as GMRES \cite{saad1986gmres}, with $O(n_k)$ iterations such that $n_k \ll N$ where $N$ is the number of unknowns in the system, the solution of such problems is brought into practical reach. However, there are situations in which iterative methods fall short. For example for problems which have \textit{multiple} right hand sides we wish to solve for. In such cases, recently developed \textit{fast direct} methods offer a promising alternative. The inversion of a dense linear system by classical direct methods, such LU decomposition, have a complexity of $O(N^3)$. Fast direct methods however take advantage of the low-rank structure implicit in the matrix of (\ref{eq:ch_1:generic_int_equation}) to find an approximation for the inverse in a similar manner to the FMM. The main trade-off between fast direct methods and the iterative alternative is the relatively greater memory cost in having to pre-compute and store the matrix factorization.
 
-Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in chapter \ref{chpt:2:fmms} \cite{martinsson2005fast, ambikasaran2013mathcal, ambikasaran2014inverse,ho2012fast,minden2017recursive}. Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, an $O(N)$ method which incorporates strong admissibility and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems described by the Helmholtz equation at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
+Numerous approaches have been implemented for fast direct solvers for the matrix factorisations described in chapter \ref{chpt:2:fmms} \cite{martinsson2005fast, ambikasaran2013mathcal, ambikasaran2014inverse,ho2012fast,minden2017recursive}. Here we introduce the `Recursive Strong Skeletonisation' (RS-S) algorithm of Minden et. al \cite{minden2017recursive}, an $O(N)$ method which incorporates strong admissibility, and thus operates on $\mathcal{H}^2$ matrices, and has good properties for parallelisation. Our main contribution is the extension of this technique to effectively handle acoustic scattering problems described by the Helmholtz equation at low to moderate frequencies where the size of the problem domain is less than a few hundred times the wavelength, building on the exterior Dirichlet case first presented in \cite{sushnikova2022fmm}. 
 
 \subsection*{Problem Formulation}
 
@@ -244,7 +244,7 @@ The complexity of the fast direct solver described by the RS-S technique is dete
 
 Consider as a setting the boundary integral equation formulation of a Helmholtz scattering problem, the main idea of the proxy trick rests on the principle of representing the far-field particles of a given box $B$, which may contain $O(N)$ particles, with a set of `proxy points' contained on a proxy surface that encloses $B$. This surface is often chosen to be a sphere. By choosing $O(1)$ proxy points, without getting into the details yet of how exactly they are sampled, we are able to obtain the linear complexity we desire.
 
-For a given box $B$, a proxy surface $D$ and its boundary $\gamma$ are chosen such that $B \subset D$. The far-field points of $B$, $\mathcal{F}$ is partitioned such that $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$, where $\mathcal{Q}$ contains $O(1)$ points. $\Gamma$ is the boundary of the entire scatterer, and $\tau = \Gamma \cap B$ is the portion of the scatterer boundary contained in $B$. The situation is sketched in figure (\ref{fig:ch_7:proxy_trick}) in 2D.
+For a given box $B$, a proxy surface $D$ and its boundary $\gamma$ are chosen such that $B \subset D$. The far-field points of $B$, $\mathcal{F}$ is partitioned such that $\mathcal{F} = \mathcal{Q} \cup \mathcal{P}$, where $\mathcal{Q}$ contains $O(1)$ points. $\Gamma$ is the boundary of the entire scatterer, and $\tau = \Gamma \cap B$ is the portion of the scatterer boundary contained in $B$. The situation is sketched in figure (\ref{fig:ch_7:proxy_trick}) in $\mathbb{R}^2$.
 
 \begin{figure}
     \centering
@@ -401,7 +401,7 @@ and seek a boundary integral equation in terms of its normal derivative at the t
     w(x) = \int_{\Gamma \cap B} \frac{\partial \Phi(x, y)}{\partial n(x)} \phi(y) ds(y) := \mathcal{K}'\phi, \> \> x \in \Gamma \cap \mathcal{F}
 \end{flalign}
 
-We observe the same problem as in the $\mathcal{T}$ case, where this expression is not a general solution of our PDE. We can similarly separate out the normal component and write,
+We observe the same problem as in the $\mathcal{T}$ case, where this expression is not a general solution of Helmholtz. We can similarly separate out the normal component and write,
 
 \begin{flalign}
     \tilde{w}(x) := \int_{\Gamma \cap B} \nabla_x \Phi(x, y) \phi(y) ds(y), \> \> x \in \mathbb{R}^m \setminus \tau
@@ -417,7 +417,7 @@ Noticing that,
     \left [\frac{\partial u}{\partial n(x)} \right ]_{\mathcal{F} B}^T = \int_{\Gamma \cap B} \frac{\partial \Phi(x, y)}{\partial n(y)} \phi(y) ds(y) = \mathcal{D}_{\gamma B} \phi
 \end{flalign}
 
-already satisfies our PDE without any further work, we can simply use it as our Dirichlet data in the associated boundary value problem. The matrix to compress being $C_{\gamma B} = \mathcal{D}_{\gamma B}$.
+already satisfies Helmholtz without any further work, we can simply use it as our Dirichlet data in the associated boundary value problem. The matrix to compress being $C_{\gamma B} = \mathcal{D}_{\gamma B}$.
 
 \subsubsection*{Single Layer - $\mathcal{S}$}
 
@@ -429,7 +429,7 @@ We now choose to represent our scattered solution with a single-layer operator,
     u(x) =\int_{\Gamma \cap B} \Phi(x, y)\phi(y)ds(y) := \mathcal{S}\phi,\> \> x \in \mathbb{R}^m \setminus \tau
 \end{flalign}
 
-This satisfies the underlying PDE everywhere. We can now set up an associated exterior boundary value problem as before, and use our single-layer potential as Dirichlet boundary data.
+This satisfies Helmholtz everywhere. We can now set up an associated exterior boundary value problem as before, and use our single-layer potential as Dirichlet boundary data.
 
 \begin{flalign}
     (\Delta + k^2)w= 0, \> \> x \in \mathbb{R}^m \setminus D \\
@@ -441,14 +441,14 @@ where $\phi$ is some unknown density supported on $\tau$. As before, we can form
 
 \subsubsection*{Incoming Skeletonisation}
 
-The single-layer operator is self-adjoint, leading to the same operator to compress. Spelling this out, consider the associated interior boundary value problem,
+The single-layer operator is self-adjoint, leading to the same operator to compress. Consider the associated interior boundary value problem,
 
 \begin{flalign}
     (\Delta + k^2)w= 0\> \> \text{in } D \\
     w = \mathcal{S}\phi \> \> \text{on } \gamma
 \end{flalign}
 
-The solution of an interior Helmholtz scattering problem may not be unique, but this doesn't matter for our purposes. Proxy compression doesn't require uniqueness, only existence. Let's seek a solution in the form of a combined-layer potential,
+The solution of an interior Helmholtz scattering problem may not be unique, but this doesn't matter for our purposes as our proxy compression formulation doesn't require uniqueness, only existence. Let's seek a solution in the form of a combined-layer potential,
 
 \begin{flalign}
     w(x) = (\mathcal{D}_\gamma - ik \mathcal{S}_\gamma)[\phi](x)
