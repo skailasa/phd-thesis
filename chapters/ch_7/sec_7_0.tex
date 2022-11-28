@@ -59,6 +59,8 @@ we see that it mirrors the integral equation described in chapter \ref{chpt:1:mo
 
 where $\mathbf{x}_i$ and $w_{ij}$ are the quadrature nodes and weights, respectively, and $\sigma_i$ is the approximation to $\sigma(\mathbf{x}_i)$. Solving this equation for $\sigma$, allows one to find the approximation of the general solution of the scattering problem (\ref{eq:ch_7:helmholtz_ext_dir}) in the exterior using (\ref{eq:ch_7:combined_field_representation}).
 
+An obvious advantage of boundary integral approaches is that they transform an unbounded $d$ dimensional problem into a bounded $d-1$ dimensional problem, however a consequence of this is a dense discrete operator in \ref{eq:ch_7:bie}. Boundary integral formulations of the form \ref{eq:ch_7:bie} also have favourable spectral properties \cite{colton2013integral}, making them significantly more benign mathematical objects than the PDEs they replace.
+
 \subsection*{Recursive Strong Skeletonisation}
 
 Consider a domain containing the discretisation points of the boundary $\Gamma$, $\mathbf{x}_i \in \Gamma$. We proceed to discretise with an adaptive, 2:1 balanced, octree. The idea of strong skeletonisation is then to use the \textit{interpolative decomposition} (ID) \cite{cheng2005compression}, a dense matrix compression algorithm, to globally compress matrices with low-rank structure for the case in which only particular off-diagonal blocks are low-rank. In our problem of interest, (\ref{eq:ch_7:bie}), where the low-rank assumption only applies when two nodes of an octree are strongly admissible with respect to each other, i.e. the far-field interactions via the kernel of the integral equation.
