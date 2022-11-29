@@ -1,0 +1,21 @@
+[package]
+name = "new_package"
+version = "1.1.0"
+authors = ["Foo Bar"]
+edition = "2018"
+description = "A great new package"
+license = "BSD-3-Clause"
+homepage = "https://github.com/foo_bar/new_package"
+repository = "https://github.com/foo_bar/new_package"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+
+[dependencies]
+# Build from binary on crates.io
+memoffset = "0.6"
+rand = "0.8.4"
+itertools = "0.10"
+vtkio = "0.6"
+
+# Build from source on GitHub
+mpi = { git = "https://github.com/rsmpi/rsmpi", branch = "main"}

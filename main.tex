@@ -5,8 +5,46 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{nicematrix}
-
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools} % dcases
+\usepackage{multicol}
+\usepackage{tcolorbox}
 \usepackage{datetime}
+\usepackage{caption}
+\usepackage{etoolbox}
+\usepackage{subfig}
+\usepackage{algcompatible}
+\usepackage{algpseudocode}
+
+\usepackage{listings}
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Python style for highlighting
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{problem}[theorem]{Problem}
+
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4
+		\end{array}
+	\right.
+}
+
+\AtBeginEnvironment{tcolorbox}{\footnotesize}
 
 \newdateformat{monthyeardate}{%
   \monthname[\THEMONTH], \THEYEAR}
@@ -18,7 +56,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[RO,LE]{Computational Topics on the Solution of Integral Equations}
+\fancyhead[RO,LE]{Towards Exascale Multiparticle Simulations}
 \fancyfoot{}
 \fancyfoot[LE,RO]{\thepage}
 \fancyfoot[LO,CE]{Chapter \thechapter}
@@ -36,8 +74,8 @@
 \usepackage{lipsum}
 \usepackage[toc]{glossaries}
 
-\makeglossaries
-\input{pages/glossary.tex}
+% \makeglossaries
+% \input{pages/glossary.tex}
 
 % Default fixed font does not support bold face
 \DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
@@ -50,18 +88,78 @@
 \definecolor{deepgreen}{rgb}{0,0.5,0}
 
 \usepackage{listings}
-
-% Python style for highlighting
 \newcommand\pythonstyle{\lstset{
+backgroundcolor=\color{GrayCodeBlock},
+basicstyle=\ttfamily\color{BlackText},
 language=Python,
 basicstyle=\ttm,
-otherkeywords={self},             % Add keywords here
 keywordstyle=\ttb\color{deepblue},
 emph={MyClass,__init__},          % Custom highlighting
 emphstyle=\ttb\color{deepred},    % Custom highlighting style
 stringstyle=\color{deepgreen},
 frame=tb,                         % Any extra options here
-showstringspaces=false            %
+showstringspaces=false
+}}
+
+\usepackage{listings}
+\newcommand\bashstyle{\lstset{
+language=bash,
+basicstyle=\ttm,
+morekeywords={self},              % Add keywords here
+keywordstyle=\ttb\color{deepblue},
+emph={echo, ls, pwd, mkdir, gcc},          % Custom highlighting
+emphstyle=\ttb\color{deepred},    % Custom highlighting style
+stringstyle=\color{deepgreen},
+frame=tb,                         % Any extra options here
+showstringspaces=false
+}}
+
+\definecolor{GrayCodeBlock}{RGB}{241,241,241}
+\definecolor{BlackText}{RGB}{110,107,94}
+\definecolor{RedTypename}{RGB}{182,86,17}
+\definecolor{GreenString}{RGB}{96,172,57}
+\definecolor{PurpleKeyword}{RGB}{184,84,212}
+\definecolor{GrayComment}{RGB}{170,170,170}
+\definecolor{GoldDocumentation}{RGB}{180,165,45}
+
+\newcommand\ruststyle{\lstset{
+% language=python,
+columns=fullflexible,
+keepspaces=true,
+frame=single,
+framesep=0pt,
+framerule=0pt,
+framexleftmargin=4pt,
+framexrightmargin=4pt,
+framextopmargin=5pt,
+framexbottommargin=3pt,
+xleftmargin=4pt,
+xrightmargin=4pt,
+backgroundcolor=\color{GrayCodeBlock},
+basicstyle=\ttfamily\color{BlackText},
+keywords={
+    true,false,
+    unsafe,async,await,move,
+    use,pub,crate,super,self,mod,
+    struct,enum,fn,const,static,let,mut,ref,type,impl,dyn,trait,where,as,
+    break,continue,if,else,while,for,loop,match,return,yield,in
+},
+keywordstyle=\color{PurpleKeyword},
+ndkeywords={
+    bool,u8,u16,u32,u64,u128,i8,i16,i32,i64,i128,char,str,
+    Self,Option,Some,None,Result,Ok,Err,String,Box,Vec,Rc,Arc,Cell,RefCell,HashMap,BTreeMap,
+    macro_rules
+},
+ndkeywordstyle=\color{RedTypename},
+comment=[l][\color{GrayComment}\slshape]{//},
+morecomment=[s][\color{GrayComment}\slshape]{/*}{*/},
+morecomment=[l][\color{GoldDocumentation}\slshape]{///},
+morecomment=[s][\color{GoldDocumentation}\slshape]{/*!}{*/},
+morecomment=[l][\color{GoldDocumentation}\slshape]{//!},
+morecomment=[s][\color{RedTypename}]{\#![}{]},
+morecomment=[s][\color{RedTypename}]{\#[}{]},
+stringstyle=\color{GreenString},
+string=[b]"
 }}
 
 
@@ -78,11 +176,43 @@ showstringspaces=false            %
 \pythonstyle
 \lstinputlisting[#1]{#2}}}
 
+% Bash external files
+\newcommand\bashexternal[2][]{{
+  \bashstyle
+  \lstinputlisting[#1]{#2}
+}}
+
+% Rust external files
+\newcommand\rustexternal[2][]{{
+  \ruststyle
+  \lstinputlisting[#1]{#2}
+}}
+
 % Python for inline
 \newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
 
-\begin{document}
+% Bash inline
+\newcommand\bashinline[1]{{\bashstyle\lstinline!#1!}}
 
+% Rust inline
+\newcommand\rustinline[1]{{\ruststyle\lstinline!#1!}}
+
+
+% Remove excess double page
+\let\cleardoublepage\clearpage
+\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
+
+\begin{document}
+% declaration of the new block
+\algblock{PARFOR}{ENDPARFOR}
+% customising the new block
+\algnewcommand\algorithmicparfor{\textbf{parfor}}
+\algnewcommand\algorithmicpardo{\textbf{do}}
+\algnewcommand\algorithmicendparfor{\textbf{end\ parfor}}
+\algrenewtext{PARFOR}[1]{\algorithmicparfor\ #1\ \algorithmicpardo}
+\algrenewtext{ENDPARFOR}{\algorithmicendparfor}
+
+    \frontmatter
 
     \input{pages/cover.tex}
 
@@ -94,14 +224,21 @@ showstringspaces=false            %
 
     \tableofcontents
 
-    \input{chapters/ch_1/ch_1.tex}
+    \mainmatter
 
+    \input{chapters/ch_1/ch_1.tex}
+    \input{chapters/ch_2/ch_2.tex}
+    \input{chapters/ch_3/ch_3.tex}
+    \input{chapters/ch_4/ch_4.tex}
+    \input{chapters/ch_5/ch_5.tex} 
+    \input{chapters/ch_6/ch_6.tex}
+    \input{chapters/ch_7/ch_7.tex}
+    \input{chapters/conclusion/conclusion.tex}
+ 
     \appendix
     \input{pages/appendix.tex}
 
-    \printglossary
-
+    % \printglossary
     \printbibliography[heading=bibintoc]
-
 
 \end{document}
