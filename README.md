@@ -36,7 +36,7 @@ We demonstrate the performance of our solvers, and the ease of deploying them, w
 ```bash
 @phdthesis{Kailasa:PhDThesis:2024,
     author = {Srinath Kailasa},
-    title = {{Computational Topics on the Solution of Integral Equations}},
+    title = {{Towards Exascale Multiparticle Simulations}},
     school = {University College London},
     address = {United Kingdom},
     year = {2024},
