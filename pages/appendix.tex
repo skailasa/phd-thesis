@@ -1,32 +1,32 @@
 \chapter{Appendix}
 
-\section*{Complexity of RS-S Factorisation}\label{app:a_6:rss_complexity}
+% \section*{Complexity of RS-S Factorisation}\label{app:a_6:rss_complexity}
 
-This section is adapted from section 3.3.4 of \cite{minden2017recursive}. The RS-S algorithm applies to an arbitrary tree decomposition, i.e. trees may be adaptively refined. To compute complexity bounds they impose some structure to the tree. Specifically, they assume, as standard, a tree with $L = O(\log N)$ levels in $d$ dimensions is given such that each leaf node contains at most a constant number of degrees of freedom independent of $N$. Letting $k_l$ denote the maximum of $\mathcal{S}_i$, i.e the skeleton degrees of of freedom of the tree's nodes on level $l$, and assuming $k_l \leq k_{l+1}$ for all $l$.
+% This section is adapted from section 3.3.4 of \cite{minden2017recursive}. The RS-S algorithm applies to an arbitrary tree decomposition, i.e. trees may be adaptively refined. To compute complexity bounds they impose some structure to the tree. Specifically, they assume, as standard, a tree with $L = O(\log N)$ levels in $d$ dimensions is given such that each leaf node contains at most a constant number of degrees of freedom independent of $N$. Letting $k_l$ denote the maximum of $\mathcal{S}_i$, i.e the skeleton degrees of of freedom of the tree's nodes on level $l$, and assuming $k_l \leq k_{l+1}$ for all $l$.
 
-Under the above assumptions, and assuming further that a constant number of points is used to discretise the proxy surface $\Gamma$, they show that the cost $T_f$ of construction the RS-S factorisation $F$ using the bottom-up recursive procedure described in chapter \ref{chpt:7:fds}, and the cost $T_s$ of applying $F$ or $F^{-1}$ are given by,
+% Under the above assumptions, and assuming further that a constant number of points is used to discretise the proxy surface $\Gamma$, they show that the cost $T_f$ of construction the RS-S factorisation $F$ using the bottom-up recursive procedure described in chapter \ref{chpt:7:fds}, and the cost $T_s$ of applying $F$ or $F^{-1}$ are given by,
 
 
-\begin{flalign*}
-    T_{f} &= O(N) + \sum_{l-1}^{L-2}O(2^{d(L-l)}k_l^3) \\
-    T_s &= O(N) + \sum_{l=1}^{L-2}O(2^{d(L-l)}k_l^2)
-\end{flalign*}
+% \begin{flalign*}
+%     T_{f} &= O(N) + \sum_{l-1}^{L-2}O(2^{d(L-l)}k_l^3) \\
+%     T_s &= O(N) + \sum_{l=1}^{L-2}O(2^{d(L-l)}k_l^2)
+% \end{flalign*}
 
-The memory requirement is $m_f = O(t_s)$. To show this, let $k_0=1$ without loss of generality. Note that for the DOF set $\mathcal{B}_i$ corresponding to the points in a box at level $l$, we have that $|\mathcal{B}_i| = O(k_{l-1})$, the near field degrees of freedom $|\mathcal{N}_i| = O(k_{l-1})$ and the far-field degrees of freedom within the proxy surface $|\mathcal{Q}_i| = O(k_{l-1})$, since for the leaf nodes the number of degrees of freedom is bounded by a constant, and for non-leaf nodes the degrees of freedom are given by aggregating skeleton degrees of freedom of their children at the previous level.
+% The memory requirement is $m_f = O(t_s)$. To show this, let $k_0=1$ without loss of generality. Note that for the DOF set $\mathcal{B}_i$ corresponding to the points in a box at level $l$, we have that $|\mathcal{B}_i| = O(k_{l-1})$, the near field degrees of freedom $|\mathcal{N}_i| = O(k_{l-1})$ and the far-field degrees of freedom within the proxy surface $|\mathcal{Q}_i| = O(k_{l-1})$, since for the leaf nodes the number of degrees of freedom is bounded by a constant, and for non-leaf nodes the degrees of freedom are given by aggregating skeleton degrees of freedom of their children at the previous level.
 
-Because of the proxy compression, the cost of the ID for the skeletonisation of a given box was found to be reduced as we only needed the ID on a box of size  $O(|\mathcal{Q}_i|) \times O(|\mathcal{B}_i|)$ in chapter \ref{chpt:7:fds}. Using the complexity result of the ID from chapter \ref{chpt:7:fds}, we see that the cost of skeletonisation  with respect to the degrees of freedom $B_i$ corresponding to a node at level $l$ is $O(k_l^3)$. Finally, at each level $l$ there are at most $2^{d(L-l)}$ boxes, which gives the stated complexity for $T_f$ above using the fact the $2^{dL} = O(N)$. The authors of \cite{minden2017recursive} note that the complexity for $T_s$ can be similarly derived, noting that all block unit-triangular matrices can be trivially inverted.
+% Because of the proxy compression, the cost of the ID for the skeletonisation of a given box was found to be reduced as we only needed the ID on a box of size  $O(|\mathcal{Q}_i|) \times O(|\mathcal{B}_i|)$ in chapter \ref{chpt:7:fds}. Using the complexity result of the ID from chapter \ref{chpt:7:fds}, we see that the cost of skeletonisation  with respect to the degrees of freedom $B_i$ corresponding to a node at level $l$ is $O(k_l^3)$. Finally, at each level $l$ there are at most $2^{d(L-l)}$ boxes, which gives the stated complexity for $T_f$ above using the fact the $2^{dL} = O(N)$. The authors of \cite{minden2017recursive} note that the complexity for $T_s$ can be similarly derived, noting that all block unit-triangular matrices can be trivially inverted.
 
-We note that the initial tree construction cost will still require an algorithm of $O(N \log N)$ at the least, however the authors note that in practice this is usually a negligible cost in comparison to the factorisation or application themselves.
+% We note that the initial tree construction cost will still require an algorithm of $O(N \log N)$ at the least, however the authors note that in practice this is usually a negligible cost in comparison to the factorisation or application themselves.
 
-For kernels that we're interested in, i.e. Green's functions arising from elliptic PDEs at low-moderate frequencies, standard multipole expansions can be used to show that the far field blocks have ranks that depend only weakly on $N$ \cite{minden2017recursive}. In RS-S far-field interaction blocks that have received Schur complement updates to some of their entries from earlier skeletonisation steps, therefore multipole expansions don't strictly apply, but Minden et al indicate that similar rank behaviour still applies which they've confirmed with numerical experiments. Proceeding with this this assumption they observe a stronger complexity bound.
+% For kernels that we're interested in, i.e. Green's functions arising from elliptic PDEs at low-moderate frequencies, standard multipole expansions can be used to show that the far field blocks have ranks that depend only weakly on $N$ \cite{minden2017recursive}. In RS-S far-field interaction blocks that have received Schur complement updates to some of their entries from earlier skeletonisation steps, therefore multipole expansions don't strictly apply, but Minden et al indicate that similar rank behaviour still applies which they've confirmed with numerical experiments. Proceeding with this this assumption they observe a stronger complexity bound.
 
-For a fixed tolerance $\epsilon$, we have $k_l = O(l^q)$ for some $q>0$. ie. the skeleton sets grow only as some power of the level index $l$, and $k_{L-2} = O(\log^q N)$, then we obtain
+% For a fixed tolerance $\epsilon$, we have $k_l = O(l^q)$ for some $q>0$. ie. the skeleton sets grow only as some power of the level index $l$, and $k_{L-2} = O(\log^q N)$, then we obtain
 
-\begin{flalign*}
-    T_f = T_s = m_f = O(N)
-\end{flalign*}
+% \begin{flalign*}
+%     T_f = T_s = m_f = O(N)
+% \end{flalign*}
 
-with differing constants depending on the tolerance $\epsilon$ and dimension $d$.
+% with differing constants depending on the tolerance $\epsilon$ and dimension $d$.
 
 \section*{Deriving Local Expansion Coefficents from Multipole Expansion in $\mathbb{R}^2$}\label{app:a_1_fmm_algorithm}
 

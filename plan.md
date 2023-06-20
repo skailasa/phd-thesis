@@ -1,77 +1,98 @@
 # Upgrade
 
-Story: Modern software approaches for IEs (~30 pages at most)
+Title: Modern software approaches for IEs (~30 pages at most)
 
-Context 
-- Modern software stacks enable cross platform/architecture development with high-performance.
-    - Small teams can now innovate over large code-bases, and build codes that can scale from laptops to supercomputing clusters.
-        - Give context of team size at UCL in comparison to other large scale FMM codes (PVFMM, ExaFMM and number of iterations etc)
-    - The impact of software comes from its generality and hackability
-        - Can I implement new algorithms? Can I write code on my laptop, and easily run a much larger simulation on a supercomputer. Can I do most of the work in a language I'm already familiar with (python/matlab) ?
-    - IEs specialised field, complex for non-experts (math) to use something that isn't a black box. Similarly, complex for non-experts (eng/cs) to parse the theoretical aspects. Software for this application needs to be easy to use for both sets of researchers, easy to deploy, and easy to maintain by a small team.
+Chapter 0 - Introduction ~3-5 pages
 
-- The goal of this thesis is to bring these tools to the world of integral equation solvers.
-- Impact:
-    - A highly impactful and widely used unified library for `fast solvers' for IEs - for our purposes the optimal application and inversion of the dense matrices that arise in the discretisation of these problems, with a goal of us being the standard library for these algorithms.
-    - Experimentation and innovation with new algorithmic approaches. New scientific investigations.
-    - High performance without too much strain on non-software oriented researchers.
-    - Re-use of common data structures (trees) for forward/inverse application.
-    - A definitive comparison of the merits of different algorithmic approaches - still unclear as of 2023 - as each implementation is often heavily optimised.
+- The goal of this research project is to contribute significantly towards the design and development of a highly-parallelised, scalable, software infrastructure for `Fast Algorithms'
+    - `Fast Algorithms' - explain how they arise from desnse matrices with hierarchical structures that allows for numerical compression of off-diagonals for optimal application/inversion.
+    - Specific outputs:
+        - Parallel tree library
+        - Parallel FMM library
+        - Re-use of data structures to create fast direct solver library.
+    - Context
+        - Next gen BEM software
+            - can scale from laptops to supercomputers
+            - deployed with ease with interpreted language interfaces for non-computational researchers
+        - Problems that can be studied
+            - virus simulation
+            - geophysics
+            - ML
+    - Impact
+        - solvers in this domain are either
+            - designed to numerically validate an algorithmic approach
+            - heavily optimised to achieve performance
+        - nothing extensible really available
+            - as a testbed for algorithmic experimentation
+            - extension to differing applications in which these algorithms apply.
+            - or as a testbed for new implementation approaches
+                - new hardware etc.
+        - the impact of a particular method is defined by how easy it is for software to be extended OR to be run as a black box.
 
-- Overview of project goals, and what's reasonable to achieve in remaining PhD time:
-        - Distributed FMM library
-            - highly optimised translation operators + data exchange via tree implementation.
-        - Begin looking into FDS.
-        - All accessible from Python.
-        - Designed to be future ready, can extend to target heterogenous hardware and software targets with our library in rapidly evolving landscape.
+Chapter 1 - A Python FMM ~3-5 pages
 
-Chapter 1 - A Python FMM.
-- Brief introduction to the FMM we use (KiFMM)
-    - how it works approximately, and the logic behind it - maybe put the actual algorithm in the appendix.
-    - where this algorithm appears in BEM problems, without formulating them.
-    - How we approximte the translation operators explicitly with this algorithm.
-    - the bottlenecks in the algorithm from computational perspective (tree construction, m2l translation, data exchange)
-    - Open implementation issues
-        - pluggable translation operators
-        - optimal tree data exchange.
-        - distributed library that works from python and is easy to deploy.
+- What is the FMM?
+- What are kernel-independent FMMs?
+    - Benefits of this approach
+    - Computational bottlenecks and open implementation issues
+        - Tree construction
+        - Design and implementation of translation operators
+        - Simple software interfaces extensible to new techniques/hardware and accessible from familiar interpreted languages (python/matlab etc)
 
-- Python + Numba / Julia
-    - First idea, can we write such algs in Python alone?
-    - Experience developing a Python FMM and why this isn't a suitable step forward.
-    - Redacted summary of the python paper.
-    - emerging tools, and why it's not entirely sufficient for such algorithms. 
-         - e.g. Mojo - languages designed for a variety of hardware settings, easy integration to Python, why this shouldn't necessarily trouble us.
+- Why did we try a Python FMM?
+    - Fulfills many of the requirements we need for our infrastructure
+    - large ecosystem of software for science
+    - easy to deploy
+    - easy to write and extend
+    - JIT compiled approaches make it easy to extend to new hardware targets using LLVM infrastructure.
 
-Chapter 2 - Rust as a tool for computational science.
+- Why did it not succeed?
+    - Why JIT compiled approaches are not sufficient.    
+    - What alternatives are emerging (Mojo) and why these aren't necessarily a competitor to compiled languages.
+    - What do we need from a language for our approach? And why is Rust a suitable alternative? 
+
+Chapter 2 - Rust as a tool for computational science ~ 2 pages
     - Its benefits and pitfalls.
         - Traits for bottom up design.
         - Memory safety, contrast with C++/C
-        - Python interfaces.
+        - Python/C interfaces
         - Cargo as a package manager/deployment tool.
-    - Emerging trends
+    - Comparison with major competitors
+        - C/C++ and Fortran
+        - Also JIT approaches, as well as MoJo's approach.
 
-Chapter 3 - Open work streams
+Chapter 3 - Open work streams ~5-10 pages
 
-- High performance distributed trees
-    - some scaling experiments.
+- Brief introduction to the FMM we use (KiFMM)
+    - Why are the translation operators and tree construction the biggest bottlenecks and what past work has been done to optimise these pieces?
+    - SVD based M2L
+        - description of approach
+        - computational optimisations (BLAS3, precomputation with randomised SVD, multithreading) 
+    - FFT based M2L
+        - description of approach
+        - computational optimisations (explicit SIMD, multithreading) 
+    - Contrast approaches in terms of complexity, as well as practical considerations
+    - Identify a gap in the literature to directly compare the optimisation approaches on modern hardware.
+        - propose this as upcoming paper.
+
+    - High performance distributed trees
+        - Our algorithmic approach and why its the most appropriate for our usecase
+            - double global sort etc justified.
+        - Design approach to easily extend single to multiple nodes.
+        - Key shared traits and how these help.
+    - some preliminary scaling experiments.
+        - How many octants can I get scaling on a single node?
+        - How many octants can I get on Kathleen?
     - Unimplemented innovations to improve trees and hyksort (communicator optimisations)
-        - need to contact Rio about this soon as I've forgotten what he said.
+        - Sub communicators to improve strong scaling in M2M/L2L
+        - Review p4est's optimisations as they are state of the art
+            - suggest how we can incorporate/improve on these - how we differ (two global sorts etc.)
 
-- Rust based FMM on a single node
+- Design of Rust based FMM on a single node
     - Brief discussion on how this would translate to a multinode setting via trait implementations.
-    - What kind of problems can we expect to be able to study (tree size). What kind of performance  can we expect to achieve based on the preliminary results ?
+    - Explain current status of project code.
 
-- Multipole to local translation operators.
-    - E.g. traits for translation operators
-        - how these could be re-implemented relatively easily for heterogenous compute kernels.
-    - FFT vs SVD approaches
-    - brief discussion on these two contrasting approaches (keep as wordy as possible)
-        - Need to review SVD and FFT thoroughly before exam.
-    - hardware/math optimisations for both approaches briefly spelled out.
-    - want to write up as a comparison study - gap in literature.
-
-- Future outlook
+- Conclusion ~1 page
     - Comparison study of M2L
     - Completion of distributed FMM
-    - Longer term/ final project - incorporation of FDS.
+    - Longer term/ final project - incorporation of fast direct solvers into software framework.
