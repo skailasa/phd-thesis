@@ -13,7 +13,7 @@
 %     \label{fig:ch_3:software_comparison}
 % \end{figure}
 
-% As expected from theory, the analytical FMMs, ExaFMM and FMM3D, consume less memory than the black box ExaFMM-T (fig. (\ref{fig:ch_3:software_comparison}b)). However, for larger problem sizes this difference is marginal between FMM3D and ExaFMM-T. For the largest problem size tested, $N=10^7$, ExaFMM-T is roughly 3.5 times faster than FMM3D with a similar memory footprint. Counter intuitively, the analytical ExaFMM fails to converge in our experiments for $N=10^7$, as its memory requirements exceed the available 250 GB. 
+% As expected from theory, the analytical FMMs, ExaFMM and FMM3D, consume less memory than the black box ExaFMM-T (fig. (\ref{fig:ch_3:software_comparison}b)). However, for larger problem sizes this difference is marginal between FMM3D and ExaFMM-T. For the largest problem size tested, $N=10^7$, ExaFMM-T is roughly 3.5 times faster than FMM3D with a similar memory footprint. Counter intuitively, the analytical ExaFMM fails to converge in our experiments for $N=10^7$, as its memory requirements exceed the available 250 GB.
 
 % Theoretical considerations aside, each software's performance is practically determined by the computational and algorithmic performance optimisations they take. ExaFMM-T for example uses optimized algorithms for the calculation of inverse square roots \cite{malhotra2015pvfmm}, as well as using SIMD vectorisation for kernel evaluations \cite{wang2021exafmm}. Similarly by stacking $T^{M2L}$ as in (\ref{eq:ch_2:m2l_stacked}), they optimise cache-reuse. Similar SIMD vectorisations are implemented by FMM3D and ExaFMM, however their remaining optimisations are presented opaquely, making it difficult for users to evaluate their relative merits. It is unclear from STRUMPACK's documentation as to whether they use SIMD vectorisations to accelerate kernel evaluations, however they do offer limited GPU offloading but not for algorithms defined on HSS or HODLR matrices. FLAM is multithreaded, however is written for implementation simplicity and algorithm testing and is largely unoptimised for HPC.
 
@@ -23,7 +23,7 @@
 
 % \subsection*{Conclusion}
 
-% We identify a distinct lack of software for fast algorithms that fulfills our usability criteria and can also scale to multi-node systems. Presently available software is not composable, with differing APIs and re-implementations of high-performance kernels as well as data structures such as quad and octrees. Wrappers for high-level languages are not uniformly available, and builds can be challenging in non-Linux environments. We aim to solve this with our proposed software infrastructure, the high-level architecture of which is illustrated in figure (\ref{fig:ch_3:rusty_roadmap}). By offering a set of composable libraries with a unified API for FMMs and algebraic methods for constructing matrix inverses, we aim to maximally re-use highly-optimised code, such as for SIMD vectorised kernel evaluations, and quad and octrees that can scale across multiple processors. 
+% We identify a distinct lack of software for fast algorithms that fulfills our usability criteria and can also scale to multi-node systems. Presently available software is not composable, with differing APIs and re-implementations of high-performance kernels as well as data structures such as quad and octrees. Wrappers for high-level languages are not uniformly available, and builds can be challenging in non-Linux environments. We aim to solve this with our proposed software infrastructure, the high-level architecture of which is illustrated in figure (\ref{fig:ch_3:rusty_roadmap}). By offering a set of composable libraries with a unified API for FMMs and algebraic methods for constructing matrix inverses, we aim to maximally re-use highly-optimised code, such as for SIMD vectorised kernel evaluations, and quad and octrees that can scale across multiple processors.
 
 % We initially explored Python, in conjunction with high-performance `just in time' (JIT) code generation tool Numba \cite{lam2015numba}, as a base programming model for our infrastructure. We document this through our experience building a Python based KIFMM in chapter \ref{chpt:4:pyexafmm}. Although we evaluate a single code-generation tool, Numba, we believe our experience generalises to other approaches that rely on similar JIT compiled technologies for the acceleration of code written in high-level languages, such as Julia. We found the constraints placed on our software using this approach to be too restrictive for the infrastructure we were planning and therefore pivoted to Rust, a modern compiled language designed explicitly with code portability in mind, as the base language of our infrastructure.  We believe that Rust offers a powerful and productive alternative to older compiled languages for the development of scientific software, with similar runtime performance. We explore its beneficial properties in chapter \ref{chpt:5:rust}. Most important of these is its build system, Cargo, which is specified by a simple TOML file. This makes it easy to deploy Rust codes on most common platforms without the need for complex build CMake style build scripts. With users able to develop software locally, before deploying to a cluster, while being able to expect high-performance performance. Rust's syntax inherits from both functional and imperative paradigms, and its trait system wholly replaces object orientation, making the description of shared behaviour, and data oriented programming, significantly more readable. Importantly, it is also easy to develop wrappers from Rust to Python using its C foreign function interface \cite{maturin2022github}, making it easy for novice programmers to develop and deploy our solvers on a range of devices, from their laptops to supercomputing clusters. This combined Rust and Python approach combines the usability and portability features we are looking for, commonly associated with interpreted languages, with the performance of more complex compiled languages such as C++.
 
@@ -33,11 +33,16 @@
 %     \label{fig:ch_3:rusty_roadmap}
 % \end{figure}
 
-- Its benefits and pitfalls.
-- Traits for bottom up design.
-- Memory safety, contrast with C++/C
-- Python/C interfaces
-- Cargo as a package manager/deployment tool.
-- Comparison with major competitors
-- C/C++ and Fortran
-- Also JIT approaches, as well as MoJo's approach.
+Q. Active areas of development
+    - field translations and comparison with state of the art
+        - can take some benchmarks with dummy library
+        - highlight the communication bound
+        - can measure flop rate for translation library
+        - can do roofline analysis of blas3 optimistion on modern
+        processors for svd approach, though note that this is not
+        necessarily the end of the road, as we have yet to examine
+        the rank behaviour for different kernels.
+    - communicator optimisations in trees
+        - what has been implemented in p4est, and can this help us?
+
+
