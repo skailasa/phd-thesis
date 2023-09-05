@@ -1,0 +1,51 @@
+Q. What is the FMM, and how does it fit into an ecosystem of Fast Algorithms?
+
+    - Introduce the algorithmic intuition for the FMM very briefly.
+        - Dump the algorithm in the appendix.
+    - Zoo of FMMs/Hierarchical algorithms that have similar algorithm structure.
+    - Utility relies on problem context.
+        - Where some FMMs are preferable to others.
+        - This makes a generic software hard \dots
+    - Some FMMs are amenable to generic implementation that target a wide-class
+    of problems, black box.
+        - KiFMM
+            - How does it create multipole and local expansions - MFS.
+                - Dump MFS further explanation in the appendix.
+            - How does it compute the translation operators?
+                - turn it into a least squares problem
+        - bbFMM
+            - How does it create multipole and local expansions? Cheb.
+            - How does it compute translation?
+                - Not sure, need to check.
+
+Q. What are the main challenges associated with developing bbFMMs?
+
+    - Performant multipole to local translations. Which in bbFMMs are a matvec.
+        - Main approaches to accelerate this are SVD and FFT.
+        - How do these work, roughly?
+            - Dump detailed explanation in the appendix.
+        - Can count flops for different approaches
+        - Implementation challenges
+            - memory ordering for fft
+            - fast ffts
+            - blas3 for SVD
+            - designing a generic interface for developers
+            - fast trees, that can also work in dist memory
+                - communication bottlenecks, and potential approaches
+
+        - dump all algorithms into appendix
+
+Q. What about other fast algorithms, do they require any of the same stuff used
+in the FMM? What are the key areas to make generic as an implementer, has this
+been done before?
+
+    - Inverse FMM H matrix inverses, other fast direct solver approaches all
+    rely on fast trees
+    - trees are actually widely used in other sci comp tasks
+        - current tree software, p4est
+            - why can we not just use this?
+                - want cross platform builds trivial
+    - want to design a hierarchy of interfaces that can be used for our application,
+    but also easily plug in to other work.
+
+

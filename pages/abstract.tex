@@ -14,11 +14,12 @@ that operate with performance across different software and hardware platforms,
 shared and distributed memory systems, can have a dramatic impact on the
 research ecosystem as a whole. Examples include projects such as the SciPy and
 NumPy projects in Python, OpenMPI for distributed memory computing, or the package
-manager Spack, which collectively support a vast and diverse ecosystem of scientific
+manager and build system Spack, which collectively support a vast and diverse ecosystem of scientific
 research.
 
-Recent decades have seen the emergence of so called `fast algorithms', these are
-algorithms that are able to optimally apply and invert dense matrices that exhibit
+This thesis is concerned with the development of a software platform
+for so called `fast algorithms'. These algorithms have emerged in recent decades to
+optimally apply and invert dense matrices that exhibit
 a special low-rank structure in their off-diagonal elements. Such matrices arise
 in numerous areas of science and engineering, for example in the linear system
 matrices of boundary integral formulations of problems from acoustics and
@@ -33,8 +34,7 @@ across platforms highly challenging. To date, many softwares for fast algorithms
 are often written to benchmark the power of a particular implementation approach,
 rather than with real user in mind.
 
-This thesis is concerned with the development of such a software platform
-for fast algorithms. Modern programming environments are diverse, with unique trade-offs, in Chapter 1 we document our experience in transitioning from Python to Rust as a
+ Modern programming environments are diverse, with unique trade-offs, in Chapter 1 we document our experience in transitioning from Python to Rust as a
 modern, ergonomic, programming environment for our software. Chapter 2 introduces
 fast algorithms in the context of current work streams, specifically the
 implementation of a library for distributed memory octrees, and a distributed memory fast

@@ -81,122 +81,62 @@
 \DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
 \DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{12}  % for normal
 
-% Custom colors
-\usepackage{color}
-\definecolor{deepblue}{rgb}{0,0,0.5}
-\definecolor{deepred}{rgb}{0.6,0,0}
-\definecolor{deepgreen}{rgb}{0,0.5,0}
-
+% Custom code colors
 \usepackage{listings}
-\newcommand\pythonstyle{\lstset{
-backgroundcolor=\color{GrayCodeBlock},
-basicstyle=\ttfamily\color{BlackText},
-language=Python,
-basicstyle=\ttm,
-keywordstyle=\ttb\color{deepblue},
-emph={MyClass,__init__},          % Custom highlighting
-emphstyle=\ttb\color{deepred},    % Custom highlighting style
-stringstyle=\color{deepgreen},
-frame=tb,                         % Any extra options here
-showstringspaces=false
-}}
+\usepackage{xcolor}
 
-\usepackage{listings}
-\newcommand\bashstyle{\lstset{
-language=bash,
-basicstyle=\ttm,
-morekeywords={self},              % Add keywords here
-keywordstyle=\ttb\color{deepblue},
-emph={echo, ls, pwd, mkdir, gcc},          % Custom highlighting
-emphstyle=\ttb\color{deepred},    % Custom highlighting style
-stringstyle=\color{deepgreen},
-frame=tb,                         % Any extra options here
-showstringspaces=false
-}}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 
-\definecolor{GrayCodeBlock}{RGB}{241,241,241}
-\definecolor{BlackText}{RGB}{110,107,94}
-\definecolor{RedTypename}{RGB}{182,86,17}
-\definecolor{GreenString}{RGB}{96,172,57}
-\definecolor{PurpleKeyword}{RGB}{184,84,212}
-\definecolor{GrayComment}{RGB}{170,170,170}
-\definecolor{GoldDocumentation}{RGB}{180,165,45}
-
-\newcommand\ruststyle{\lstset{
-% language=python,
-columns=fullflexible,
-keepspaces=true,
-frame=single,
-framesep=0pt,
-framerule=0pt,
-framexleftmargin=4pt,
-framexrightmargin=4pt,
-framextopmargin=5pt,
-framexbottommargin=3pt,
-xleftmargin=4pt,
-xrightmargin=4pt,
-backgroundcolor=\color{GrayCodeBlock},
-basicstyle=\ttfamily\color{BlackText},
-keywords={
-    true,false,
-    unsafe,async,await,move,
-    use,pub,crate,super,self,mod,
-    struct,enum,fn,const,static,let,mut,ref,type,impl,dyn,trait,where,as,
-    break,continue,if,else,while,for,loop,match,return,yield,in
-},
-keywordstyle=\color{PurpleKeyword},
-ndkeywords={
-    bool,u8,u16,u32,u64,u128,i8,i16,i32,i64,i128,char,str,
-    Self,Option,Some,None,Result,Ok,Err,String,Box,Vec,Rc,Arc,Cell,RefCell,HashMap,BTreeMap,
-    macro_rules
-},
-ndkeywordstyle=\color{RedTypename},
-comment=[l][\color{GrayComment}\slshape]{//},
-morecomment=[s][\color{GrayComment}\slshape]{/*}{*/},
-morecomment=[l][\color{GoldDocumentation}\slshape]{///},
-morecomment=[s][\color{GoldDocumentation}\slshape]{/*!}{*/},
-morecomment=[l][\color{GoldDocumentation}\slshape]{//!},
-morecomment=[s][\color{RedTypename}]{\#![}{]},
-morecomment=[s][\color{RedTypename}]{\#[}{]},
-stringstyle=\color{GreenString},
-string=[b]"
-}}
-
-
-% Python environment
-\lstnewenvironment{python}[1][]
-{
-\pythonstyle
-\lstset{#1}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
 }
-{}
 
-% Python for external files
-\newcommand\pythonexternal[2][]{{
-\pythonstyle
-\lstinputlisting[#1]{#2}}}
+\lstset{style=mystyle}
 
-% Bash external files
-\newcommand\bashexternal[2][]{{
-  \bashstyle
-  \lstinputlisting[#1]{#2}
-}}
+\definecolor{rustorange}{rgb}{0.8,0.4,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 
-% Rust external files
-\newcommand\rustexternal[2][]{{
-  \ruststyle
-  \lstinputlisting[#1]{#2}
-}}
+\lstdefinelanguage{Rust}{
+    keywords={as, break, const, continue, crate, else, enum, extern, false, fn, for, if, impl, in, let, loop, match, mod, move, mut, pub, ref, return, Self, self, static, struct, super, trait, true, type, unsafe, use, where, while, async, await, dyn},
+    keywordstyle=\color{rustorange},
+    commentstyle=\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    morecomment=[l][\color{magenta}]{\#},
+    morestring=[b]',
+    morestring=[b]"
+}
 
-% Python for inline
-\newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
-
-% Bash inline
-\newcommand\bashinline[1]{{\bashstyle\lstinline!#1!}}
-
-% Rust inline
-\newcommand\rustinline[1]{{\ruststyle\lstinline!#1!}}
-
+\lstset{backgroundcolor=\color{backcolour}, style=mystyle}
 
 % Remove excess double page
 \let\cleardoublepage\clearpage
