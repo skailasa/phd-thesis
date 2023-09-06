@@ -1,0 +1,89 @@
+The parallel splitter selection and HykSort algorithms are provided below. In terms of complexity analysis, we adapt the analysis provided in section 3.4 of \cite{sundar2013hyksort}. The main costs of SampleSort is sorting the splitters and the MPI collectives for data reshuffling. This can lead to a load imbalance and network congestion, represented by a constant $c$ below,
+
+\begin{flalign*}
+    T_{ss} = t_c c \frac{N}{p} \log \frac{N}{p} + (t_s + t_w o) \log^2 p + t_w c \frac{N}{p}
+\end{flalign*}
+
+Where $t_c$ is the intranode memory slowness (1/RAM bandwidth), $t_s$ interconnect latency, $t_w$ is the interconnect slowness (1/bandwidth), $p$ is the number of MPI tasks in $comm$, and $N$ is the total number of keys in an input array $A$, of length $N$.
+
+The parallel splitter selection algorithm for determining $k$ splitters uses MPI collectives, \texttt{All\_Gather}() and \texttt{All\_Reduce}(). The main cost is in determining the local ranks of the samples using a binary search. The number of iterations $\eta$ depends on the input distribution, the required tolerance $N_\epsilon/N$ and the parameter $\beta$. The expected value of $\eta$ varies as $\log(\epsilon)/\log(\beta)$ and $\beta$ is chosen experimentally to minimise the running time, leading to a complexity of,
+
+\begin{flalign*}
+    T_{ps} = \eta t_c \beta k \log \frac{N}{p} + \eta (t_s + t_w \beta k) \log p
+\end{flalign*}
+
+HykSort relies on a specialised \texttt{All\_to\_all\_kway}() collective, we defer to the original paper for details. It uses only point to point communications with staged message sends and receives, allowing HykSort to minimise network congestion. It has $\log p / \log k$ stages with $O(N/p)$ data transfer and $k$ messages for each task in every stage. This leads to a complexity of,
+
+\begin{flalign*}
+    T_{a2a} = \left( t_s k + t_w \frac{N}{p} \right) \frac{\log p}{\log k}
+\end{flalign*}
+
+Finally, HykSort has the same communication pattern as \texttt{All\_to\_all\_kway}(). In addition it relies on the parallel splitter selection algorithm to determine splitters. The main computational cost is the initial local sort, and merging $k$ arrays during each iteration.
+
+\begin{flalign}
+    T_{Hk} = t_c \frac{N}{p} \log \frac{N}{p} + \left( t_c \frac{N}{p} + T_{ps}\right) \frac{\log p}{\log k} + T_{a2a}
+\end{flalign}
+
+Unlike SampleSort, the complexity of HykSort doesn't involve any $O(p)$ terms. This is the term that can lead to network congestion for higher core counts.
+
+\begin{algorithm}
+    \caption{\textbf{Parallel Select}}
+    \begin{algorithmic}
+        \STATE \textbf{Input:} $A_r$ - array to be sorted (local to each process), $n$ - number of elements in $A_r$, $N$ - total number of elements, $R[0,....,k-1]$ - expected global ranks, $N_\epsilon$ - global rank tolerance, $\beta \in [20, 40]$,
+
+        \STATE \textbf{Output:} $S \subset A$ - global splitters, where $A$ is the global array to be sorted, with approximate global ranks $R[0,...,k-1]$
+
+        \STATE $R^{\text{start}} \gets [0,...,0]$ - Start range of sampling splitters
+        \STATE $R^{\text{end}} \gets [n,...,n]$ - End range of sampling splitters
+        \STATE $n_s \gets [\beta/p,...,\beta/p]$ - Number of local samples, each splitters
+        \STATE $N_{\text{err}} \gets N_\epsilon + 1$
+
+        \WHILE{$N_{\text{err}} > N_\epsilon$}
+            \STATE $Q' \gets A_r[\texttt{rand}(n_s, (R^{\text{start}}, R^{\text{end}}))]$
+            \STATE $Q \gets$ \texttt{Sort}(\texttt{All\_Gather}($\hat{Q}'$))
+            \STATE $R^{loc} \gets \texttt{Rank}(Q, A_r)$
+            \STATE $R^{glb} \gets \texttt{All\_Reduce}(R^{loc})$
+            \STATE $ I[i] \gets \text{argmin}_j | R^{glb} - R[I] | $
+            \STATE $N_{err} \gets \max |R^{glb} - R{I}|$
+            \STATE $R^{\text{start}} \gets R^{loc}[I-1]$
+            \STATE $R^{\text{end}}  \gets R^{loc}[I+1]$
+            \STATE $n_s \gets \beta \frac{R^{\text{end}}-R^{\text{start}}}{R^{glb}[I+1]-R^{glb}[I-1]}$
+        \ENDWHILE
+        \STATE \textbf{return }$S \gets Q[I]$
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{HykSort}}
+    \begin{algorithmic}
+        \STATE \textbf{Input:} $A_r$ - array to be sorted (local to each process), $comm$ - MPI communicator, $p$ - number of processes, $p_r$ - rank of current task in $comm$
+        \STATE \textbf{Output:} globally sorted array $B$.
+        \WHILE{$p > 1$, Iters: $O(\log p/\log k)$}
+            \STATE $N \gets \texttt{MPI\_AllReduce}(|B|, comm)$
+            \STATE $s \gets \texttt{ParallelSelect}(B, \{i N/k ; i=1,...,k-1 \})$
+            \STATE $d_{i+1} \gets \texttt{Rank}(s_i, B), \> \forall i$
+            \STATE $[d_0, d_k] \gets [0, n]$
+            \STATE $color \gets \lfloor k p_r/p \rfloor$
+            \PARFOR{ $i \in 0,...,k-1$}
+                \STATE $p_{recv} \gets m((color-i)\text{mod}k)+(p_r \text{mod}m)$
+                \STATE $R_i \gets \texttt{MPI\_Irecv}(p_{recv}, comm)$
+            \ENDPARFOR
+
+            \FOR{$i \in 0,...,k-1$}
+                \STATE $p_{recv} \gets m((color-i)\text{mod}k)+p_r \text{mod}m$
+                \STATE $p_{send} \gets m((color+i)\text{mod}k)+p_r \text{mod}m$
+                \STATE $j \gets 2$
+                \WHILE{$i > 0$ and $i \text{mod}j = 0$}
+                    \STATE $R_{i-j} \gets \texttt{merge}(R_{i-j}, R_{i-j/2})$
+                    \STATE $j \gets 2j$
+                \ENDWHILE
+                \STATE \texttt{MPI\_WaitRecv}($p_{recv}$)
+            \ENDFOR
+            \STATE \texttt{MPI\_WaitAll}()
+            \STATE $B \gets \texttt{merge}(R_0, R_{k/2})$
+            \STATE $comm \gets \texttt{MPI\_Comm\_splitt}($color, comm$)$
+            \STATE $p_r \gets \texttt{MPI\_Comm\_rank}(comm)$
+        \ENDWHILE
+        \STATE \textbf{return } $B$
+    \end{algorithmic}
+\end{algorithm}

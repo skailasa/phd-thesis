@@ -1,0 +1,46 @@
+Working in the setting in which we derived the multipole expansion in equation (\ref{eq:ch_2:multipole_expansions}),
+
+\begin{flalign}
+    \phi(x) = \sum_{j \in I_s} K(x, y)q_j = \log(x-c_s)\hat{q}_0^s + \sum_{p=1}^\infty \frac{1}{(x-c_s)^p}\hat{q}_p^s
+    \label{eq:app:multipole_expansion}
+\end{flalign}
+
+Deriving the local expansion centered around the origin, where the bounding box of the targets, $\Omega_t$, is well separated from the source box, $\Omega_s$,
+
+\begin{flalign*}
+    \phi(x) = \sum_{l=0}^\infty \hat{\phi}^t_l (x-c_t)^l
+\end{flalign*}
+
+from the multipole expansion relies on the following expressions,
+
+\begin{flalign*}
+\log((x-c_t)-c_s) &= \log(-c_s(1-\frac{x-c_t}{c_s})) \\
+&= \log(-c_s)  - \sum_{l=1}^\infty \frac{1}{l} \left( \frac{x-c_t}{c_s} \right) ^l
+\end{flalign*}
+
+and,
+
+
+\begin{flalign*}
+    ((x-c_t)-c_s)^{-p} &= \left( \frac{-1}{c_s} \right)^p \left( \frac{1}{1-\frac{x-c_t}{c_s}} \right)^p \\
+    &=  \left( \frac{-1}{c_s} \right)^p \sum_{l=0}^\infty \binom{l+p-1}{p-1} \left( \frac{x-c_t}{c_s} \right)^l
+\end{flalign*}
+
+Substituting these expressions into (\ref{eq:app:multipole_expansion}), translated to be centred on $\Omega_t$
+
+\begin{flalign*}
+    \phi(x) &= \log((x-c_t)-c_s)\hat{q}^s_0 + \sum_{p=1}^\infty \frac{1}{((x-c_t)-c_s)^p}\hat{q}_p^s \\
+     &= \log(-c_s)\hat{q}^s_0 - \left( \sum_{l=1}^\infty \frac{1}{l} \left( \frac{x-c_t}{c_s} \right) ^l\right) \hat{q}^s_0 + \sum_{p=1}^\infty \left( \frac{-1}{c_s} \right)^p \sum_{l=0}^\infty \binom{l+p-1}{p-1} \left( \frac{x-c_t}{c_s} \right)^l \hat{q}^s_p
+\end{flalign*}
+
+Identifying the local expansion coefficients as,
+
+\begin{flalign*}
+    \hat{\phi}^t_0 = \hat{q}^s_0 \log(-c_s) + \sum_{p=1}^\infty \frac{\hat{q}^s_p}{c_s^p}(-1)^p
+\end{flalign*}
+
+and,
+
+\begin{flalign*}
+    \hat{\phi}_l^t = \frac{-\hat{q}_0^s}{l c_s^l} + \frac{1}{c_s^l}\sum_{p=1}^\infty \frac{\hat{q}_p^s}{c_s^p} \binom{l+p-1}{p-1} (-1)^p
+\end{flalign*}
