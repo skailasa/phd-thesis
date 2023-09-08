@@ -1,0 +1,38 @@
+Consider the Laplace equation,
+
+\begin{flalign}
+    \Delta \phi = 0
+\end{flalign}
+
+Solutions of which are described as `harmonic'. The fundamental solutions, or kernel, (\ref{eq:chpt:2:sec:0:laplace_kernel}) are harmonic in $\mathbb{R}^n \setminus \{ y \}$. To formulate a boundary value problem for the Laplace equation, consider a bounded domain $\Omega_- \in \mathbb{R}^n$ which supports $C^2$ functions, with a boundary $\partial \Omega_-$, its open complement $\Omega_+ := \mathbb{R}^n \setminus \bar{\Omega_-}$, as well as a unit normal $n$ pointing outwards into its exterior $\Omega_+$. We can define two prototypical boundary value problems based on a Dirichlet boundary condition,
+
+\begin{definition}[Exterior Dirichlet Problem]
+    \label{def:ext_dir_prob}
+    Find a function $\phi \in C^2(\Omega_+) \cap C(\bar{\Omega}_=)$ which is harmonic over $\Omega_+$ and satisfies,
+
+    $$ \phi = f, \> \> on \> \partial \Omega_- $$
+
+    where $f$ is a given continuous function. For $|x| \rightarrow \infty$ it's required that,
+
+    $$\phi(x) = O(1)$$ if $m=2$, and $$\phi(x)=o(1)$$ if $m=3$, uniformly in all directions $x/|x|$
+\end{definition}
+
+\begin{definition}[Interior Dirichlet Problem]
+    \label{def:int_dir_prob}
+    Find a function $u \in C^2(\Omega_-) \cap C(\bar{\Omega}_-)$ which is harmonic over $\Omega_-$ and satisfies,
+
+    $$ \phi = f, \> \> on \> \partial \Omega_- $$
+
+    where $f$ is a given continuous function.
+
+\end{definition}
+
+Problems of this form appear with great frequency in Physics and Engineering. They appear in electrostatics, heat flow, and fluid flow and many many more fields. We want to establish well-posedness, i.e. uniqueness, in the solution of each of these problems.
+
+\begin{theorem}[Dirichlet Problems]
+    The interior and exterior Dirichlet problems are unique.
+
+    \textbf{Proof:}
+
+    Let $\phi_1$ and $\phi_2$ be two harmonic functions in some region $\Omega$, satisfying the Dirichlet boundary condition on $\partial \Omega$. Then $\phi := \phi_1 - \phi_2$ is also harmonic with $\phi = 0$ Dirichlet boundary conditions. Using the minimum-maximum principle we see that $\phi \equiv 0$ in $\Omega$. As $\phi$ is of $O(1)$ (or $o(1)$, depending on dimension) in the exterior uniformly in all directions, we see that $\phi \equiv 0$ in the exterior too. Thus proving our claim.
+\end{theorem}

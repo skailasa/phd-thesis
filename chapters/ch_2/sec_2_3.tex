@@ -1,0 +1,11 @@
+\section{Building for Re-Use in Fast Algorithm Software}\label{chpt:2:sec:3}
+
+High performance software for the core data structure of quad/octrees is essential to all fast algorithms. Indeed, these hierarchical discretisations are found across scientific computing applications [REFERENCES FOR APPLICATIONS OF TREES]. Similarly, methods for sparsifying the $T^{M2L}$ operator, whether that be via an SVD or FFT, can also be re-used in the implementation of fast direct solvers, or alternative algebraic FMMs such as the bbFMM of Fong and Darve \cite{fong2009black}. The same is true of software for evaluating kernel functions in $P2P$ operator. We identify the decoupling of these separate components to be rare in other softwares for fast algorithms \cite{malhotra2015pvfmm,wang2021exafmm,h2lib2016github}, which are often presented as a monolith to users, making it difficult for developers to extend or adapt this software to their use-case.
+
+Our software is designed to be de-coupled as independent sub-components. We achieve this using Cargo, which allows the development of `workspaces'
+
+\dots
+
+- how workspaces let you work with multiple targets, and use dependencies as libraries from the same project.
+- How the design of, say translation operators, is relatively generic and plug and play.
+- same for P2P, via traits as well, can plug in a GPU implementation say.

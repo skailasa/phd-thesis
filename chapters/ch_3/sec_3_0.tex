@@ -1,8 +1,14 @@
 \section{Distributed Octrees}
 
 - Implementation details of octrees, and overview of current research.
+    - how are we explicitly doing Morton encodings?
+    - how are parallel trees constructed
+        - global sorts for balancing
+            - hyksort, and its importance
 
-- Our octree algorithm
-    - bottlenecks in algorithm, and potential communicator optimisations
+- Our octree algorithm and software
+    - bottlenecks for fast algorithm implementation, and potential communicator optimisations
     - a single node benchmark at the very least, can defer multi-node one for now.
+    - how are single/multinode tree implementations made easier with Rust traits?
+
 

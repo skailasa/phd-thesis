@@ -1,18 +1,7 @@
 \chapter{Conclusion}\label{chpt:conclusion}
 
-% In this subsidiary thesis we've presented progress on the development of a new software infrastructure for fast algorithms. We've documented recent outputs towards this goal including foundational software as well as a algorithmic techniques. The main outputs being an investigation into programming languages and environments most suitable for scientific computing, a parallel load balanced octree library designed for high-performance,  as well as a proxy-compression based fast direct solver for acoustic Helmholtz scattering problems.
+In this subsidiary thesis we've presented progress on the development of a new software infrastructure for fast algorithms. We've documented recent outputs towards this goal including foundational software as well as algorithmic techniques. The main outputs being an investigation into programming languages and environments most suitable for scientific computing, a distributed load balanced octree library designed for high-performance, as well as significant inroads to a distributed FMM based on this.
 
-% The immediate next steps of this project will be to publish our recent software results on octrees in an appropriate scientific journal. We also intend to continue the developments on fast direct solvers for oscillatory problems, and extend the RS-S framework to electromagnetic scattering problems described by Maxwell's equations. This would constitute a first fast direct solver for electromagnetic scattering problems. In the medium term, we plan to complete the implementation of the parallel FMM software, and the apply this to large scale boundary integral equation problems. This would entail the completion of the majority of our fast solver infrastructure. The final stage of this project will be the extension of our infrastructure to a parallel fast direct solver, and the simulation of large scale electromagnetic scattering problems.
+The immediate next steps of this project will be to publish our recent software results on octrees and the parallel FMM in an appropriate scientific journal. The final stages of this project will focus on completing the outlined improvements to our translation operator library to achieve, and hopefully supersede the current state of the art, creating a new benchmark distributed FMM library, as well as experiment with the communicator optimisations outlined above for parallel distributed trees.
 
-% - Comparison study of M2L
-% - Completion of distributed FMM
-% - Longer term/ final project - incorporation of fast direct solvers into software framework.
-
-Q. What do you hope to achieve in next 15 months?
-    - distributed FMM library, stable interface, plugged into BEM code
-    - ready for some large scale benchmarks, and test experiments
-
-Q. What is an extension?
-    - developing a fast direct solver using the software infrastructure
-        - presenting a unified forward/backward solver package
-            - first one on the market.
+If time permits, we hope to use our software infrastructure to implement an example of a fast direct solver, and benchmark this with a computation of a vector kernel, such as the Time Harmonic Maxwell Equations.

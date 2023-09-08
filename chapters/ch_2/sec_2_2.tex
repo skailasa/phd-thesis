@@ -1,1 +1,27 @@
-\section{Building for Re-Use in Fast Algorithm Software}
+\section{Implementation Challenges for the Kernel Independent Fast Multipole Method }\label{chpt:2:sec:2}
+
+- The M2L bottleneck (as noted in the previous section)
+    - the number of interactions is large, and it dominates the complexity of a software implementation. Where concerns such as appropriate data assembly, memory ordering are really important.
+    - the descision for how to sparsify this is crucial, and analytical considerations can be used to speed this up, based on the kernel.
+        - can use m2l write up here about symmetries and transfer vectors
+        - can use a table here of the complexity of this operation based on the kernel
+            - this table exists in fong paper
+    - also, approaches to svd differ
+        - randomised approaches that can be deployed very efficiently
+        - blas3 to reduce compute-memory bottleneck in application
+        - but has an inherent complexity of ...
+    - same for FFT
+        - software chosen, and the constraints
+            - fftw wrapper vs fewer feature Rust implementation
+        - has a lower complexity, at the cost of a significantly more complex implementation due to having to embed eq surfaces into a regular grid.
+        - different approaches
+            - e.g. traditional approach vs mine, and impacts on memory concerns.
+
+- the parallel tree
+    - construction: global sorts required for balancing
+    - m2l: communication bottleneck due to M2L in the parallel Algorithms
+
+
+- the P2P bottleneck
+    - ultimately still a large number of direct kernel evaluations
+    - have to make these vectorised in some manner
