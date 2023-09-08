@@ -1,5 +1,60 @@
 \section{Implementation Challenges for the Kernel Independent Fast Multipole Method }\label{chpt:2:sec:2}
 
+In this section we introduce analytical features of the kernels compatible with the kiFMM that have consequences for computer implementations, such as the ability to pre-compute and cache matrices that correspond to translation operators. We also discuss the octree datastructure in more detail, highlighting its key bottlenecks. Concluding with a discussion on implied computational and storage complexity.
+
+
+The defining feature of the kernels compatible with the FMM is that they they display a rapid decay behaviour as the distance between interactions increases, known formally as \textit{asymptotic smoothness}. A kernel is described as asymptotically smooth if there are constants $C_{\text{as1}}, C_{\text{as2}} \in \mathbb{R}_{>0}$ that satisfy,
+
+\begin{flalign}
+        \label{eq:chpt:2:sec:1:asym_smooth}
+    \| \partial_x^\alpha \partial_y^\beta K(x, y) \leq C_{\text{as1}} (C_{\text{as2}} \|| x-y \|_2)^{-|a|-|b|}\alpha + \beta|K(x, y)|
+\end{flalign}
+
+for all multi-indices $\alpha, \beta \in \mathbb{N}^3_0$ and all $x, y \in \mathbb{R}^3$. It's this smoothness that allows us to limit the definition of $\mathcal{N}^B$ to its neighbouring boxes in the FMM. This leads to $|\mathcal{N}^B| = 3^3=27$ in $\mathbb{R}^3$.
+
+Far-field interactions are handled by the $T^{M2L}$ step, we saw above how this is limited to interactions with boxes which are children of $B$'s parent, but non-adjacent to $B$. Therefore we see that in a multi-level scheme the $\mathcal{N}^B$ contains all of the $6^3=216$ near and far field interactions of $B$'s children. As far-field interactions necessarily exclude the near field, this leads to a maximum of $6^3-3^3=189$ boxes in each child box's far field that must be considered, each corresponding to a single $T^{M2L}$. This is one of the \textit{key bottlenecks} of efficient FMM implementations. There are numerous ways of \textit{sparsifying} this step, either by using some additional numerical technique such as an SVD to compress the matrices corresponding to $T^{M2L}$ as they are known to be low-rank, or by using a direct method such as an Fast Fourier Transform (FFT) - which relies on our decision to place the equivalent densities on a regular grid as then the $T^{M2L}$ can be re-interpreted as a convolution. We discuss the trade-offs of these approaches in detail in Section \ref{chpt:2:sec:2}, as optimal implementations of this sparsification are of central importance to our software's performance.
+
+We note that precomputations can be further reduced if kernels also exhibit translational invariance,
+
+\begin{flalign}
+    \label{eq:chpt:2:sec:1:translational_invariance}
+    K(x, y) = K(x+v, y+v)
+\end{flalign}
+
+where $v \in \mathbb{R}^3$, we can compute $T^{M2L}$ for a restricted subset of the total possible interactions for the eight child boxes. Indeed, the union of all possible far-field interactions for the eight child boxes gives $7^3-3^3 = 316$ possible interactions. This comes from the fact some subset of translation vectors are non-overlapping for each child, resulting in a total of $7^3$ total interactions for all children, subtracting the near-field interactions which are the same for all children gives the result. Furthermore this means that we must pre-compute just 316 unique $T^{M2L}$ if our kernel has these favourable properties. This is of course dependent on choosing the same equivalent and check surfaces, and density locations, for each box. If so, these can be pre-computed and cached for a given expansion order, corresponding to all possible $T^{M2L}$ at each level.
+
+If an asymptotically smooth kernel is also homogeneous to degree $n$,
+
+\begin{flalign}
+    K(\alpha r) = \alpha^n K(r)
+\end{flalign}
+
+where $\alpha \in \mathbb{R}$, implies that when we scale the distance between a source and target box by $\alpha$ the potential is scaled by a factor of $\alpha^n$, where $n$ depends on the kernel function in question, we can compute $T^{M2L}$ for a \textit{single} level of the tree, and scale the result at subsequent levels. This is summarised in Table \ref{table:chpt:2:sec:1:m2l_optimisations}.
+
+\begin{table}
+    \centering
+    \caption{Number of near and far field boxes for a given box $B$, depending on the type of kernel we're considering.}
+    \begin{tabular}{l l l}
+        \toprule
+        Kernel Type & boxes in $\mathcal{N}^B$ & boxes in $\mathcal{F}^B$ \\
+        \midrule
+        smooth & $\leq$ 27 per box & $\leq$ 316 per level \\
+        smooth + homog. & $\leq$ 27 per box & $\leq$ 316 in total\\
+        \bottomrule
+    \end{tabular}
+    \label{table:chpt:2:sec:1:m2l_optimisations}
+\end{table}
+
+As we've chosen the location of point densities to be fixed relative to each box, the evaluation of (\ref{eq:chpt:2:sec:1:m2m}) and (\ref{eq:chpt:2:sec:1:l2l}) can equivalently be pre-computed. In this case, there are just 8 unique matrices corresponding to $T^{M2M}$ and $T^{L2L}$, corresponding to the relative positions between a parent box and its children.
+
+- complexity analysis of the P2M
+- Complexity analysis of M2M
+- complexity analysis of the M2L (depends on sparsification method chosen)
+- Complexity analysis of the L2L
+- Complexity analysis of M2P, L2P, P2P
+
+
+
 - The M2L bottleneck (as noted in the previous section)
     - the number of interactions is large, and it dominates the complexity of a software implementation. Where concerns such as appropriate data assembly, memory ordering are really important.
     - the descision for how to sparsify this is crucial, and analytical considerations can be used to speed this up, based on the kernel.
