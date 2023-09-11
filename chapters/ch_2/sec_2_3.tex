@@ -2,6 +2,48 @@
 
 High performance software for the core data structure of quad/octrees is essential to all fast algorithms. Indeed, these hierarchical discretisations are found across scientific computing applications [REFERENCES FOR APPLICATIONS OF TREES]. Similarly, methods for sparsifying the $T^{M2L}$ operator, whether that be via an SVD or FFT, can also be re-used in the implementation of fast direct solvers, or alternative algebraic FMMs such as the bbFMM of Fong and Darve \cite{fong2009black}. The same is true of software for evaluating kernel functions in $P2P$ operator. We identify the decoupling of these separate components to be rare in other softwares for fast algorithms \cite{malhotra2015pvfmm,wang2021exafmm,h2lib2016github}, which are often presented as a monolith to users, making it difficult for developers to extend or adapt this software to their use-case.
 
+
+SOLID
+
+Open/close
+- software entities should be open for extension, but close for modification..
+    - implemented by default with traits
+
+Interface segragation
+    - no code should depnd on methods it doesn't use
+    - i.e. interfaces should be split up so that each one only specifies methods
+        that a caller actually requires
+
+Dependency inversion
+    - high level modules should be independent of low-leve implementation details
+
+Single responsibility
+    - a module/software unit is responsible only for one thing
+
+- liskov substitution
+    - an object/class should be replacable by a sub class without breaking the code.
+
+Rust trait coherence and orphan rules
+
+- coherence - each trait has only one implementation for a given type.
+    - Rust refuses to compile code with multiple implementations
+    - but incoherence may occur far away from crates with conflicting implementations
+        - e.g. hashtables implement hash on your types
+
+- orphan rules
+    - overlap rules
+        - prevent you from writing two impl blocks that overlap, i.e. apply to some of the same types
+
+    - orphan rules
+        - forbid you from writing an impl where both the trait and the type are defined in a different crate
+            - prevent dependency hell, where multiple crates write conflicting impls
+        - allow crates to change their impls without it being considered a breaking change, as downstream users may have overlapping impls.
+
+    - either the trait or the type must be from the same crate.
+
+
+
+
 Our software is designed to be de-coupled as independent sub-components. We achieve this using Cargo, which allows the development of `workspaces'. This is a modern language feature, without a direct parallel provided in competitors such as Fortran or C/C++. With workspaces, all sub-packages (known as `crates' in Rust) share a common build directory - speeding up build compile times, and ensuring that dependencies are uniformly versioned across all crates, specified by a root level TOML dependency file. Indeed, crates within a workspace can be specified to be binaries, libraries, or both, allowing for sub-components to easily be deployed independently or used as a dependency by a downstream developer.
 
 - Explain in detail how traits work to specify shared behaviour in comparison to oop
