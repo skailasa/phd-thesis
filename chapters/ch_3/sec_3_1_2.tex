@@ -1,9 +1,101 @@
 \subsection{FFT Field Translations}
 
-- Use M2L write-up
+From the structure of our kernels of interest (\ref{eq:chpt:2:sec:0:laplace_kernel}), as well as the fact that our equivalent densities and check potentials are arranged on a regular grid (fig. \ref{fig:chpt:2:sec:1:translations}), we notice that the calculation of the downward check potential during $T^{M2L}$ is a convolution,
 
-- offer a benchmark from exafmm-t, and a comment on how it works in terms of memory ordering
 
-- Go through a new algorithm, and how this could help. I already have the discussion on transfer vectors from before and don't need to re-write it.
-- offer a benchmark for same test problem using our dummy software, as this is the best I can do for now
-- document the issue with memory ordering, and how this is rectified with the new algorithm.
+\begin{flalign}
+    \phi = (K \ast q)(x) = \int_{y^{B, d}} K(x-y)q^{A, u}(y)dy
+    \label{eq:chpt:3:sec:1:subsec:2:m2l_convolution}
+\end{flalign}
+
+When translating the multipole expansion at a box $A$ to a box $B$. From Fourier theory, the property of the Fourier transforms of a convolution is that they are the product of two individual transforms,
+
+\begin{flalign}
+    \mathcal{F} \{K \ast q\}(k) = \mathcal{F}\{K\}(k) \cdot \mathcal{F}\{q\}(k)
+\end{flalign}
+
+where $k$ denotes the frequencies in Fourier space. We therefore find that the check potential can be computed as,
+
+\begin{flalign}
+    \phi(x) = \mathcal{F}^{-1}\{ \mathcal{F}\{K\}(k) \cdot \mathcal{F}\{q\}(k)  \} (x)
+\end{flalign}
+
+In practice for the kiFMM the sequence corresponding to $K$ must contain all the unique evaluations of the kernel (\ref{eq:chpt:2:sec:0:laplace_kernel}) between a source box $A$ and a target box $B$. This sequence is constructed with the help of an ancillary data structure known as a `convolution grid'.
+
+We illustrate the construction of the sequences that are required for an FFT based $T^{M2L}$ in $\mathbb{R}^2$, however they are directly applicable to $\mathbb{R}^3$. Consider Figure \ref{fig:chpt:3:sec:1:subsec:2:translations}, which shows a source and target box, each of which is annotated with source equivalent points $i_i$ and target check points, $x_i$, for a $P=2$ expansion.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/ch_3/m2l_source_target.pdf}
+    \caption{A source and target box, with source and target locations on the repsective equivalent and check surface annotated..}
+    \label{fig:chpt:3:sec:1:subsec:2:translations}
+\end{figure}
+
+Th equivalent surface around the source box is \textit{embedded} within a convolution grid, as shown in Figure \ref{fig:chpt:3:sec:1:subsec:2:embed_surface_grid}, such that the number of points on a convolution grid is $P^3$ in $\mathbb{R}^3$ and $P^2$ in $\mathbb{R}^2$ respectively.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/ch_3/embed_surface_grid.pdf}
+    \caption{The source equivalent surface is embedded within a (green) convolution grid. The points on the convolution grid are marked with diamonds. An additional diamond is placed on the target check surface, which identifies the point with which kernels are evaluated with respect to.}
+    \label{fig:chpt:3:sec:1:subsec:2:embed_surface_grid}
+\end{figure}
+
+The unique kernel interactions between the source equivalent surface and the target check surface in (\ref{eq:chpt:3:sec:1:subsec:2:m2l_convolution}) are computed with respect to a single point on the target check surface and the points on the convolution grid. We then see that we must compute the convolution of two sequences in $\mathbb{R}^2$, illustrated in Figure \ref{fig:chpt:3:sec:1:subsec:2:convolution}. Here the first sequence is the unique kernel evaluations taken with respect to a fixed point on the target check surface, and the second sequence is the multipole expansion coefficients mapped to the convolution grid from the source box's equivalent surface. We proceed to take Fourier transforms via the FFT for both of these sequences, and compute their convolution via a Hadamard product.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/ch_3/convolution.pdf}
+    \caption{A Hadamard product is computed between the Fourier transforms sequence of unique kernel evaluations and the multipole expansion coefficients which are also placed on the convolution grid.}
+    \label{fig:chpt:3:sec:1:subsec:2:convolution}
+\end{figure}
+
+Computing this Hadamard product, for which we use the FFT, results in another sequence illustrated in Figure \ref{fig:chpt:3:sec:1:subsec:2:check_potential}, where we have taken care to `flip' the sequence corresponding the unique kernel evaluations as required by the definition of a convolution. We find the final check potentials by taking the inverse Fourier transform of it.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.3\textwidth]{images/ch_3/check_potential.pdf}
+    \caption{The result of the convolution in Figure \ref{fig:chpt:3:sec:1:subsec:2:convolution}. We only identify locations that correspond to check potentials, as the other entries will contain results which are not required, corresponding to some redundant computations with this method.}
+    \label{fig:chpt:3:sec:1:subsec:2:check_potential}
+\end{figure}
+
+We note that although we rely on the existence of a convolution grid to compute the required sequences, in practice we do not compute or store it. We simply require a mapping between the index locations of points on the equivalent surfaces to their corresponding positions on a convolution grid.
+
+Expressed alternatively, we can represent the points on an equivalent surface, $y \in y^{B, u}$, by their respective indices $y_{i, j, k}$ when in $\mathbb{R}^3$. The elements corresponding to the unique kernel interactions are then,
+
+\begin{flalign}
+    K_{ijk} = K(x_{000} - y_{ijk})
+\end{flalign}
+
+where $x_{000}$ is the index of a point on the target equivalent surface with which the sequence is calculated with respect to. We choose the bottom left corner on the target surface, though in principle any point could be used, it would just amount to a translation of the convolution grid. This results in a 3D sequence,
+
+\begin{flalign}
+    K[i, j, k] = K_{i, j, k}
+\end{flalign}
+
+Again the symmetries of kernels make the Fourier transforms of this quantity something that has the potential to be pre-computed and cached, in a similar way to which the SVD based $T^{M2L}$ could be cached. At runtime, we simply need to look up the corresponding sequence $\hat{K}_t[i, j, k]$ corresponding to a transfer vector $t$ between a given source and target box, and compute the convolution as outlined above.
+
+The Hadamard product has a low computational intensity, and naive implementations can be slow in practice regardless of the superior complexity of the FFT based $T^{M2L}$ ($O(N \log (N))$) in comparison to the compressed matrix vector products of the SVD approach outlined in the previous section especially when combined with optimisations to use BLAS 3 operations. The authors of the leading multi-node bbFMM \cite{malhotra2015pvfmm} use a strategy of considering sets of siblings together, alongside explicit SIMD to increase the computational intensity of this operation. This approach is re-implemented by the authors of the leading single-node kiFMM \cite{wang2021exafmm}, though negatively computes redundant $T^{M2L}$ translations. We explain briefly how this works below, before introducing our own approach which though similar, avoids these redundancies.
+
+Consider a source box alongside its siblings in $\mathbb{R}^3$,
+
+\begin{flalign}
+    S = \cup_{i=1}^{N=8} S_i
+\end{flalign}
+
+For each unique $T^{M2L}$ we have a sequence $K[i, j, k]$, and can pre-compute a sequence $\hat{K}[i, j, k]$ corresponding to their Fourier transforms. Considering the sibling set $S$'s parent box, we can compute $T^{M2L}$ with respect to the neighbours of $S$'s parent. This results in $64 = 8 \times 8$ for translations between $S$ and the children in a particular neighbour of their parent, with corresponding sequences $\hat{K}[i, j, k]$. We note that note all of these translations are necessarily required, the authors of \cite{malhotra2015pvfmm,wang2021exafmm} simply take the convolutions with respect to zero data used for the corresponding multipole expansion. When repeated for all of the neighbour's of $S$'s parent, we're left with a total of $1664 = 8 \times 8 \times 26$ applications of $T^{M2L}$ for a given sibling set $S$. Despite containing redundant calculations, the implementation is highly cache-optimised. The authors of \cite{malhotra2015pvfmm} proceed by iterating over each of $S$'s parent's neighbours - pulling out the $i$th frequency component from each - leading to a sequence of length $8 \times 8 \times 26$, they proceed by pulling out the $i$th frequency component of the Fourier transform of each sibling - leading to a sequence of length 8. The Hadamard product is found by computing 26 individual $8 \times 8$ operation using explicit SIMD. By iterating over $S$'s parent's neighbours in the outer loop the sequence of length $8 \times 8 \times 26$ can be held in memory for each subsequent sibling set.
+
+This strategy is known to perform well. An experiment with the Laplace kernel, order $P=9$ expansions, and 1e6 source/target points takes approximately 2.7s to evaluate $T^{M2L}$ on a 6 core Intel i7-9750H processor. However, we note that the redundant computations can be reduced.
+
+We begin by noting that for our kernels of interest correspond lead to 316 unique translation vectors $t$ with corresponding $T^{M2L}$ operators, however the majority of these operators correspond to reflections of each other. First introduced by Messner et. al \cite{messner2012optimized} in the context of an SVD based acceleration of $T^{M2L}$, where they attempt to reduce the size of the SVD required for the pre-computation in this approach, one can reduce the number of transfer vectors corresponding to \textit{unique} $T^{M2L}$ to just 16. In the original paper they aimed to demonstrate that with just 16 unique $T^{M2L}$ BLAS3 matrix-matrix products would further reduce the application time of the compressed $T^{M2L}$ operator, however as we demonstrate in Figure [BLAS3 FIGURE], we don't observe this to have a significant effect on the runtime of the matrix-matrix products of the sizes expected in a typical FMM, at least on modern processors with up to date implementations of LAPACK.
+
+In order to see how we arrive at 16 unique $T^{M2L}$ operators,
+
+\dots
+
+However, in the case of an FFT accelerated FFM being able to identify a smaller subset of $T^{M2L}$ we can drastically reduce the number of flops required during this operation. We start by noticing that $T^{M2L}$ is calculated for a $B$ from a halo consisting of the children of $B$'s parent which it does not lie adjacent to. There is a conjugacy in this relationship meaning that if $A$ is in that set of boxes for $B$, then $B$ is correspondingly in that set of boxes for $A$.
+
+This means that we can `invert' the application of the $T^{M2L}$ operator. Instead of attempting to compute the check potential at $B$ from boxes $A$ in its halo, we can instead compute the convolutions corresponding to just 16 unique $T^{M2L}$ for the multipole coefficients at $B$ and scatter the resulting check potential to their corresponding boxes in $B$'s halo. This means that we are only computing 16 convolution operations with respect to each box, in comparison the 1664 as in previous implementations.
+
+This transforms the problem into one that is bound by memory accesses. To alleviate this we take a similar approach to the state of the art softwares mentioned above, and consider sibling sets $S$ at a time. We iterate over sibling sets in parallel, pulling in references to $S$'s parent's neighbours' children into memory in each parallel thread. These constitute all the scatter locations for the check potentials computed for each box in $S$. For the same benchmark problem above we reported for the state of te art approach, that we compute $T^{M2L}$ in [BENCHMARK FOR M2L].
+
+The effect of memory ordering and access on runtimes is clear, and significant, for this operation. As of writing are still working on an optimal memory ordering in the implementation, which if we are able to find would constitute a significant improvement in computing $T^{M2L}$ via the FFT for algebraic FMMs discretised on regular grids, as the number flops in our approach is greatly reduced.

@@ -1,12 +1,113 @@
 \subsection{SVD Field Translations}
 
-- Can largely copy discussion from M2L write-up for specifics on how this works.
+In order to uniquely label M2L interactions we introduce transfer vectors $t = (t_1, t_2, t_3)$, $t \in \mathbb{Z}^3$. They describe the relative positioning of two boxes, $X$ and $Y$, in a hierarchical tree and computed from their centres $t = \frac{c_x - c_y}{w}$ where $w$ is the box width.
 
-- BLAS3 optimisation for this algorithm, again taken from write-up.
+Consider the application of $T^{M2L}$, to a given multipole expansion $q$, where our goal is to compute the check potential $\phi$,
 
-- offer a benchmark for a test problem, which can be contrasted with FFT.
+\begin{flalign}
+    \phi = T^{M2L} q
+\end{flalign}
+
+
+As $T^{M2L}$ is known to be low-rank, it can be optimally approximated with an SVD,
+
+\begin{flalign}
+    \tilde{\phi} = U_k \Sigma_k V_k^T q
+\end{flalign}
+
+where $k$ indicates the rank of $T^{M2L}$, i.e. the smallest non-zero singular value. This can be shown to be an optimal approximation to $K$ \cite{Trefethen1997}. For homogenous, translationally invariant kernels we see from Table \ref{table:chpt:2:sec:1:m2l_optimisations} that there are at most 316 unique translation vectors corresponding to $T^{M2L}$ operations in $\mathbb{R}^3$. Stacking their corresponding discrete matrices column wise,
+
+\begin{flalign}
+    T^{M2L}_{\text{fat}} &= \left [ T^{M2L}_1, ..., T^{M2L}_{316} \right ] \\
+    &= U \Sigma \left [ V^{T}_1, ..., V^{T}_{316} \right ]
+    \label{eq:chpt:3:sec:1:subsec:1:m2l_fat}
+\end{flalign}
+
+or row-wise,
+
+\begin{flalign}
+    T^{M2L}_{\text{thin}} &= \left [ T^{M2L}_1; ...; T^{M2L}_{316} \right ] \\
+    &= \left [ R^{T}_1; ...; R^{T}_{316} \right ]  \Lambda S^T
+    \label{eq:chpt:3:sec:1:subsec:1:m2l_thin}
+\end{flalign}
+
+
+we note that,
+
+\begin{flalign}
+    T^{M2L}_{\text{thin}}  = (T^{M2L}_{\text{fat}})^T
+\end{flalign}
+
+for such kernels which are symmetric. Having computed these two SVDs we can reduce the application cost of a given $T^{M2L}_i$ between two boxes,
+
+\begin{flalign}
+    T^{M2L}_i q = R_i\Lambda S^T q
+    \label{eq:chpt:3:sec:1:subsec:1:single_svd}
+\end{flalign}
+
+Using the fact that $S$ is unitary, i.e. $S^TS = I$, we can insert this into equation (\ref{eq:chpt:3:sec:1:subsec:1:single_svd}) to find,
+
+\begin{flalign}
+    T^{M2l}_{i} q &= R^{(i)}\Lambda S S^T S^T q \\
+    &= T^{M2L}_{i} SS^T q \\
+    &= U \Sigma V^{T}_i SS^T q \\
+\end{flalign}
+
+
+Now using that $U$ is also unitary such that $U^TU = I$, we find
+
+\begin{flalign}
+    T^{M2L}_i q &= UU^T U \Sigma V^{T}_i SS^T q \\
+    &= U [U^T U \Sigma V^{T}_i S] S^T q \\
+    &= U[U^T T^{M2L}_i S] S^T q
+\end{flalign}
+
+
+The bracketed terms can be calculated using the rank $k$ approximation from the SVD,
+
+\begin{flalign}
+    [U^T T^{M2L}_i S] &= \Sigma V^{T}_i S\\
+    &= U^T R_{i} \Lambda
+    \label{eq:chpt:3:sec:1:subsec:1:compressed_m2l}
+\end{flalign}
+
+
+We call equation (\ref{eq:chpt:3:sec:1:subsec:1:compressed_m2l}) the \textit{compressed $T^{M2L}$ operator}.
+
+\begin{flalign}
+    C^k_i = U^T T^{M2L}_i S
+    \label{eq:chpt:3:sec:1:subsec:1:compressed_m2l_2}
+\end{flalign}
+
+This matrix can be precomputed for each unique interaction. Therefore in the kernels considered in this exposition, it must be computed at most 316 times, with corresponding pre-computations for kernels with different properties.
+
+The application of $T^{M2L}$ can now be broken down into four steps.
+
+
+\begin{enumerate}
+    \item Find the `compressed multipole expansion'
+    \[
+    q_c = S^T q
+    \]
+    \item Compute the `compressed check potential', where the sum is taken over all boxes which have an applicable $T^{M2L}$ operator.
+    \[
+    \phi_c = \sum C^k_i q_c
+    \]
+    \item Post process to recover an uncompressed check potential
+    \[
+    \phi = U \phi_c
+    \]
+    \item Finally, calculate the local expansion from the check potential as done previously in Section \ref{chpt:2:sec:2}.
+\end{enumerate}
+
+
+The rank behaviour of $T^{M2L}$ has been assumed to be low-rank throughout this thesis, and therefore amenable to compression. However it remains an open question as to the exact rank behaviour of a given kernel in practice. This has consequences for real implementations, as if we are able to effectively cut-off the rank $k$ with $\kappa \ll k$ we may be able to reduce the complexity of the SVD based scheme $T^{M2L}$ further. Figure [RANK FIGURE] shows the effective rank behaviour of the Laplace kernel for different expansion orders ...
+
+- Analytical considerations to investigate the rank behaviour of the kernel could be used to identify the cut-off ranks $\kappa$ based on the transfer vector.
 
 - Rank experiment for Laplace, different orders, where is the cut-off, and what is the accuracy?
 
-- Can this be improved by analytical considerations as well? What are they? The explicit rank behaviour of kernels is not known, even numerically, if this was investigated in more detail we could inform the design of an SVD based compression.
+Furthermore, practical implementations can re-formulate the SVD based scheme to increase the computational intensity\footnote{The computational intensity is short hand for the ratio of computations to memory accesses, i.e. flops/bytes.} of the operation. As presented above, each box $B$ will have to compute $T^{M2L}$ for each box in its relevant halo, up to 189 times in $\mathbb{R}^3$. For each of these applications, $B$ will have to look up the appropriate compressed $T^{M2L}$ from memory in this naive scheme. Matrix vector products are handled by BLAS level 2 operations, however by taking advantage of BLAS level 3 operations we can increase the ratio of compute/memory access. We do so in our implementation by blocking together \textit{all} the right hand sides, i.e. multipole expansions, which share a given translation vector $t$ and compute their compressed check potentials in a single matrix-matrix product. This has a dramatic effect on the runtime of our software as shown in Figure [NAIVE VS BLOCKED FIGURE].
+
+We note that the precomputation for this approach relies on an SVD of two relatively large matrices in (\ref{eq:chpt:3:sec:1:subsec:1:m2l_fat}) and (\ref{eq:chpt:3:sec:1:subsec:1:m2l_thin}) where we use the `greedy' DGESVD provided by LAPACK. For the Laplace kernel, which is translationally invariant and homogenous, precomputation times are shown in Figure [PRECOMPUTE TIME FIGURE]. However, for kernels which are translationally invariant but not homogenous, these must be computed for each level of the octree which can have a significant impact on setup time for the FMM, dominating the tree setup time as well as the algorithm runtime. This could be alleviated with alternative implementations that make use of randomised algorithms, which have been shown to have considerably faster runtimes for a given compression rank \cite{halko2011finding}, though we haven't explored this as of date.
 
