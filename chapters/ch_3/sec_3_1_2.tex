@@ -88,14 +88,38 @@ This strategy is known to perform well. An experiment with the Laplace kernel, o
 
 We begin by noting that for our kernels of interest correspond lead to 316 unique translation vectors $t$ with corresponding $T^{M2L}$ operators, however the majority of these operators correspond to reflections of each other. First introduced by Messner et. al \cite{messner2012optimized} in the context of an SVD based acceleration of $T^{M2L}$, where they attempt to reduce the size of the SVD required for the pre-computation in this approach, one can reduce the number of transfer vectors corresponding to \textit{unique} $T^{M2L}$ to just 16. In the original paper they aimed to demonstrate that with just 16 unique $T^{M2L}$ BLAS3 matrix-matrix products would further reduce the application time of the compressed $T^{M2L}$ operator, however as we demonstrate in Figure [BLAS3 FIGURE], we don't observe this to have a significant effect on the runtime of the matrix-matrix products of the sizes expected in a typical FMM, at least on modern processors with up to date implementations of LAPACK.
 
-In order to see how we arrive at 16 unique $T^{M2L}$ operators,
+In order to see how we arrive at 16 unique $T^{M2L}$ operators we introduce two symmetries we follow the discussion in \cite{messner2012optimized}. They describe two planes of symmetry, axial and diagonal, when considering a source box $A$ and a target box $B$ during a given interaction specified by a $T^{M2L}$ operator. This is sketched for $\mathbb{R}^2$ for clarity in Figure \ref{fig:chpt:3:sec:1:subsec:2:symmetries}, where we show three sources $A$ with their respective transfer vectors, $t$, with respect to $B$. These boxes describe the equivalent/check surfaces described above for the kiFMM and the quadrature points are labelled by an index coordinate for an expansion of $P=2$. The axial planes of symmetry are given by $t_1 = 0$, $t_2 = 0$ and $t_3 = 0$ in $\mathbb{R}^3$, each dividing $\mathbb{R}^3$ into two parts centered on the target box $B$. Combining all three plane divides $\mathbb{R}^3$ into octants centered on $B$, we refer to $\mathbb{R}^3_+$ as the \textit{reference octant}. The diagonal planes of symmetry are given by $t_1 = t_2$, $t_1 = t_3$ and $t_2 = t_3$ in $\mathbb{R}^3$. We restrict ourselves to diagonal symmetries that lie in the reference octant. Combining the axial and diagonal symmetries we obtain a \textit{reference cone},
 
-\dots
+\begin{flalign}
+    \mathbb{R}^3_{\text{sym}} = \{ \mathbb{R}^3_{\text{sym}} \subset \mathbb{R}^3 : t_1 \geq t_2 \geq t_3 \text{ with } t \in \mathbb{R}^3 \}
+    \label{eq:chpt:3:sec:1:subsec:2:reference_cone}
+\end{flalign}
 
-However, in the case of an FFT accelerated FFM being able to identify a smaller subset of $T^{M2L}$ we can drastically reduce the number of flops required during this operation. We start by noticing that $T^{M2L}$ is calculated for a $B$ from a halo consisting of the children of $B$'s parent which it does not lie adjacent to. There is a conjugacy in this relationship meaning that if $A$ is in that set of boxes for $B$, then $B$ is correspondingly in that set of boxes for $A$.
+We identify a subset of transfer vectors $T_{\text{sym}} = T \cap  \mathbb{R}^3_{\text{sym}}$ from which all transfer vectors for $B$ can be expressed as reflections around the axes of symmetry. Explicitly to find $t$ within $T_{\text{sym}}$, we apply the following rule
 
-This means that we can `invert' the application of the $T^{M2L}$ operator. Instead of attempting to compute the check potential at $B$ from boxes $A$ in its halo, we can instead compute the convolutions corresponding to just 16 unique $T^{M2L}$ for the multipole coefficients at $B$ and scatter the resulting check potential to their corresponding boxes in $B$'s halo. This means that we are only computing 16 convolution operations with respect to each box, in comparison the 1664 as in previous implementations.
+\begin{enumerate}
+    \item A \textit{axial symmetry} given by say $t_1 = 0$ as shown in Figure \ref{fig:chpt:3:sec:1:subsec:2:symmetries}, we invert the corresponding component of the index coordinate
+    \[
+        \alpha \leftarrow (P-(\alpha_1-1), \alpha_2, \alpha_3) \text{ and } \beta \leftarrow (P-(\beta_1-1), \beta_2, \beta_3)
+    \]
+    \item A \textit{diagonal symmetry} given by say $t_1 = t_2$, w swap the corresponding components of the index coordinate as,
+    \[
+        \alpha \leftarrow (\alpha_2, \alpha_1, \alpha_3) \text{ and } \beta \leftarrow (\beta_2, \beta_1, \beta_3)
+    \]
+\end{enumerate}
 
-This transforms the problem into one that is bound by memory accesses. To alleviate this we take a similar approach to the state of the art softwares mentioned above, and consider sibling sets $S$ at a time. We iterate over sibling sets in parallel, pulling in references to $S$'s parent's neighbours' children into memory in each parallel thread. These constitute all the scatter locations for the check potentials computed for each box in $S$. For the same benchmark problem above we reported for the state of te art approach, that we compute $T^{M2L}$ in [BENCHMARK FOR M2L].
+
+Where as before $P$ stands for expansion order. When these rules are applied to the 316 unique transfer vectors for our kernels of interest, we find that $|T_{\text{sym}}|  = 16$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{images/ch_3/symmetries.pdf}
+    \caption{Here we show the axial and diagonal symmetries of three source boxes labelled $A$ with respect to a target box $B$ in $\mathbb{R}^2$ for expansion order $P=2$. The quadrature points are labelled with index coordinates taken with respect to the lower left corner of the box. The only transfer vector here the constraints of being in the `reference cone', which is shaded in grey, is $t=(2, 1)$ and therefore corresponds to the only $T^{M2L}$ that needs to be pre-computed. This figure is adapted from \cite{messner2012optimized} for the kiFMM.}
+    \label{fig:chpt:3:sec:1:subsec:2:symmetries}
+\end{figure}
+
+Utilising this redundancy for the FFT accelerated $T^{M2L}$ means that one only has to precompute Fourier transform of Kernel sequences $K[i, j, k]$ corresponding to transfer vectors in $T_{\textit{sym}}$. In order to reduce the number of flops required for computing $T^{M2L}$ during the algorithm we notice that $T^{M2L}$ is calculated for a $B$ from a halo consisting of the children of $B$'s parent which it does not lie adjacent to. There is a conjugacy in this relationship meaning that if $A$ is in that set of boxes for $B$, then $B$ is correspondingly in that set of boxes for $A$. This means that we can `invert' the application of the $T^{M2L}$ operator. Instead of attempting to compute the check potential at $B$ from boxes $A$ in its halo, we can instead compute the convolutions corresponding to just 16 unique $T^{M2L}$ for the multipole coefficients at $B$ and scatter the resulting check potential to their corresponding boxes in $B$'s halo. This means that we are only computing 16 convolution operations with respect to each box, in comparison the 1664 as in previous implementations.
+
+This transforms the problem into one that is bound by memory accesses. To alleviate this we take a similar approach to the state of the art softwares mentioned above, and consider sibling sets $S$ at a time. We iterate over sibling sets in parallel, pulling in references to $S$'s parent's neighbours' children into memory in each parallel thread. These constitute all the scatter locations for the check potentials computed for each box in $S$. By doing this however we reduce the number of cache-misses during the scatter operation as we an save all the corresponding check potentials to a box in $S$'S halo at once. For the same benchmark problem above we reported for the state of the art approach, that we compute $T^{M2L}$ in [BENCHMARK FOR M2L].
 
 The effect of memory ordering and access on runtimes is clear, and significant, for this operation. As of writing are still working on an optimal memory ordering in the implementation, which if we are able to find would constitute a significant improvement in computing $T^{M2L}$ via the FFT for algebraic FMMs discretised on regular grids, as the number flops in our approach is greatly reduced.
