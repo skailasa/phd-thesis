@@ -54,7 +54,7 @@ Computing this Hadamard product, for which we use the FFT, results in another se
 \begin{figure}
     \centering
     \includegraphics[width=0.3\textwidth]{images/ch_3/check_potential.pdf}
-    \caption{The result of the convolution in Figure \ref{fig:chpt:3:sec:1:subsec:2:convolution}. We only identify locations that correspond to check potentials, as the other entries will contain results which are not required, corresponding to some redundant computations with this method.}
+    \caption{The result of the convolution illustrated in Figure \ref{fig:chpt:3:sec:1:subsec:2:convolution}, on the convolution grid. We only identify locations that correspond to check potentials, as the other entries will contain results which are not required, corresponding to redundant computations with this method.}
     \label{fig:chpt:3:sec:1:subsec:2:check_potential}
 \end{figure}
 
@@ -114,7 +114,7 @@ Where as before $P$ stands for expansion order. When these rules are applied to 
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{images/ch_3/symmetries.pdf}
-    \caption{Here we show the axial and diagonal symmetries of three source boxes labelled $A$ with respect to a target box $B$ in $\mathbb{R}^2$ for expansion order $P=2$. The quadrature points are labelled with index coordinates taken with respect to the lower left corner of the box. The only transfer vector here the constraints of being in the `reference cone', which is shaded in grey, is $t=(2, 1)$ and therefore corresponds to the only $T^{M2L}$ that needs to be pre-computed. This figure is adapted from \cite{messner2012optimized} for the kiFMM.}
+    \caption{Here we show the axial and diagonal symmetries of three source boxes labelled $A$ with respect to a target box $B$ in $\mathbb{R}^2$ for expansion order $P=2$. The quadrature points are labelled with index coordinates taken with respect to the lower left corner of the box. The only transfer vector here the constraints of being in the `reference cone', which is shaded in grey, is $t=(2, 1)$ and therefore corresponds to the only $T^{M2L}$ that needs to be pre-computed. This figure is adapted from \cite{messner2012optimized} for the kiFMM as opposed to the bbFMM as originally presented.}
     \label{fig:chpt:3:sec:1:subsec:2:symmetries}
 \end{figure}
 
@@ -122,4 +122,4 @@ Utilising this redundancy for the FFT accelerated $T^{M2L}$ means that one only 
 
 This transforms the problem into one that is bound by memory accesses. To alleviate this we take a similar approach to the state of the art softwares mentioned above, and consider sibling sets $S$ at a time. We iterate over sibling sets in parallel, pulling in references to $S$'s parent's neighbours' children into memory in each parallel thread. These constitute all the scatter locations for the check potentials computed for each box in $S$. By doing this however we reduce the number of cache-misses during the scatter operation as we an save all the corresponding check potentials to a box in $S$'S halo at once. For the same benchmark problem above we reported for the state of the art approach, that we compute $T^{M2L}$ in [BENCHMARK FOR M2L].
 
-The effect of memory ordering and access on runtimes is clear, and significant, for this operation. As of writing are still working on an optimal memory ordering in the implementation, which if we are able to find would constitute a significant improvement in computing $T^{M2L}$ via the FFT for algebraic FMMs discretised on regular grids, as the number flops in our approach is greatly reduced.
+The effect of memory ordering and access on runtimes is clear, and significant, for this operation. As of writing are still working on an optimal memory ordering in the implementation of this approach, which if we are able to find would constitute a new algorithm for sparsifying $T^{M2L}$ via the FFT for algebraic FMMs discretised on regular grids, as the number flops in our approach is greatly reduced.

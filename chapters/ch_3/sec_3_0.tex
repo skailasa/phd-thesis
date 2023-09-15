@@ -35,7 +35,11 @@ This algorithm is summarised in Algorithm \ref{alg:app:morton:point2octree} in A
     \hline
     Relation & Definition \\ [0.5ex]
     \hline\hline
-    Siblings($N$) & Keys that share a parent with $N$  \\
+    Siblings($N$) & The seven (octree) or three (quadtree) Keys \\
+        & that share a parent with $N$  \\
+    Neighbours($N$) & Keys that share a face, edge, or vertex with $N$  \\
+    Parent($N$) & The parent key of $N$  \\
+    Children($N$) & The eight (octree) or four (quadtree) children of $N$  \\
     Descendants($N$) & All descendants of $N$  \\
     Ancestors($N$) & All ancestors of $N$  \\
     FinestAncestors($N$, $M$) & Finest shared ancestor of $N$ and $M$.  \\
@@ -63,7 +67,7 @@ An alternative approach is provided by HykSort \cite{sundar2013hyksort}, which i
 \end{figure}
 
 
-Figure \ref{fig:chpt:3:sec:0:single_node_scaling} shows scaling of our software, `Bempp-Tree', on a single node as time limitations inhibited multi-node experiments. In the left figure compare the performance of linear trees constructed using our software with the pointer-based trees constructed using the functionality of ExaFMM-t the leading single-node implementation of the kiFMM. We limit this comparison to uniform trees as they don't offer adaptive functionality. In the right figure we show weak scaling for fixed 1e6 points per MPI process for adaptive and uniform trees. We observe that there is a constant overhead in constructing adaptive trees, this comes from having to recursively refine blocks from the block tree by counting how many points they contain. The significant jump when using 8 MPI processes is likely due to the number of physical threads exceeding the number of cores available on the Intel i7-9750 processor used for the experiments. Our performance in the single-node case is excellent, where we're able to generate an octree with 8e6 points, with a depth of 5, in approximately 13.5s. A marked improvement over ExaFMM-T, and demonstrative of the power of a bottom up approach. Multi-node experiments are required to assess the performance of our library in comparison to other state of the art tree libraries \cite{sampath2008dendro,BursteddeWilcoxGhattas11}. However, as our approach closely follows theirs we don't expect performance to be significantly different.
+Figure \ref{fig:chpt:3:sec:0:single_node_scaling} shows scaling of our software, `Bempp-Tree', on a single node as time limitations inhibited multi-node experiments. In the left figure compare the performance of linear trees constructed using our software with the pointer-based trees constructed using the functionality of ExaFMM-t the leading single-node implementation of the kiFMM. We limit this comparison to uniform trees as they don't offer adaptive functionality. In the right figure we show weak scaling for fixed 1e6 points per MPI process for adaptive and uniform trees. We observe that there is a constant overhead in constructing adaptive trees, this comes from having to recursively refine blocks from the block tree by counting how many points they contain. The significant jump when using 8 MPI processes is likely due to the number of MPI processes exceeding the number of cores available on the Intel i7-9750 processor used for the experiments. Our performance in the single-node case is excellent, where we're able to generate an octree with 8e6 points, with a depth of 5, in approximately 13.5s. A marked improvement over ExaFMM-T, and demonstrative of the power of a bottom up approach. Multi-node experiments are required to assess the performance of our library in comparison to other state of the art tree libraries \cite{sampath2008dendro,BursteddeWilcoxGhattas11}. However, as our approach closely follows theirs we don't expect performance to be significantly different.
 
 \begin{figure}[h]
   \centering
@@ -74,20 +78,73 @@ Figure \ref{fig:chpt:3:sec:0:single_node_scaling} shows scaling of our software,
   \begin{minipage}[b]{0.45\textwidth}
     \includegraphics[width=\textwidth]{images/ch_3/weak_scaling_graph.png}
   \end{minipage}
-\caption{The left figure shows the runtime of creating uniform trees on a single node in Bempp-Tree, in comparison to ExaFMM-T. The right figure shows weak scaling (over cores on a single node) of creating uniform and adaptive trees with Bempp-Tree, where each core is given 1e6 points. The uniform trees are partitioned to a depth of 5, the adaptive trees have at most 150 particles in their leaf boxes. Experiments were taken on an Intel i7-9750H 6 core processor.}
+\caption{The left figure shows the runtime of creating uniform trees on a single node in Bempp-Tree, in comparison to ExaFMM-T. The right figure shows weak scaling (over cores on a single node) of creating uniform and adaptive trees with Bempp-Tree, where each MPI process is given 1e6 points. The uniform trees are partitioned to a depth of 5, the adaptive trees have at most 150 particles in their leaf boxes. Experiments were taken on an Intel i7-9750H 6 core processor.}
 \label{fig:chpt:3:sec:0:single_node_scaling}
 \end{figure}
 
-In the context of FMMs generating a distributed tree constitutes the first communication intensive phase. Further bottlenecks occur in the evaluation of the operators, most significantly in the evaluation of $T^{M2M}$ and $T^{M2L}$. To understand where these operators lead to communication bottlenecks, and how these can be overcome in practical implementations, we introduce the concept of a `locally essential tree'.
+\subsection{Exposing Parallelism in A Distributed Memory FMM}
+
+In the context of FMMs generating a distributed tree constitutes the first communication intensive phase. Further bottlenecks occur in the evaluation of the operators, most significantly in the evaluation of $T^{M2M}$ and $T^{M2L}$. To understand where these operators lead to communication bottlenecks, and how these can be overcome in practical implementations, we now introduce terminology relevant to distributing the FMM on parallel machines. We largely follow the discussion in Section 3 of \cite{Lashuk2012}, and use the same terminology.
+
+Given a partition of a global tree $T$, as described above, such that each compute node $k$ contains a disjoint subset of leaves arranged in morton order, $T_k$m we define a \textit{Locally Essential Tree} (LET) for compute node $k$ as the union of interaction lists for all its owned leaves, as well as their ancestors,
+
+\begin{flalign}
+    \text{LET}(k) := \cup_{N \in T_k \cup \text{Ancestors}(T_k)} \text{InteractionList}(N)
+    \label{eq:chpt:3:sec:0:let}
+\end{flalign}
+
+We denote the region controlled by compute-node $k$ as $\Omega_k$, from the properties of Morton keys (see app. \ref{app:morton}) this is defined by the smallest and largest Morton key they hold. Using an MPI\_AllGather collective, we exchange information about the bounds of each compute-node globally. Following this, ancestors are added to each $T_k$ for the leaf nodes they control. In order to communicate `ghost octants', i.e. octants which are relied upon by the translation operators acting upon each $T_k$ but are not held locally, we introduce the concept of `Contributor' and `User' compute nodes,
+
+\begin{enumerate}
+    \item Contributor compute nodes for an octant $N \in T$ are
+    \[
+        \mathcal{P}_c(N) := k \in 1...p : N \text{ overlaps with } \Omega_k
+    \]
+    \item User compute nodes of an octant $N \in T$ are
+    \[
+        \mathcal{P}_u(N) := k \in 1...p : \text{ Parent($N$) or Neighbours ($N$) overlaps with } \Omega_k
+    \]
+\end{enumerate}
+
+We denote the set of octants which compute node $k$ contributes and which process $k'$ uses as $I_{k k'}$. These are communicated and inserted into each compute node's local tree in order to complete the construction of its LET. Consider the potential generated by the sources enclosed by some octant $N$. In order to evaluate the potential outside the volume covered by $\text{Neighbours}(\text{Parent})(N)$ one doesn't need the multipole expansions, or sources, associated with $N$ as an ancestor of $N$ would be used instead. This ensures the correctness of this approach to constructing LETs.
+
+During evaluation of the FMM Lashuk et. al define three communication phases.
 
 \dots
 
+Ibeid et. al demonstrate a communication scheme with a reduced complexity bound.
+
+\dots
+
+
+
+- Data dependencies of the FMM  - P2M and U list have no dependencies on anything else
+    - one can pipeline p2m, m2m and m2l steps to expose more parallelism
+    - one strategy is to use MPI based global tree andpartition into overlapping subtres LETs to remove data dependencies between m2l and x list, as well a w list and l2p
+    - define LET
+        - for a process k the LET is the union of interaction lists for all owned leaves and their ancestors.
+        - once constructed can run the FMM in parallel over each processor.
+            - two comm intesnive, first is LET construction
+            - second is all-reduce during evaluation?
+
+    - LET construction
+        - MPI all gather to exchange region contrlled by each processor
+        - add all ancestor octants to local leaves, creating LET
+        - exchange ghost octants using comm scheme, ghosts are exchanged for leaves and non-leaves.
+        - repartition to get equal load.
+
+    - Evaluation
+        - pre M2M
+            - first step
+            - communicate source charges required for near field interaction.
+                - MPI Isend - relatively local communicatons
+        - M2M
+            - second step, sum up multipoles o the contributors to each octant.
+            - third step, communicate th collected upward densities to uses of each octant, as they only have a part of the final sum.
+        - second and third steps same as allreduce  on a hypercube.
+
 - How must we break down the communication pattern during this algorithm to achieve optimal communication bound of the FMM? (global vs local tree)?
-- introducing these communicator optimisations is something we need to implement imminently in our software, and are vital for FMMs designed for the exascale.
 
 
-
-
-
-
+It is a near term priority of this research project to combine the enhanced communication scheme proposed by Ibeid et. al. with the LET construction of Lashuk et. al. in our implementation.
 
