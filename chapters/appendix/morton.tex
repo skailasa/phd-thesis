@@ -1,0 +1,182 @@
+\subsection{Useful Properties of Morton Encodings}
+
+These properties are taken from Appendix A in \cite{sundar2008bottom}
+
+\begin{enumerate}
+    \item Sorting the leaves by their Morton keys is equivalent to pre-order traversal of an octree. If one connects the centers of the boxes in this order we observe a `Z'-pattern in Cartesian space. Nearby octants in Morton order are clustered together in Cartesian space.
+    \item Given three octants $a < b < c$ and $c \notin \text{Descendants}(b)$
+    \[
+      a < d < c \forall d \in \{ \text{Descendants(b)} \}
+    \]
+    \item The Morton key of any box is less than those of its descendants.
+    \item Two distinct octants overlap only if and only if one is an ancestor of another.
+    \item The Morton key of any node and its first child are consecutive.
+    \item The first descendant at level $l$, $\text{FirstDescendant}(N, l)$ of any box $N$ is the descendant at that level with the least Morton key.
+    \item The range $(N, \text{DeepestFirstDescendent}(N)]$ contains only the first descendants of $N$ at different levels, and hence there can be no more than one leaf in this range in the entire linear octree.
+    \item The last descendant at level $l$ of $N$, $\text{LastDescendant}(N, l)$ of any node $N$ is the descendant at that level with the greatest Morton key.
+    \item Every octant in the range $(N, \text{DeepestLastDescendant}(N)]$ is a descendant of $N$.
+\end{enumerate}
+
+
+\subsection{Algorithms Required for Constructing Linear Octrees}
+
+These listings are adapted from \cite{sundar2008bottom}.
+
+\begin{algorithm}
+    \caption{\textbf{Remove Overlaps From Sorted List of Octants (Sequential)} - \texttt{Linearise}. Favour smaller octants over larger overlapping octants.}
+    \label{alg:app:morton:linearise_octree}
+    \begin{algorithmic}
+
+        \STATE \textbf{Input}: A sorted list of octants, $W$.
+        \STATE \textbf{Output}: $R$, an octree with no overlaps.
+        \STATE \textbf{Work}: $O(n)$, where $n$=len($W$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+
+        \FOR{i $\gets$ 1 to len($W$)}
+            \IF {$W[i] \notin \{ \text{Ancestors}(W[i+1]), W[i+1] \}$}
+                \STATE $R \gets R + W[i]$
+            \ENDIF
+        \ENDFOR
+        \STATE $R\gets R+W$[len($i$)]
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+    \caption{\textbf{Construct a Minimal Linear Octree Between Two Octants (Sequential)} - \texttt{CompleteRegion}.}
+    \label{alg:app:morton:complete_region}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: Two octants $a$ and $b$, where $a > b$ in Morton order.
+        \STATE \textbf{Output}: $R$, minimal linear octree between $a$ and $b$.
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+
+        \FOR {$w \in W$}
+            \IF {$a < w < b$ \textbf{and} $w \notin \{ \text{Ancestors}(b)\}$}
+                \STATE $R \gets R + w$
+            \ELSIF {$w \notin \{\text{Ancestors}(a), \text{Ancestors}(b)\}$}
+                \STATE $W \gets W - w + \text{Children}(w)$
+            \ENDIF
+        \ENDFOR
+        \STATE \text{Sort}($R$)
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{Balance a Local Octree (Sequential)} - \texttt{Balance}. A 2:1 balancing is enforced, such that adjacent octants are at most twice as large as each other.}
+    \label{alg:app:morton:balance_octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A local octree $W$, on a given node.
+        \STATE \textbf{Output}: $R$, a 2:1 balanced octree.
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($W$).
+
+        \STATE $R = \text{Linearize}(W)$
+        \FOR {$l \gets \text{Depth } \text{to } {1} $}
+            \STATE $Q \gets \{ x \in W | \text{Level}(x) = l \}$
+            \FOR {$q \in Q$}
+                \FOR {$n \in \{\text{Neighbours}(q), q\}$}
+                    \IF {$n \notin R$ and $\text{Parent}(n) \notin R$}
+                        \STATE $R \gets R + \text{Parent}(n)$
+                        \STATE $R \gets R + \text{Siblings}(\text{Parent}(n))$
+                    \ENDIF
+                \ENDFOR
+            \ENDFOR
+        \ENDFOR
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textbf{Construct Distributed Octree (Parallel)}}
+    \label{alg:app:morton:point2octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed list of points $L$, and a parameter $n_{\text{crit}}$ specifying the maximum number of points per octant.
+        \STATE \textbf{Output}: A complete linear octree, $B$.
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($L$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($L$).
+
+        \STATE $F \gets $ [Octant($p$, MaxDepth), $\forall p \in L$]
+        \STATE ParallelSort(F)
+        \STATE $B \gets $ BlockPartition($F$), using algorithm (\ref{alg:ch_6:block_partition})
+        \FOR {$b \in B$}
+            \IF {NumberOfPoints($b$) $>$ $n_{\text{crit}}$}
+                \STATE $B \gets B - b + $ Children($b$)
+            \ENDIF
+        \ENDFOR
+
+        \STATE \\\# Optional Balancing over subtrees, $f$.
+
+        \IF {Balance = True}
+            \FOR {$f \in F$}
+                \STATE Balance($f$), using algorithm (\ref{alg:app:morton:balance_octree})
+            \ENDFOR
+
+            \STATE ParallelSort($F$)
+
+            \FOR {$f \in F$}
+                \STATE Linearise($f$), using algorithm (\ref{alg:app:morton:linearise_octree})
+            \ENDFOR
+        \ENDIF
+
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+    \caption{\textbf{Partitioning Octants Into Coarse Parallel Blocks (Parallel)} - \texttt{BlockPartition}.}
+    \label{alg:ch_6:block_partition}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed list of octants $F$.
+        \STATE \textbf{Output}: A list of blocks $G$, $F$ redistributed but the relative order of the octants is preserved.
+        \STATE \textbf{Work}: $O(n)$, where $n$=len($F$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($F$).
+
+        \STATE $T \gets $ CompleteRegion($F$[1], $F$[len($F$)]), using algorithm (\ref{alg:app:morton:complete_region})
+        \STATE $C \gets \{ x \in T | \forall y \in T, \text{Level}(x) \leq \text{Level}(y) \}$
+        \STATE $G \gets $ CompleteOctree($C$), using algorithm (\ref{alg:app:morton:complete_octree})
+        \FOR {$g \in G$}
+            weight($g$) $\gets $ len($F_{global} \cap \{ g,  \{ \text{Descendents (g)} \} \}$)
+        \ENDFOR
+
+        \STATE $F \gets F_{global} \cap \{ g, \{ \text{Descendants}(g) \} \forall g \in G \}$
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+    \caption{\textbf{Construct a Complete Linear Octree From a Set of Seed Octants Spread Across Processors (Parallel)} - \texttt{CompleteOctree}}
+    \label{alg:app:morton:complete_octree}
+    \begin{algorithmic}
+        \STATE \textbf{Input}: A distributed sorted list of seeds $L$.
+        \STATE \textbf{Output}: $R$, a complete linear octree.
+        \STATE \textbf{Work}: $O(n \log n)$, where $n$=len($R$).
+        \STATE \textbf{Storage}: $O(n)$, where $n$=len($R$).
+
+        \STATE $L \gets \text{Linearise}(L)$, using algorithm (\ref{alg:app:morton:linearise_octree}).
+
+        \IF {rank = 0}
+            \STATE $L$.push\_front(FirstChild(FinestAncestors(DeepestFirstDescendent(root), $L$[1])))
+        \ENDIF
+
+        \IF {rank = $n_p-1$ }
+            \STATE $L$.push\_back(LastChild(FinestAncestors(DeepestLastDescendent(root), $L$[len($L$)])))
+        \ENDIF
+
+        \IF {rank > 0}
+            \STATE Send($L$[1], (rank-1))
+        \ENDIF
+
+        \IF {rank < ($n_p-1$)}
+            \STATE $L$.push\_back(Receive())
+        \ENDIF
+
+        \FOR {$i \gets 1$ to (len($L$)-1)}
+            \STATE $A \gets$ CompleteRegion($L[i]$, $L[i+1]$), using algorithm (\ref{alg:app:morton:complete_region})
+        \ENDFOR
+
+        \IF {rank = $n_p-1$}
+            \STATE $R \gets R+L[\text{L}]$
+        \ENDIF
+
+    \end{algorithmic}
+\end{algorithm}
