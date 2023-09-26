@@ -2,11 +2,11 @@
 
 In this section we introduce analytical features of the kernels compatible with the kiFMM that have consequences for computer implementations, such as the ability to pre-compute and cache matrices that correspond to translation operators. We also discuss the octree data structure in more detail, highlighting its key bottlenecks, concluding with a discussion on implied computational and storage complexity.
 
-The defining feature of the kernels compatible with the FMM is that they they display a rapid decay behaviour as the distance between interactions increases, known formally as \textit{asymptotic smoothness}. A kernel is described as asymptotically smooth if there are constants $C_{\text{as1}}, C_{\text{as2}} \in \mathbb{R}_{>0}$ that satisfy,
+The defining feature of the kernels compatible with the FMM is that they they display a rapid decay behaviour as the distance between interactions increases, known formally as \textit{asymptotic smoothness}. A kernel is described as asymptotically smooth if there are constants $C_{\text{as1}}, C_{\text{as2}} \in \mathbb{R}_{>0}$ that satisfy \cite{borm2003introduction},
 
 \begin{flalign}
         \label{eq:chpt:2:sec:1:asym_smooth}
-    \| \partial_x^\alpha \partial_y^\beta K(x, y) \leq C_{\text{as1}} (C_{\text{as2}} \|| x-y \|_2)^{-|a|-|b|}\alpha + \beta|K(x, y)|
+    | \partial_x^\alpha \partial_y^\beta K(x, y) | \leq C_{\text{as1}} (C_{\text{as2}} \|| x-y \|_2)^{-|a|-|b|}\alpha + \beta|K(x, y)|
 \end{flalign}
 
 for all multi-indices $\alpha, \beta \in \mathbb{N}^3_0$ and all $x, y \in \mathbb{R}^3$. It's this smoothness that allows us to limit the definition of $\mathcal{N}^B$ to its neighbouring boxes in the FMM. Considering the situation in $\mathbb{R}^3$ only, this leads to $|\mathcal{N}^B| = 3^3=27$.

@@ -21,7 +21,7 @@ Here, $q_i$ is a point charge/mass, corresponding to $N$ particles at positions 
     \right.
 \end{flalign}
 
-Writing the component form (\ref{eq:chpt:2:sec:0:laplace_kernel}) as its corresponding linear system,
+Where we take without loss of generality the singularity to be $K(x, x) = 0$ in practical implementations. Writing the component form (\ref{eq:chpt:2:sec:0:laplace_kernel}) as its corresponding linear system,
 
 \begin{flalign}\label{eq:chpt:2:sec:0:fmm_linear_system}
    \mathbf{\phi} = K \mathbf{q}
@@ -85,7 +85,7 @@ Greengard and Rokhlin also define a local expansion centered on $\Omega_t$, that
     \phi(x) = \sum_{l=1}^\infty (x-c_t)^l \hat{\phi}^t_l
 \end{flalign}
 
-with a simple computation to derive the local expansion coefficients $\{\hat{\phi}^t_p\}_{p=0}^\infty$ from $\{ \hat{q}_p^s \}_{p=0}^{P-1}$ (see app. \ref{app:locals}).
+with a simple computation to derive the local expansion coefficients $\{\hat{\phi}^t_p\}_{p=0}^\infty$ from $\{ \hat{q}_p^s \}_{p=0}^{P-1}$.
 
 For our purposes it's useful to write the multipole expansion in linear algebraic terms as a linear map between vectors,
 
