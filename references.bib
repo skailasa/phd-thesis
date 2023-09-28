@@ -9,6 +9,18 @@
     doi           = {http://dx.doi.org/10.1016/j.jcp.2003.11.021}
 }
 
+@article{hasselbring2020open,
+  title={Open source research software},
+  author={Hasselbring, Wilhelm and Carr, Leslie and Hettrick, Simon and Packer, Heather and Tiropanis, Thanassis},
+  journal={Computer},
+  volume={53},
+  number={8},
+  pages={84--88},
+  year={2020},
+  publisher={IEEE}
+}
+
+
 @article{wolf2011aeroacoustic,
   title={Aeroacoustic integrals accelerated by fast multipole method},
   author={Wolf, William R and Lele, Sanjiva K},
@@ -219,7 +231,7 @@
 
 @software{fmm2d,
 
-  author = {Rachh, Manas and Lu, Libin and Malhotra, Dhairya and O'Neill, Mike and Askham, Travis and Magland, Jeremy and Greengard, Leslie and 
+  author = {Rachh, Manas and Lu, Libin and Malhotra, Dhairya and O'Neill, Mike and Askham, Travis and Magland, Jeremy and Greengard, Leslie and
  Saturnino, Guilherme },
   title = {FMM3D},
   url = {https://github.com/flatironinstitute/FMM3D},
@@ -247,19 +259,37 @@
   title={FLAM: Fast linear algebra in MATLAB-Algorithms for hierarchical matrices},
   author={Ho, Kenneth L},
   journal={Journal of Open Source Software},
-  volume={5}, 
+  volume={5},
   number={51},
   pages={1906},
   year={2020}
 }
 
+@misc{Arabas2022,
+  author = {Arabas, Sylwester and Zwicker, David and Derlatka, Kacper and Manna, Maciej and Bulenok, Oleksii},
+  title = {numba-mpi},
+  year = {2022},
+  note = {Git repository, version 0.36},
+  howpublished = {\url{https://github.com/numba-mpi/numba-mpi}},
+  version = {0.36}
+}
+
+@misc{Lattner2023Mojo,
+    author = {Lattner, Chris},
+    title = {Mojo - a new programming language for all AI developers},
+    year = {2023},
+    howpublished = {\url{https://www.modular.com/mojo}},
+}
+
 @article{kailasa2022pyexafmm,
-  title={PyExaFMM: an exercise in designing high-performance softawre with Python and Numba},
+  title={PyExaFMM: an exercise in designing high-performance software with Python and Numba},
   author={Kailasa, Srinath and Wang, Tingyu and Barba, Lorena A and Betcke, Timo},
-  journal={To Appear in Computing in Science and Engineering},
+  journal={Computing in Science \& Engineering},
   volume={24},
-  number={4},
-  year={2022}
+  number={5},
+  pages={77--84},
+  year={2022},
+  publisher={IEEE}
 }
 
 @article{hackbusch1999sparse,
@@ -273,6 +303,16 @@
   publisher={Springer}
 }
 
+@article{messner2012fast,
+  title={Fast directional multilevel summation for oscillatory kernels based on Chebyshev interpolation},
+  author={Messner, Matthias and Schanz, Martin and Darve, Eric},
+  journal={Journal of Computational Physics},
+  volume={231},
+  number={4},
+  pages={1175--1196},
+  year={2012},
+  publisher={Elsevier}
+}
 
 @article{borm2003short,
   title={A short overview of H2-matrices},
@@ -669,6 +709,92 @@ year = {2016}
   year={2018},
   publisher={Crascit}
 }
+@book{Kress2014,
+author = {Kress, Rainer},
+booktitle = {Applied Mathematical Sciences (Switzerland)},
+doi = {10.1007/978-1-4614-9593-2},
+file = {:home/sri/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Kress - 2014 - Linear integral equations.pdf:pdf},
+isbn = {9781461495925},
+issn = {2196968X},
+pages = {i--412},
+title = {{Linear integral equations}},
+volume = {82},
+year = {2014}
+}
+
+@article{Lashuk2012,
+abstract = {We describe a parallel fast multipole method (FMM) for highly nonuniform distributions of particles. We employ both distributed memory parallelism (via MPI) and shared memory parallelism (via OpenMP and GPU acceleration) to rapidly evaluate two-body nonoscillatory potentials in three dimensions on heterogeneous high performance computing architectures. We have performed scalability tests with up to 30 billion particles on 196,608 cores on the AMD/ CRAY-based Jaguar system at ORNL. On a GPU-enabled system (NSF's Keeneland at Georgia Tech/ORNL), we observed 30× speedup over a single core CPU and 7× speedup over a multicore CPU implementation. By combining GPUs with MPI, we achieve less than 10 ns/particle and six digits of accuracy for a run with 48 million nonuniformly distributed particles on 192 GPUs. {\textcopyright} 2012 ACM.},
+author = {Lashuk, Ilya and Chandramowlishwaran, Aparna and Langston, Harper and Nguyen, Tuan-Anh and Sampath, Rahul and Shringarpure, Aashay and Vuduc, Richard and Ying, Lexing and Zorin, Denis and Biros, George},
+doi = {10.1145/2160718.2160740},
+file = {:home/sri/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Lashuk et al. - 2012 - A massively parallel adaptive fast multipole method on heterogeneous architectures.pdf:pdf},
+issn = {0001-0782},
+journal = {Communications of the ACM},
+month = {may},
+number = {5},
+pages = {101--109},
+title = {{A massively parallel adaptive fast multipole method on heterogeneous architectures}},
+url = {https://dl.acm.org/doi/10.1145/2160718.2160740},
+volume = {55},
+year = {2012}
+}
+
+
+@inproceedings{sampath2008dendro,
+  title={Dendro: parallel algorithms for multigrid and AMR methods on 2: 1 balanced octrees},
+  author={Sampath, Rahul S and Adavani, Santi S and Sundar, Hari and Lashuk, Ilya and Biros, George},
+  booktitle={SC'08: Proceedings of the 2008 ACM/IEEE Conference on Supercomputing},
+  pages={1--12},
+  year={2008},
+  organization={IEEE}
+}
+
+@article{Yokota2014,
+abstract = {A combination of hierarchical tree-like data structures and data access patterns from fast multipole methods and hierarchical low-rank approximation of linear operators from H-matrix methods appears to form an algorithmic path forward for efficient implementation of many linear algebraic operations of scientific computing at the exascale. The combination provides asymptotically optimal computational and communication complexity and applicability to large classes of operators that commonly arise in scientific computing applications. A convergence of the mathematical theories of the fast multipole and H-matrix methods has been underway for over a decade. We recap this mathematical unification and describe implementation aspects of a hybrid of these two compelling hierarchical algorithms on hierarchical distributed-shared memory architectures, which are likely to be the first to reach the exascale. We present a new communication complexity estimate for fast multipole methods on such architectures. We also show how the data structures and access patterns of H-matrices for low-rank operators map onto those of fast multipole, leading to an algebraically generalized form of fast multipole that compromises none of its architecturally ideal properties.},
+archivePrefix = {arXiv},
+arxivId = {1406.1974},
+author = {Yokota, Rio and Turkiyyah, George and Keyes, David},
+doi = {10.14529/jsfi140104},
+eprint = {1406.1974},
+file = {:home/sri/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Yokota, Turkiyyah, Keyes - 2014 - Communication complexity of the fast multipole method and its algebraic variants.pdf:pdf},
+issn = {23138734},
+journal = {Supercomputing Frontiers and Innovations},
+keywords = {Communication complexity,Fast multipole methods,H-matrices,Hierarchical low-rank approximation,Sparse solvers},
+mendeley-groups = {Doctorate/Math/Numerical Analysis/Hierarchical Methods},
+number = {1},
+pages = {62--83},
+title = {{Communication complexity of the fast multipole method and its algebraic variants}},
+volume = {1},
+year = {2014}
+}
+@article{Ibeid2016,
+abstract = {Exascale systems are predicted to have approximately 1 billion cores, assuming gigahertz cores. Limitations on affordable network topologies for distributed memory systems of such massive scale bring new challenges to the currently dominant parallel programing model. Currently, there are many efforts to evaluate the hardware and software bottlenecks of exascale designs. It is therefore of interest to model application performance and to understand what changes need to be made to ensure extrapolated scalability. The fast multipole method (FMM) was originally developed for accelerating N-body problems in astrophysics and molecular dynamics but has recently been extended to a wider range of problems. Its high arithmetic intensity combined with its linear complexity and asynchronous communication patterns make it a promising algorithm for exascale systems. In this paper, we discuss the challenges for FMM on current parallel computers and future exascale architectures, with a focus on internode communication. We focus on the communication part only; the efficiency of the computational kernels are beyond the scope of the present study. We develop a performance model that considers the communication patterns of the FMM and observe a good match between our model and the actual communication time on four high-performance computing (HPC) systems, when latency, bandwidth, network topology, and multicore penalties are all taken into account. To our knowledge, this is the first formal characterization of internode communication in FMM that validates the model against actual measurements of communication time. The ultimate communication model is predictive in an absolute sense; however, on complex systems, this objective is often out of reach or of a difficulty out of proportion to its benefit when there exists a simpler model that is inexpensive and sufficient to guide coding decisions leading to improved scaling. The current model provides such guidance.},
+archivePrefix = {arXiv},
+arxivId = {arXiv:1405.6362v1},
+author = {Ibeid, Huda and Yokota, Rio and Keyes, David},
+doi = {10.1177/1094342016634819},
+eprint = {arXiv:1405.6362v1},
+file = {:home/sri/Documents/Mendeley/1405.6362.pdf:pdf},
+issn = {17412846},
+journal = {International Journal of High Performance Computing Applications},
+keywords = {communication complexity,communication performance models,fast multipole method},
+number = {4},
+pages = {423--437},
+title = {{A performance model for the communication in fast multipole methods on high-performance computing platforms}},
+volume = {30},
+year = {2016}
+}
+
+@book{Trefethen1997,
+address = {Philadelphia},
+author = {Trefethen, Lloyd Nicholas and Bau, David III},
+file = {:home/sri/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Trefethen, Bau - 1997 - Numerical Linear Algebra.pdf:pdf},
+isbn = {0898713617},
+mendeley-groups = {Doctorate},
+publisher = {Society for Industrial and Applied Mathematics},
+title = {{Numerical Linear Algebra}},
+year = {1997}
+}
+
 
 @ARTICLE{BursteddeWilcoxGhattas11,
   author = {Carsten Burstedde and Lucas C. Wilcox and Omar Ghattas},

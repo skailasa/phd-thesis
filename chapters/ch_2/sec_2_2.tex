@@ -1,0 +1,100 @@
+\section{Implementation Challenges for the Kernel Independent Fast Multipole Method }\label{chpt:2:sec:2}
+
+In this section we introduce analytical features of the kernels compatible with the kiFMM that have consequences for computer implementations, such as the ability to pre-compute and cache matrices that correspond to translation operators. We also discuss the octree data structure in more detail, highlighting its key bottlenecks, concluding with a discussion on implied computational and storage complexity.
+
+The defining feature of the kernels compatible with the FMM is that they they display a rapid decay behaviour as the distance between interactions increases, known formally as \textit{asymptotic smoothness}. A kernel is described as asymptotically smooth if there are constants $C_{\text{as1}}, C_{\text{as2}} \in \mathbb{R}_{>0}$ that satisfy \cite{borm2003introduction},
+
+\begin{flalign}
+        \label{eq:chpt:2:sec:1:asym_smooth}
+    | \partial_x^\alpha \partial_y^\beta K(x, y) | \leq C_{\text{as1}} (C_{\text{as2}} \|| x-y \|_2)^{-|a|-|b|}\alpha + \beta|K(x, y)|
+\end{flalign}
+
+for all multi-indices $\alpha, \beta \in \mathbb{N}^3_0$ and all $x, y \in \mathbb{R}^3$. It's this smoothness that allows us to limit the definition of $\mathcal{N}^B$ to its neighbouring boxes in the FMM. Considering the situation in $\mathbb{R}^3$ only, this leads to $|\mathcal{N}^B| = 3^3=27$.
+
+Far-field interactions are handled by the $T^{M2L}$ step, we saw above how this is limited to interactions with boxes which are children of $B$'s parent, but non-adjacent to $B$. Therefore we see that in a multi-level scheme the $\mathcal{N}^B$ contains all of the $6^3=216$ near and far field interactions of $B$'s children. As far-field interactions necessarily exclude the near field, this leads to a maximum of $6^3-3^3=189$ boxes in each child box's far field that must be considered, each corresponding to a single $T^{M2L}$. This is one of the \textit{key bottlenecks} of efficient FMM implementations. There are numerous ways of \textit{sparsifying} this step, either by using some additional numerical technique such as an SVD to compress the matrices corresponding to $T^{M2L}$ as they are known to be low-rank, or by using an exact method such as an Fast Fourier Transform (FFT) - which relies on our decision to place the equivalent densities on a regular grid as then the $T^{M2L}$ can be re-interpreted as a convolution. We discuss the trade-offs of these approaches in detail in Section \ref{chpt:3:sec:1:m2l}, as optimal implementations of this sparsification are of central importance to our software's performance.
+
+We note that precomputations can be further reduced if kernels also exhibit translational invariance,
+
+\begin{flalign}
+    \label{eq:chpt:2:sec:1:translational_invariance}
+    K(x, y) = K(x+v, y+v)
+\end{flalign}
+
+where $v \in \mathbb{R}^3$, we can compute $T^{M2L}$ for a restricted subset of the total possible interactions for the eight child boxes. Indeed, the union of all possible far-field interactions for the eight child boxes gives $7^3-3^3 = 316$ possible interactions. This comes from the fact some subset of translation vectors are non-overlapping for each child, resulting in a total of $7^3$ total interactions for all children, subtracting the near-field interactions which are the same for all children gives the result. Furthermore this means that we must pre-compute just 316 unique $T^{M2L}$ if our kernel has these favourable properties. This is of course dependent on choosing the same equivalent and check surfaces, and density locations, for each box. If so, these can be pre-computed and cached for a given expansion order, corresponding to all possible $T^{M2L}$ at each level.
+
+If an asymptotically smooth, translationally invariant, kernel is also homogeneous to degree $n$,
+
+\begin{flalign}
+    K(\alpha r) = \alpha^n K(r)
+\end{flalign}
+
+where $\alpha \in \mathbb{R}$, implies that when we scale the distance between a source and target box by $\alpha$ the potential is scaled by a factor of $\alpha^n$, where $n$ depends on the kernel function in question, we can compute $T^{M2L}$ for a \textit{single} level of the tree, and scale the result at subsequent levels. This is summarised in Table \ref{table:chpt:2:sec:1:m2l_optimisations}.
+
+\begin{table}
+    \centering
+    \caption{Number of near and far field boxes for a given box $B$, depending on the type of kernel we're considering.}
+    \begin{tabular}{l l l}
+        \toprule
+        Kernel Type & boxes in $\mathcal{N}^B$ & boxes in $\mathcal{F}^B$ \\
+        \midrule
+        trans. invar. & $\leq$ 27 per box & $\leq$ 316 per level \\
+        trans. invar. + homog. & $\leq$ 27 per box & $\leq$ 316 in total\\
+        \bottomrule
+    \end{tabular}
+    \label{table:chpt:2:sec:1:m2l_optimisations}
+\end{table}
+
+As we've chosen the location of point densities to be fixed relative to each box, the evaluation of (\ref{eq:chpt:2:sec:1:m2m}) and (\ref{eq:chpt:2:sec:1:l2l}) can equivalently be pre-computed. In this case, there are just 8 unique matrices corresponding to $T^{M2M}$ and $T^{L2L}$, corresponding to the relative positions between a parent box and its children.
+
+We observe the $T^{P2M}$ is calculated for all the nodes of a quad/octree in a discretisation, as observed in the previous section the level of discretisation is either specified by the user, or set by a user defined constraint $N_{\text{crit}}$ which specifies a maximum number of points contained within each leaf box. This leads to $O(N \cdot N_{\text{crit}})$ to find the check potentials for each leaf, therefore we note that $N_{\text{crit}}$ must be kept small to ensure linear complexity is maintained for this operation. To compute the equivalent density, we rely on an application of the inverted integral operator in (\ref{eq:chpt:2:sec:1:multipole_appx}). The size of this matrix is determined by the expansion order $P$, which determines the number of quadrature points taken on the equivalent/check surfaces. As the points are taken to be placed on a regular grid over this surface, the number of quadrature points $N_{\text{quad}}$ relates to $P$ as,
+
+\begin{flalign}\label{eq:chpt:2:sec:2:ncoeffs}
+    N_{\text{quad}} = 6(P-1)^2+2
+\end{flalign}
+
+Therefore, this matrix vector product is of $O((P-1)^4)$, leading to $O(N((P-1)^4 + N_{\text{crit}}))$ complexity for the entire operator. The complexity of $T^{P2L}$ is the same, as it amounts to the same calculation, albeit to form a local expansion. The precomputation of the translation operator requires an SVD for the integral operator in (\ref{eq:chpt:2:sec:1:multipole_appx}), the complexity of which is dependent on the algorithm chosen, with implementation specific optimisations. However, for a $\mathbb{R}^{m \times n}$ matrix where $m$ and $n$ are of similar size, the `DGESVD' implementation of LAPACK, which we use in our software framework, has a complexity of $O(n^3)$ therefore this precomputation is of $O((P-1)^6)$. The storage required is of $O((P-1)^4)$ for the inverted matrix.
+
+Applying similar analysis for computing (\ref{eq:chpt:2:sec:1:m2m}) and (\ref{eq:chpt:2:sec:1:l2l}), we arrive at computational complexities of $O(N \cdot (P-1)^4)$ for calculating the check potentials, and then evaluating the equivalent densities via two matrix-vector products. For the M2L step, if we do not choose to implement any sparsification, we also obtain $O(N \cdot (P-1)^4)$ for the asymptotic complexity of applying $T^{M2L}$, however here there are large lurking constants. Specifically, each box $B$ has to apply an $T^{M2L}$ up to 189 times in $\mathbb{R}^3$ or 27 times in $\mathbb{R}^2$. The storage complexity is determined by the kernel, as shown by table \ref{table:chpt:2:sec:1:m2l_optimisations}, the properties of the kernel can reduce the number of precomputations that can be cached.
+
+Similar large constants lurk in the leaf level computations $P2P$, $T^{M2P}$, $T^{P2L}$. These all consider boxes contained in $B$'s near field. For non-uniform point distribution there could be very large number of boxes contained in the near field. Therefore to reduce this we enforce a `balancing' condition, as mentioned above. The most common condition is a `2:1 balance', whereby neighbouring boxes are restricted to be no more than twice as large as each other \cite{malhotra2015pvfmm}. This restricts the size of the number of adjacent boxes to $B$ to be at most 52 in $\mathbb{R}^3$. For these boxes we will calculate the potential for points in $B$ using kernel evaluations directly via $P2P$. For the remainder of its near field, we'll use the $T^{M2P}$ operator. This operator considers boxes in $B$' near field for which the multipole expansion still applies at $B$, this means that leaf boxes that coincide with $B$'s neighbours children that are non-adjacent to $B$. At most there are 156 such boxes in $\mathbb{R}^3$. There may also be an additional contribution to the local expansion at $B$ not captured in $T^{L2L}$ and $T^{M2L}$, from boxes in the near-field of $B$'s parent which are the leaf level, and considered in the far-field of $B$ itself, and are the level of $B$'s parent. These contributions are found via $T^{P2L}$. With our balancing condition there are at most 19 such boxes in $\mathbb{R}^3$. We note that for uniformly refined trees $T^{M2P}$ and $T^{P2L}$ aren't calculated as their corresponding interactions are subsumed into $P2P$. The $P2P$ operator is therefore of $O(52 N \cdot N_{\text{crit}})$, with no storage cost as this is applied directly to points. Similarly, the complexity of $T^{M2P}$ is $O(156 N \cdot (P-1)^2 N_\text{crit})$, $T^{L2P}$ is of $O(N (P-1)^2 \cdot N_\text{crit})$. The complexity of $T^{P2L}$ is $O(19 N \cdot ((P-1)^4 + N_\text{crit}))$, where we include the cost of calculating the check potential as in $T^{P2M}$. The complexities of each step are summarised in table \ref{table:chpt:2:sec:2:kifmm_complexities}. These complexities are only an upper bound, for $T^{M2P}$ and $T^{P2L}$, and correspond to quite extreme point distributions, rarely occuring for all boxes in a given discretisation. In practice these are found to be an order of magnitude smaller than the number of boxes that must be considered in $T^{M2L}$ for point distributions that are relatively uniform \footnote{For example for randomly distributed on the surface of a sphere, or normally distributed points, typical values are $O(10)$ boxes for $T^{M2P}$ and $O(1)$ boxes for $T^{L2P}$}.
+
+Therefore the largest bottlenecks are the $P2P$ and $T^{M2L}$ steps, and the area of focus in optimised implementations. When implemented naively, $T^{M2L}$ contains a large number of BLAS level 2 operations, and is calculated for every non-leaf box below the first level of an octree/quadtree. An obvious optimisation is to re-order data such that a single BLAS level 3 operation is computed for each box. This increases the ratio of computations to memory accesses by converting a series of matrix-vectors product into a single matrix-matrix product for each box. Additionally, the SVD taken for the integral operators above can be cut-off due to the low-rank nature of the above operators, leading to a reduced storage and application complexity. We explore the rank behaviour in more detail in Chapter \ref{chpt:3:sec:1:m2l} for the Laplace kernel. If instead one chooses to take an FFT, which offers lower complexity for each $T^{M2L}$ while being an exact translation, one has to compute the FFT corresponding to each unique translation which as we've seen is kernel dependent, and perform an inverse FFT to evaluate the check potentials at the equivalent density points. This leads to a lower overall complexity for both compute and storage - however, as we observe in Section \ref{chpt:3:sec:1:subsec:2:fft}, memory accesses are critical to performant implementations. The performance of the $P2P$, $T^{M2P}$ and $T^{L2P}$ operators are determined most significantly by the ability to rapidly evaluate the kernel function over sets of points. This is a ripe area for compute optimisations, such as GPU off-loading, or developing vectorised CPU code, and is therefore highly-dependent on the available computational resources and their respective architectures. Practical implementations should be flexible enough to for developers to `plug-in' different implementations in order to experiment with new hardware.
+
+The second major bottleneck with the kiFMM and FMMs more generally, especially in a distributed setting, is the quad/octree data structure. The tree is crucial to performance as being able to rapidly query, and communicate via the tree, especially in a distributed setting will determine the overall runtime, as communication latency is a leading order variable in the distributed FMM's complexity \cite{Yokota2014}. Though there has been significant scholarship in developing high-performance tree libraries for parallel and distributed settings \cite{BursteddeWilcoxGhattas11,sundar2008bottom,sundar2013hyksort}, we observe that relatively little work has been done to examine and develop tree libraries with the FMM explicitly in mind, we explore potential optimisations in Section \ref{chpt:3:sec:0:octrees}. Specifically, $T^{M2M}$ summarises global information that is required by each box, and is later distributed via $T^{M2L}$ this necessarily involve communication across node boundaries in a distributed setting. Additionally, the broad applicability of parallel trees necessitates a design of software that is relatively de-coupled from the FMM code to encourage adoption in other communities. These two concerns determine the implementation strategy of our own tree library.
+
+\begin{table}
+    \centering
+    \caption{Asmyptotic complexities of each kiFMM operator in $\mathbb{R}^3$, with constants left to demonstrate relative contrast. For $T^{M2L}$ we provide a few different complexity estimates, starting with `naive' implementation which applies the inverted integral equation (\ref{eq:chpt:2:sec:1:m2l}) up to 189 for each box as a matrix vector product, with no sparsification. Then the complexities with respect to different kernel properties. For an $T^{M2L}$ sparsified via the SVD we indicate a cut-off rank with $\kappa$, for an FFT based approach as we are often working with real data for the densities we can retain only half the calculated frequencies to save on storage costs. For the $T^{P2L}$, $T^{M2P}$ and $P2P$ operators we provide estimates for 2:1 balanced trees, as we restrict ourselves to this a practical implementation.}
+    \begin{tabular}{l l l}
+        \toprule
+        Operator & Computational Complexity & Storage Complexity  \\
+        \midrule
+        $T^{P2M}$ & $O(N(36(P-1)^4 + N_{\text{crit}}))$ & $O(36(P-1)^4)$\\
+        \midrule
+        $T^{M2M}$ & $O(36N(P-1)^4)$ & $O(8 \cdot 36(P-1)^4)$\\
+        \midrule
+        $T^{L2L}$ & $O(36N(P-1)^4)$ & $O(8 \cdot 36(P-1)^4)$\\
+        \midrule
+        $T^{M2L}_\text{naive}$ & $O(189N \cdot 36(P-1)^4)$ & $O(189N \cdot 36(P-1)^4)$ \\
+        \midrule
+        $T^{M2L}_\text{trans. inv.}$ & $O(189N \cdot 36(P-1)^4)$ & $O(316 \log(N) \cdot 36(P-1)^4)$ \\
+        \midrule
+        $T^{M2L}_\text{homog+trans. inv.}$ & $O(189N \cdot 36(P-1)^4)$ & $O(316 \cdot 36(P-1)^4)$ \\
+        \midrule
+        $T^{M2L}_\text{homog+trans. inv. + SVD}$ & $O(189N \cdot 6(P-1)^2 \cdot \kappa )$ & $O(316 \cdot 6(P-1)^2 \cdot \kappa)$ \\
+        \midrule
+        $T^{M2L}_\text{homog+trans. inv. + FFT}$ & $O(189N \cdot 4 (P-1) \log(P-1))$ & $O(316 \cdot 36(P-1)^4)$ \\
+        \midrule
+    $T^{M2L}_\text{homog+trans. inv. + Real FFT}$ & $O(189 N \cdot 4 (P-1) \log(P-1))$ & $O(316 \cdot 18(P-1)^4)$ \\
+        \midrule
+        $T^{L2P}$ & $O(N(36(P-1)^4 + N_{\text{crit}}))$ & $O(1)$\\
+        \midrule
+        $T^{P2L}_\text{balanced}$ & $O(19 N \cdot (36(P-1)^4 + N_{\text{crit}}))$ & $O(1)$\\
+        \midrule
+        $T^{M2P}_\text{balanced}$ & $O(156 N \cdot ( 36(P-1)^4) )$ & $O(1)$\\
+        \midrule
+        $P2P_\text{balanced}$ & $O(52 N \cdot N_\text{crit} )$ & $O(1)$ \\
+        \bottomrule
+    \end{tabular}
+    \label{table:chpt:2:sec:2:kifmm_complexities}
+\end{table}

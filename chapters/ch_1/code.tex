@@ -1,0 +1,68 @@
+
+
+% \begin{figure}[h]
+%     \centering
+%     \begin{lstlisting}[language=Python, caption={An example of a function marked for JIT compilation using the `njit' decorator. At runtime the types of the inputs and outputs are inferred by Numba, and a corresponding machine code is generated and cached. A function call with different input types will lead to another compilation. This is known as multiple dispatch.},  label=code:chpt:1:sec:1:matvec]
+% from numba import njit
+
+% @numba.njit
+% def matvec(A, x):
+%     """
+%     A simple implementation of a matrix vector product
+%     """
+%     nrows = len(A)
+%     ncols = len(A[0])
+
+%     b = np.zeros(nrows)
+
+%     for i in range(nrows):
+%         for j in range(ncols):
+%             b[i] += A[i][j] * x[j]
+
+%     return n
+
+% \end{lstlisting}
+% \end{figure}
+
+% \begin{figure}[h]
+%     \centering
+%     \begin{lstlisting}[language=Python, caption={An example of a Numba compiled function being used in a shared memory program. Th},  label=code:chpt:1:sec:1:numba_mpi]
+% import numba, numba_mpi, numpy, time
+
+% @numba.njit()
+% def matvec_distributed(A, x):
+%     print(numba_mpi.rank(), numba_mpi.size())
+%     b = A @ x
+
+% n = 20
+% A = numpy.arange(n**2).reshape(n, n).astype(numpy.float64)
+% x = numpy.arange(n).astype(numpy.float64)
+
+% s = time.time()
+% matvec_distributed(A, x)
+%  # ~1 second for first call
+% print("Runtime including Compilation time", time.time()-s)
+
+% s = time.time()
+% matvec_distributed(A, x)
+% # ~1e-6 seconds for second call
+% print("Compiled Runtime", time.time()-s)
+
+
+% \end{lstlisting}
+% \end{figure}
+
+
+% \begin{figure}[h]
+%     \centering
+%     \begin{lstlisting}[language=Rust, caption=Your Rust code caption., label=code:rust_label]
+% fn main() {
+%     println!("Hello, Rust!");
+% }
+
+% trait Foo {
+
+%     pub fn bar() -> Vec<u64>;
+% }
+%     \end{lstlisting}
+% \end{figure}

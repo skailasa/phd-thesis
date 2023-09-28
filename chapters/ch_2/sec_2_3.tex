@@ -1,0 +1,153 @@
+\section{Building for Re-Use in Fast Algorithm Software}\label{chpt:2:sec:3}
+
+High performance software for the core data structure of quad/octrees is essential to all fast algorithms. Indeed, these hierarchical discretisations of space find applications across scientific computing when modelling multi-scale phenomena. Similarly, methods for sparsifying the $T^{M2L}$ operator, whether that be via an SVD or FFT, can also be re-used in the implementation of fast direct solvers, or alternative algebraic FMMs such as the bbFMM of Fong and Darve \cite{fong2009black}. The same is true of software for evaluating kernel functions in the $P2P$ operator. We identify the decoupling of separate sub-components to be rare in other softwares for fast algorithms \cite{malhotra2015pvfmm,wang2021exafmm,h2lib2016github}, which are often presented as a monolith to users, making it difficult for developers to extend or adapt this software to their use-case.
+
+Software engineering practice, traditionally object oriented programming, is centered on a set of key principles known via an acronym SOLID \footnote{S - single responsibility, a software unit is responsible for a quantum of functionality. O - Open/close principle, whereby extensions should be easy, but presented software is closed for modification. L - Liskov substitution, a software class should be replaceable with a sub-class without breaking the software. I - Interfaces should be segregated such that code relying on them shouldn't depend on methods it doesn't use. D - Dependency inversion, high-level modules should not have to worry about low level implementation details}. In this section we explain how some of Rust's features allow us to enforce 'S' - the `single responsibility' principle, as well as 'O', the `open close' principle, and the 'D' - dependency inversion principle, of SOLID which allow us to create software for fast algorithms that is composed of sub-components that are easy to modify and extend, and usable from downstream projects that may want to utilise a subset of our software's functionality.
+
+Beginning with the `single responsibility' principle. Cargo's `workspaces' feature allows all sub-packages (known as `crates' in Rust) to share a common build directory, speeding up build compile times for shared dependencies and ensuring that dependencies are uniformly versioned across all crates, specified by a root level TOML dependency file. Indeed, crates within a workspace can be specified to be binaries, libraries, or both, allowing for sub-components to easily be deployed independently or used as a dependency by a downstream developer. This allows for example users to make use of sub-components such as our tree library, or implementation of kernels, without having to install an FMM implementation that relies upon it.
+
+Rust's trait system is designed to enforce the open/close principle. As we've seem above, FMM implementations can depart quite radically from that originally presented by Greengard and Rokhlin, despite sharing a common algorithmic structure, or data structure. In designing our software we want to build a platform to rapidly add functionality, and compare performance. For example, if we can design an alternative $P2P$ operator that uses a GPU, or wanted to contrast methods to sparsify $T^{M2L}$ such as the SVD or FFT approaches mentioned above it should be possible to leave the remainder of our kiFMM intact. If we wanted to entirely replace the kiFMM by an equivalent alternative, such as the bbFMM or the original analytical FMM, and re-use the distributed octrees, the kernel evaluations, and the general algorithmic structure it should also be possible to do so. Indeed, the difficulty in comparing directly methods to sparsify $T^{M2L}$ or the relative performance of two algebraic FMM approaches comes down to the diversity in their respective implementations as presented by the authors, making it difficult to isolate independent variables that can explain performance differences in terms of speed or accuracy. To compare the relative merits of Trait based design over object oriented design, let's take the example of building an abstraction for an FMM implementation in our software.
+
+We begin by defining a trait for FMM algorithms, which we choose to make as general as possible so we can specialise it for different algorithms, distributed or single node trees, or expansion orders.
+
+\begin{lstlisting}[language=Rust, caption={Traits for FMM Algorithms.},  label=code:chpt:2:sec:3:fmm]
+use bempp::traits::kernel::Kernel;
+use bempp::traits::tree::Tree;
+
+pub trait Fmm {
+    // Associated type for a kernel
+    type Kernel: Kernel;
+
+    // Associated type for a tree
+    type Tree: Tree;
+
+    // Expansion order
+    fn order(&self) -> usize;
+
+    // The kernel function
+    fn kernel(&self) -> &Self::Kernel;
+
+    // The tree (single node or distributed)
+    fn tree(&self) -> &Self::Tree;
+}
+\end{lstlisting}
+
+To read the code in Listing \ref{code:chpt:2:sec:3:fmm}, we introduce a Rust language feature known as an `associated' type. This amounts to a placeholder which can be populated by an implementer. Associated types can be constrained to have certain behaviour, in this case we've enforced our associated types to have `Trait bounds', i.e. we expect the placeholders to implement the interface specified by two other Traits, specifically Traits that specify how a Kernel and a Tree should behave. Our Kernel Trait contains methods for single and multithreaded kernel evaluations, as well as assembly of Kernel matrices corresponding to the interactions between sets of sources and points\footnote{https://github.com/bempp/bempp-rs/blob/feat/rlst-fmm/traits/src/kernel.rs}, similarly our Tree Trait is generic over single/multi-nodes - just specifying the behaviour to query boxes and the points that they may contain \footnote{https://github.com/bempp/bempp-rs/blob/feat/rlst-fmm/traits/src/tree.rs}. Each Trait is implemented by a concrete type created by a user, for example a struct, and defines an \textit{interface} which must be implemented by the type. Rust traits from foreign libraries can be implemented for local types only, this is to avoid situations in which traits are re-implemented by downstream users of software that may be implemented by the libraries developers.
+
+We see here that the Traits do not specify how the data for our FMM looks like, this allows us to specialise for different implementations such as the kiFMM as follows. We begin by creating an interface for $T^{M2L}$ shown in Listing \ref{code:chpt:2:sec:3:field_translation}. Notice the generic parameters after the name of the trait `T', which is constrained to behave in accordance with the Kernel Trait. There are two traits here, one specifying how data should be accessed for a given $T^{M2L}$ implementation, and another providing an interface to call the operator over the boxes in a given level of a tree. We use this pattern of separating the interface for data access from that for the operator to give us flexibility in exactly how the data corresponding to $T^{M2L}$ is stored in practice. For example, an SVD based operator would store data of a different shape to an FFT based one, alongside different meta-data required for its application. The first Trait simply specifies that a user must be able to call methods to precompute the operators for a given kernel function, which as we saw in the previous section has implications for the amount of pre-computation possible, as well as for a given domain - which may be distributed.
+
+\begin{lstlisting}[language=Rust, caption={Trait for Multipole to Local Field Translation},  label=code:chpt:2:sec:3:field_translation]
+use bempp::traits::kernel::Kernel;
+
+pub trait FieldTranslationData<T>
+where
+    T: Kernel,
+{
+    // An associated type for the relative position between two boxes
+    type TransferVector;
+
+    // An associated type for how the M2L operators may look after sparsification
+    type M2LOperators;
+
+    // The type of domain, which may be single node/distributed
+    type Domain;
+
+    // Compute unique transfer vectors
+    fn compute_transfer_vectors(&self) -> Self::TransferVector;
+
+    // Precompute the field translation operators
+    fn compute_m2l_operators(
+        &self,
+        expansion_order: usize,
+        domain: Self::Domain,
+        // );
+    ) -> Self::M2LOperators;
+
+    // Number of coefficients for a given expansion order
+    fn ncoeffs(&self, expansion_order: usize) -> usize;
+}
+
+pub trait FieldTranslation {
+    // How to scale operator with tree level.
+    fn m2l_scale(&self, level: u64) -> f64;
+
+    // Field translation operation over each level.
+    fn m2l(&self, level: u64);
+}
+\end{lstlisting}
+
+A concrete implementation for a given algorithm such as the kiFMM then requires two structs one to hold the data and another to specify the concrete implementation of an FMM algorithm by containing a reference to the type of tree, kernel and $T^{M2L}$ method used. This is shown in Listing \ref{code:chpt:2:sec:3:concrete_kifmm}. In this listing we have a few more generic parameters, constraining the corresponding associated types to behave as specified by these Traits.
+
+\begin{lstlisting}[language=Rust, caption={Structs that specify a concrete implementation of an FMM algorithm.},  label=code:chpt:2:sec:3:concrete_kifmm]
+pub struct KiFmm<T: Tree, U: Kernel, V: FieldTranslationData<U>> {
+
+    // The expansion order of multipole and local expansions.
+    pub expansion_order: usize,
+
+    // The tree associated with this FMM, just has to implement Tree trait, can be single or multi-node.
+    pub tree: T,
+
+    // The kernel associated with this FMM.
+    pub kernel: U,
+
+    // The M2L operator associated with this FMM, can be specialised to be sparsified using different methods.
+    pub m2l: V,
+}
+
+pub struct KiFmmData<T: Fmm> {
+    // A field holding our FMM algorithm
+    pub fmm: T,
+
+    // Data fields, shown as placeholders
+    pub multipoles: ...,
+    pub locals: ...,
+    pub potentials: ...,
+    pub points: ...,
+    pub charges: ...,
+}
+\end{lstlisting}
+
+By implementing the traits for the translation operators in Listing \ref{code:chpt:2:sec:3:fmm_loop_traits} for the struct corresponding to our algorithm's data (e.g. KiFmmData), and the FMM loop structure for the algorithm type (KiFMM), we can now re-implement new FMM algorithms by changing the structs in Listing \ref{code:chpt:2:sec:3:concrete_kifmm} and Listing \ref{code:chpt:2:sec:3:field_translation}. This highly flexible approach allows a user to directly compare the relative differences between two variables in an FMM implementation while keeping other features, such as the underlying tree, or kernel being evaluated, constant. Indeed this is how we implement an SVD and FFT $T^{M2L}$ operator for the kiFMM, which are contrasted in Section \ref{chpt:3:sec:1:m2l}. This amounts to an implementation of the FMM following the open/close principle as Rust traits can also be implemented by downstream users of a crate. For example, if a user wanted to rewrite the Kernel to use a different hardware such as a GPU, they would simply have to implement the corresponding trait methods for their GPU based kernel, and pass this to the kiFMM struct, making our software readily extensible.
+
+\begin{lstlisting}[language=Rust, caption={Traits that are implemented over FMM Data structs, and FMM algorithm structs},  label=code:chpt:2:sec:3:fmm_loop_traits]
+pub trait SourceTranslation {
+
+    // Particle to multipole translation.
+    fn p2m(&self);
+
+    // Multipole to multipole translation.
+    fn m2m(&self, level: u64);
+}
+
+pub trait TargetTranslation {
+    // Local to local translation.
+    fn l2l(&self, level: u64);
+
+    // Multipole to particle translation.
+    fn m2p(&self);
+
+    // Particle to local translation.
+    fn p2l(&self);
+
+    // Local to particle translation.
+    fn l2p(&self);
+
+    // Near field interactions.
+    fn p2p(&self);
+}
+
+
+pub trait FmmLoop {
+
+    // Compute the upward pass.
+    fn upward_pass(&self, time: Option<bool>) -> Option<TimeDict>;
+
+    // Compute the downward pass
+    fn downward_pass(&self, time: Option<bool>) -> Option<TimeDict>;
+
+    // Compute the upward and downward passes
+    fn run(&self, time: Option<bool>) -> Option<TimeDict>;
+}
+\end{lstlisting}
+
+Of course one could replicate similar functionality in an object oriented language, by similarly defining methods over structs, however in Rust we benefit from the fact that contracts specified by Traits are checked by the compiler as a part of the type system. Thus strictly enforcing the behaviour that we expect, even for downstream users of Traits. For example, when implementing the FmmLoop trait in Listing \ref{code:chpt:2:sec:3:fmm_loop_traits} we do not know about the specifics of how the kernels, trees, or $T^{M2L}$ have been implemented. This is an example of Rust's Traits allowing us to wite code with dependency inversion built-in.

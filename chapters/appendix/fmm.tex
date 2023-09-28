@@ -1,0 +1,44 @@
+FMM literature distinguishes between types of relationships  between neighbouring nodes with the concept of \textit{interaction lists}. There are four such lists for a given node $B$, called $V$, $U$, $W$ and $X$. For a leaf node $B$, the $U$ list contains $B$ itself and leaf nodes adjacent to $B$. and the $W$ list consists of the descendants of $B$'s neighbours whose parents are adjacent to $B$. For non-leaf nodes, the $V$ list is the set of children of the neighbours of the parent of $B$ which are not adjacent to $B$, and the $X$ list consists of all nodes $A$ such that $B$ is in their $W$ lists. The non-adaptive algorithm is similar, however the $W$ and $X$ lists are empty
+
+\begin{algorithm}
+    \caption{\textbf{Adaptive Fast Multipole Method}.}
+    \label{alg:fmm}
+    \begin{algorithmic}
+
+        \STATE $N$ is the total number of points
+        \STATE $s$ is the maximum number of points in a leaf node.
+
+        \STATE
+        \STATE \textbf{Step 1: Tree construction}
+
+        \FOR{each node $B$ in \textit{preorder} traversal of tree, i.e. the nodes are traversed bottom-up, level-by-level, beginning with the finest nodes.}
+            \STATE subdivide $B$ if it contains more than $s$ points.
+        \ENDFOR
+        \FOR{each node $B$ in \textit{preorder} traversal of tree}
+            \STATE construct \textit{interaction lists}, $U$, $V$, $X$, $W$
+        \ENDFOR
+
+        \STATE
+        \STATE \textbf{Step 2: Upward Pass}
+        \FOR{each leaf node $B$ in \textit{postorder} traversal of the tree, i.e. the nodes are traversed top-down, level-by-level, beginning with the coarsest nodes.}
+        \STATE \textbf{P2M}: compute multipole expansion for the particles they contain.
+        \ENDFOR
+        \FOR{each non leaf node $B$ in \textit{postorder} traversal of the tree}
+        \STATE \textbf{M2M}: form a multipole expansion by translating the expansion centre of its children to its centre and summing their multipole expansion coefficients.
+        \ENDFOR
+
+        \STATE
+        \STATE \textbf{Step 3: Downward Pass}
+        \FOR{each non-root node $B$ in \textit{preorder} traversal of the tree}
+        \STATE \textbf{M2L}: translate multipole expansions of nodes in $B$'s $V$ list to a local expansion at $B$.
+        \STATE \textbf{P2L}: translate the charges of particles in $B$'s $X$ to the local expansion at $B$.
+        \STATE \textbf{L2L}: translate $B$'s local expansion to its children by translating its expansion centre to the centre of its children, and assigning the same coefficients.
+        \ENDFOR
+
+        \FOR{each leaf node $B$ in \textit{preorder} traversal of the tree}
+        \STATE \textbf{P2P}: directly compute the local interactions using the kernel between the particles in $B$ and its $U$ list.
+        \STATE \textbf{L2P}: translate local expansions for nodes in $B$'s $W$ list to the particles in $B$.
+        \STATE \textbf{M2P}: translate the multipole expansions for nodes in $B$'s $W$ list to the particles in $B$.
+        \ENDFOR
+    \end{algorithmic}
+    \end{algorithm}

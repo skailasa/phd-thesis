@@ -1,0 +1,210 @@
+% Preamble
+\documentclass[12pt, twoside]{book}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{nicematrix}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools} % dcases
+\usepackage{multicol}
+\usepackage{tcolorbox}
+\usepackage{datetime}
+\usepackage{caption}
+\usepackage{etoolbox}
+\usepackage{subfig}
+\usepackage{algcompatible}
+\usepackage{algpseudocode}
+
+\usepackage{listings}
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Python style for highlighting
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{notation}{Notation}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{problem}[theorem]{Problem}
+
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4
+		\end{array}
+	\right.
+}
+
+\AtBeginEnvironment{tcolorbox}{\footnotesize}
+
+\newdateformat{monthyeardate}{%
+  \monthname[\THEMONTH], \THEYEAR}
+
+\graphicspath{ {images/} }
+
+\usepackage[a4paper,width=150mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[RO,LE]{Modern Software Approaches For Fast Algorithms}
+\fancyfoot{}
+\fancyfoot[LE,RO]{\thepage}
+\fancyfoot[LO,CE]{Chapter \thechapter}
+\fancyfoot[CO,RE]{Srinath Kailasa}
+
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries}{}{0pt}{\Huge}
+
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{references.bib}
+
+% Slightly cleaner tables
+\usepackage{booktabs}
+
+% Clear a page after current page is done
+\usepackage{afterpage}
+
+\usepackage{lipsum}
+\usepackage[toc]{glossaries}
+
+% \makeglossaries
+% \input{pages/glossary.tex}
+
+% Default fixed font does not support bold face
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{12}  % for normal
+
+% Custom code colors
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{basicstyle=\small\ttfamily}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% \definecolor{rustorange}{rgb}{0.8,0.4,0}
+% \definecolor{codegray}{rgb}{0.5,0.5,0.5}
+% \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% \lstdefinelanguage{Rust}{
+%     keywords={type, as, break, const, continue, crate, else, enum, extern, false, fn, for, if, impl, in, let, loop, match, mod, move, mut, pub, ref, return, Self, self, static, struct, super, trait, true, type, unsafe, use, where, while, async, await, dyn},
+%     keywordstyle=\color{rustorange},
+%     commentstyle=\color{codegray},
+%     stringstyle=\color{codepurple},
+%     basicstyle=\ttfamily\small,
+%     breakatwhitespace=false,
+%     breaklines=true,
+%     captionpos=b,
+%     keepspaces=true,
+%     numbers=left,
+%     numbersep=5pt,
+%     showspaces=false,
+%     showstringspaces=false,
+%     showtabs=false,
+%     tabsize=2,
+%     morecomment=[l][\color{magenta}]{\#},
+%     morestring=[b]',
+%     morestring=[b]"
+%     morecomment=[l]{//},
+%     morecomment=[s]{/*}{*/},
+%     stringstyle=\color{red},
+%     sensitive=true
+% }
+
+\lstdefinelanguage{Rust}{
+    keywords={fn, let, mut, match, trait, impl, extern, crate, mod, pub, ref, Self, self, super, use},
+    keywordstyle=\color{blue},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    stringstyle=\color{red},
+    sensitive=true
+}
+
+\lstset{
+    language=Rust,
+    basicstyle=\ttfamily,
+    commentstyle=\color{gray}
+}
+
+\lstset{backgroundcolor=\color{backcolour}, style=mystyle}
+
+% Remove excess double page
+\let\cleardoublepage\clearpage
+\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
+
+\begin{document}
+% declaration of the new block
+\algblock{PARFOR}{ENDPARFOR}
+% customising the new block
+\algnewcommand\algorithmicparfor{\textbf{parfor}}
+\algnewcommand\algorithmicpardo{\textbf{do}}
+\algnewcommand\algorithmicendparfor{\textbf{end\ parfor}}
+\algrenewtext{PARFOR}[1]{\algorithmicparfor\ #1\ \algorithmicpardo}
+\algrenewtext{ENDPARFOR}{\algorithmicendparfor}
+
+    \frontmatter
+
+    \input{pages/cover.tex}
+
+    \input{pages/acknowledgements.tex}
+
+    \newpage
+
+    \input{pages/abstract.tex}
+
+    \tableofcontents
+
+    \mainmatter
+
+    \input{chapters/ch_1/ch_1.tex}
+    \input{chapters/ch_2/ch_2.tex}
+    \input{chapters/ch_3/ch_3.tex}
+    % \input{chapters/ch_4/ch_4.tex}
+    % \input{chapters/ch_5/ch_5.tex}
+    % \input{chapters/ch_6/ch_6.tex}
+    % \input{chapters/ch_7/ch_7.tex}
+    \input{chapters/conclusion/conclusion.tex}
+
+    \appendix
+    \input{chapters/appendix/appendix.tex}
+
+    % \printglossary
+    \printbibliography[heading=bibintoc]
+
+\end{document}
