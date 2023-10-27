@@ -123,8 +123,16 @@ Ibeid et. al \cite{Ibeid2016} propose an alternative communication scheme that a
 Communications are still required during the downward pass of the local trees for computing $T^{M2L}$ and the $P2P$ operators. However, the communications are `local' in the sense that the same set of MPI processes will communicate with each other due to their overlapping LETs. This limits the number of processes to communicate with to $O(1)$ during these steps, as opposed to $O(n_p)$. However, as the number of boxes increases exponentially at finer tree levels, the amount of information being sent grows with increasing tree depth. This amounts to an increasing ratio of the surface to volume for finer boxes. The same is true for communicating the source point data for the $P2P$ operator. They find the number of boxes to be sent for $T^{M2L}$ at the $i^{th}$ level of the local tree to be $(2^i + 4)^3 - 8^i$ and $(2^i + 2)^3-8^i$ respectively. This can be seen by the fact that the interaction list for $T^{M2L}$ requires the communication of a halo that is 2 boxes wide, which adds 4 boxes per dimension, and similarly the $P2P$ requires the communication of a halo that is 1 box wide, which adds 2 boxes per dimension, and there are $8^i$ boxes at the $i^{th}$ level. Summing up the powers of four up to the depth of the local tree gives,
 
 \begin{flalign}
-    \sum_{i}^{\log_8(N/n_p)} 4^i = (N/n_p)^{\log(4)/\log(8)} = (N/n_p)^{2/3}
+    \sum_{i=0}^{\log_8(N/n_p)} 4^i
 \end{flalign}
+
+taking the leading order term for this geometric series,
+
+\begin{flalign*}
+    \sum_{i=0}^{\log_8(N/n_p)} 4^i &= O(4^{\frac{\log_4(N/n_p)}{\log_4(8)}}) \\
+    &= O(4^{2/3\log_4(N/n_p)}) \\
+    &=O((N/n_p)^{2/3})
+\end{flalign*}
 
 Giving a communication complexity of $O((N/n_p)^{2/3})$ for the local tree communications, and proving the bound provided by Ibeid et. al.
 
