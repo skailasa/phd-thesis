@@ -16,10 +16,15 @@
 \usepackage{subfig}
 \usepackage{algcompatible}
 \usepackage{algpseudocode}
-
+\usepackage{setspace}
+\usepackage[a4paper,left=40mm,right=20mm,top=20mm,bottom=20mm,bindingoffset=0mm]{geometry}
+\usepackage{fancyhdr}
 \usepackage{listings}
-% Custom colors
 \usepackage{color}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+% Custom colors
 \definecolor{deepblue}{rgb}{0,0,0.5}
 \definecolor{deepred}{rgb}{0.6,0,0}
 \definecolor{deepgreen}{rgb}{0,0.5,0}
@@ -51,16 +56,29 @@
 
 \graphicspath{ {images/} }
 
-\usepackage[a4paper,width=150mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
+% \usepackage[a4paper,width=150mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
 
-\usepackage{fancyhdr}
-\pagestyle{fancy}
+
+\fancypagestyle{fancy}{
 \fancyhead{}
-\fancyhead[RO,LE]{Modern Software Approaches For Fast Algorithms}
+% \fancyhead[RO,LE]{Modern Research Software For Fast Multipole Methods}
+\fancyhead[RO,LE]{\nouppercase{\leftmark}} % Automatically use the chapter title
 \fancyfoot{}
 \fancyfoot[LE,RO]{\thepage}
-\fancyfoot[LO,CE]{Chapter \thechapter}
-\fancyfoot[CO,RE]{Srinath Kailasa}
+}
+
+\fancypagestyle{chaptertitle}{
+  \fancyhf{} % Clear all header and footer fields
+  \fancyfoot[LE,RO]{\thepage}
+  \renewcommand{\headrulewidth}{0pt} % Remove header line
+}
+
+\fancypagestyle{plain}{
+  \fancyhf{} % clear all header and footer fields
+  \fancyfoot[C]{}
+  \renewcommand{\headrulewidth}{0pt} % remove header line
+  \renewcommand{\footrulewidth}{0pt} % remove footer line
+}
 
 \usepackage{titlesec}
 
@@ -168,6 +186,8 @@
 \let\cleardoublepage\clearpage
 \newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 
+\doublespacing
+
 \begin{document}
 % declaration of the new block
 \algblock{PARFOR}{ENDPARFOR}
@@ -179,22 +199,30 @@
 \algrenewtext{ENDPARFOR}{\algorithmicendparfor}
 
     \frontmatter
-
+    \pagestyle{plain}
     \input{pages/cover.tex}
 
     \input{pages/acknowledgements.tex}
 
     \newpage
+    \input{pages/paper_declaration.tex}
+
+    \newpage
 
     \input{pages/abstract.tex}
+
+    \newpage
+    \input{pages/impact.tex}
 
     \tableofcontents
 
     \mainmatter
+    \setcounter{page}{1} % Start page numbering for the main matter
+    \pagestyle{fancy}
 
     \input{chapters/ch_1/ch_1.tex}
-    \input{chapters/ch_2/ch_2.tex}
-    \input{chapters/ch_3/ch_3.tex}
+    % \input{chapters/ch_2/ch_2.tex}
+    % \input{chapters/ch_3/ch_3.tex}
     % \input{chapters/ch_4/ch_4.tex}
     % \input{chapters/ch_5/ch_5.tex}
     % \input{chapters/ch_6/ch_6.tex}

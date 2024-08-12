@@ -5,8 +5,7 @@
 \end{center}
 
 Software has come to be a central asset produced during
-computational science research. Projects that build off the research software outputs of external
-groups rely on the software implementing proper engineering practice,
+computational science research. Projects that build off the research software outputs of external groups rely on the software implementing proper engineering practice,
 with code that is well documented, well tested, and easily extensible. As a
 result research software produced in the course of scientific discovery has
 become an object of study itself, and successful scientific software projects
@@ -18,14 +17,14 @@ manager and build system Spack, which collectively support a vast and diverse ec
 research.
 
 This thesis is concerned with the development of a software platform
-for so called `fast algorithms'. These algorithms have emerged in recent decades to
-optimally apply and invert dense matrices that exhibit
+for Fast Multipole Methods. These algorithms have emerged in recent decades to
+optimally apply dense matrices that exhibit
 a special low-rank structure in their off-diagonal elements. Such matrices arise
 in numerous areas of science and engineering, for example in the linear system
 matrices of boundary integral formulations of problems from acoustics and
 electromagnetics to fluid dynamics, geomechanics and even seismology. In the
-best case matrices can be stored, applied and inverted in $O(N)$, in contrast
-to $O(N^2)$ for storage and application, and $O(N^3)$ for inversion when computed
+best case matrices can be stored and applied in $O(N)$, in contrast
+to $O(N^2)$ for storage and application when computed
 naively. The diversity of the implementation approaches for these algorithms, as
 well as their mathematical intricacy, makes the development of an ergonomic,
 unified, software framework, that maximally re-uses data structures, is designed
@@ -34,11 +33,11 @@ across platforms highly challenging. To date, many softwares for fast algorithms
 are often written to benchmark the power of a particular implementation approach,
 rather than with real user in mind.
 
- Modern programming environments are diverse, with unique trade-offs, in Chapter 1 we document our experience in transitioning from Python to Rust as a
-modern, ergonomic, programming environment for our software. Chapter 2 introduces
-fast algorithms in the context of current work streams, specifically the
-implementation of a library for distributed memory octrees, and a distributed memory fast
-multipole method (FMM) built on top of this. Chapter 3 documents active areas
-of research and development for these projects, and proposed strategies for
-outstanding issues. We conclude by looking ahead at the requirements for the
-timely completion of this project as well as proposed extension areas.
+%  Modern programming environments are diverse, with unique trade-offs, in Chapter 1 we document our experience in transitioning from Python to Rust as a
+% modern, ergonomic, programming environment for our software. Chapter 2 introduces
+% fast algorithms in the context of current work streams, specifically the
+% implementation of a library for distributed memory octrees, and a distributed memory fast
+% multipole method (FMM) built on top of this. Chapter 3 documents active areas
+% of research and development for these projects, and proposed strategies for
+% outstanding issues. We conclude by looking ahead at the requirements for the
+% timely completion of this project as well as proposed extension areas.

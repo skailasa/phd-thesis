@@ -1,6 +1,6 @@
 #!/bin/bash
-pdflatex main.tex
-bibtex main
+pdflatex thesis.tex
+bibtex thesis
 # makeglossaries main
 # pdflatex main.tex
-pdflatex main.tex
+pdflatex thesis.tex
