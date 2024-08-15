@@ -17,7 +17,7 @@ manager and build system Spack, which collectively support a vast and diverse ec
 research.
 
 This thesis is concerned with the development of a software platform
-for Fast Multipole Methods. These algorithms have emerged in recent decades to
+for kernel independent Fast Multipole Methods. These algorithms have emerged in recent decades to
 optimally apply dense matrices that exhibit
 a special low-rank structure in their off-diagonal elements. Such matrices arise
 in numerous areas of science and engineering, for example in the linear system
@@ -26,18 +26,10 @@ electromagnetics to fluid dynamics, geomechanics and even seismology. In the
 best case matrices can be stored and applied in $O(N)$, in contrast
 to $O(N^2)$ for storage and application when computed
 naively. The diversity of the implementation approaches for these algorithms, as
-well as their mathematical intricacy, makes the development of an ergonomic,
+well as their intricacy, makes the development of an ergonomic,
 unified, software framework, that maximally re-uses data structures, is designed
 for high performance, distributed memory environments, and works seamlessly
-across platforms highly challenging. To date, many softwares for fast algorithms
-are often written to benchmark the power of a particular implementation approach,
-rather than with real user in mind.
+across platforms highly challenging.
 
-%  Modern programming environments are diverse, with unique trade-offs, in Chapter 1 we document our experience in transitioning from Python to Rust as a
-% modern, ergonomic, programming environment for our software. Chapter 2 introduces
-% fast algorithms in the context of current work streams, specifically the
-% implementation of a library for distributed memory octrees, and a distributed memory fast
-% multipole method (FMM) built on top of this. Chapter 3 documents active areas
-% of research and development for these projects, and proposed strategies for
-% outstanding issues. We conclude by looking ahead at the requirements for the
-% timely completion of this project as well as proposed extension areas.
+In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent enabled by our design. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
+

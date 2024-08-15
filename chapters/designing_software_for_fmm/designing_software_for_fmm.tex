@@ -1,40 +1,48 @@
 \chapter{Designing Software for The Fast Multipole Method}\label{chpt:designing_software_for_fmm}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
-\section{Fast Multipole Methods}
 
-\section{Kernel Independent Fast Multipole Method}
+\section{Data Oriented Design with Rust Traits}
 
-\section{Computational Issues}
+- Motivation, and review
+
+- How do traits enable data oriented design.
+
+\section{FMM Software As A Framework}
+
+- Code generation for multiple targets
+
+- Flexible backends
+
+
+\section{High Performance Trees}
 
 Bottlenecks in shared and distributed memory
 
-Tree Construction
+Tree Construction approach and algorithms
 
-M2L kernels
+Important implementation details
+    - construction of interaction lists, neighbour finding.
+    - construction of Morton encodings.
+    - trade-offs of approach in shared and distributed memory
+        - e.g. adaptive vs weakly adaptive trees.
+        - problems with load balancing approach etc
+    - justification
+        - simplicity/works vs complex/private
 
-P2P kernels (cite out work)
 
+\section{High Performance FMM Operators}
 
-\section{Software Issues}
-
-JOSS paper
-
-Data oriented design for kiFMM-RS
-
-Traits for flexibility
-
-Code generation for multiple targets
-
-Flexible backends
-
-\section{Performance Model}
+- Go through each operator of kiFMM and how it's been optimised, at a high level for M2L operators.
 
 
 
-\section{Distributed FMM}
+% \section{Performance Model}
 
-\section{Helmholtz FMM}
+
+% \section{Distributed FMM}
+
+% \section{Helmholtz FMM}
 
 
 % \input{chapters/ch_2/sec_2_0.tex}
