@@ -4,22 +4,55 @@
 
 \section{Data Oriented Design with Rust Traits}
 
-- Motivation, and review
+- Motivation, and review, DOD book.
 
 - How do traits enable data oriented design.
 
+- Overview of the design of the software.
+
+- Diagram for principal traits and how they link together in the final software.
+
+- Why is this good for the future? Well, it leaves open extension to other approaches for any individual subcomponent.
+
+- An example of this is the genericity over data type, kernel implementation, and field translation method, with a space for the kind of tree data structure.
+
 \section{FMM Software As A Framework}
 
-- Code generation for multiple targets
+- Want to encourage as much code re-use as possible.
 
-- Flexible backends
+- The re-implementation of critical subcomponents should be avoided. A step towards this is the development low-level C interfaces which enable the construction of higher level interfaces in compatible languages.
+
+- We've made a start to this with a low-level interface to the principal API of the FMM software.
+
+
+- We also want to be able to deploy on as wide a range of target hardware as possible, and leave open extension to future systems, enabled by design, referencing diagram.
+
+- High level diagram of how software components fit together
+
+- Explain the diagrams (will need zoomed in diagrams for things like M2L data)
+
+- Decouple implementation from
+
+- Code generation for multiple targets enabled by Rust's llvm based compiler.
+
+- C ABI as a compatiblity layer to other projects, success with this in developing Python wrappers and integration with NGBEM
+
+- Flexible backends enabled by RLST package for BLAS and Lapack.
 
 
 \section{High Performance Trees}
 
-Bottlenecks in shared and distributed memory
+- Exactly how are Morton encodings done, and what are the drawbacks and alternatives.
 
-Tree Construction approach and algorithms
+- ORB (how does it work)
+
+- Tree Construction approach and algorithms
+    - Morton encoding via lookup tables
+    - neighbour finding
+    - interaction list construction (fast)
+
+- What did we end up doing, and what is the justification for these being good enough.
+
 
 Important implementation details
     - construction of interaction lists, neighbour finding.
@@ -33,7 +66,31 @@ Important implementation details
 
 \section{High Performance FMM Operators}
 
+- FMM data flow, mapping its tree structure to a data flow diagram.
+
 - Go through each operator of kiFMM and how it's been optimised, at a high level for M2L operators.
+
+\subsection{Point to Multipole (P2M)}
+
+- Formulation in a blocked manner
+\subsection{Multipole to Multipole (M2M) and Local to Local (L2L)}
+
+- Formulation as BLAS3
+
+\subsection{Point to Point (P2P)}
+
+- Computational challenge (SIMD/SIMD), and why this is the easiest to optimise.
+
+\subsection{Multipole to Local (M2L)}
+
+- Description of computational challenge due to memory layout proscribed by Morton encoding.
+
+- Formulation of the problem, and required precomputations.
+
+- Data structure required to be flexible over this.
+
+
+How future FMMs may look, shallow trees with large P2P.
 
 
 

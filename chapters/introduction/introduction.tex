@@ -5,6 +5,15 @@
 \section{Fast Multipole Methods}
 
 
+The \acrfull{fmm} is an algorithm that accelerates the computation of potential evaluation problems of the form
+
+\begin{equation}
+    \label{eq:chpt:introduction:potential}
+    \phi(x_i) = \sum_{j=1}^M K(x_i, y_j) q(y_j), \> \> \> i=1,...,N
+\end{equation}
+
+where the potential $\phi(x_i)$ at a set of target points $\{ x_i \}_{i=1}^N$ due to a set of source points $\{ y_j \}_{j=1}^M$  associated with the densities $\{ q(y_j) \}_{j=1}^M$ where $K(,)$ is an interaction kernel. The \acrshort{fmm} accelerates this from a naive $O(NM)$ to, in the best case depending on the interaction kernel, $O(N + M)$. Introduced by Greengard and Rokhlin \cite{greengard1987fast}, the FMM has had a wide ranging impact in the field of computational science due to the prevalence of calculations of the form (\ref{eq:chpt:introduction:potential}) in science and engineering applications.
+
 - Introduction to idea and justification of fast multipole methods
 - origin of idea, and difference with respect to similar ideas, and utility in the era of exascale computing.
 - their research context and utility, and reason for why implementing them is still a research question.
@@ -19,7 +28,7 @@
 
 \section{Kernel Independent Fast Multipole Method}
 
-- Review of the KiFMM and variants.
+- Review of the KiFMM and variants. Black Box FMM, Analytical FMM, Data Driven Techniques.
 
 - Motivation for use from a software engineering and computational performance perspective.
 
@@ -29,8 +38,51 @@
 
 - Reflection on the kiFMM and modern software and hardware
 
-\subsection{Laplace}
 
-\subsection{Helmholtz}
+\section{Related Ideas}
 
-\subsection{Shared vs Distributed Memory}
+- H Matrix and H2 matrices, and wider setting of the FMM and related problems.
+
+- Abduljabbar thesis contains a nice summary I can read.
+
+
+
+
+\section{Laplace and Helmholtz}
+
+- What are the computational problems in Lapalce FMMs?
+
+- Precomputations
+
+- M2L operator pre-computations.
+
+The oscillatory case is considerably more complicated both in formulation and implementation.
+
+Basic idea of rank decay in oscillatory case.
+
+- Different approaches taken so far.
+
+
+- Where is kernel independent FMM weak in oscillatory case? And why?
+
+- What can be done here instead, as a stop gap?
+
+
+
+
+\section{Computational Structure of Fast Multipole Methods}
+
+- Parallelism levels in computing (ILP (Pipelining, Superscalar, Speculative execution), Data level (SIMD, GPU), Thread level TLP (multithreading, simultaneous multithreading and hyper threading), Process level (symettric and asymettrixc multitprocessing), task level, Distributed Parallelism e.g. MPI and MapReduce)
+
+- Only some of these are relevant for scientific computing
+
+- Examine FMM data flow and relate to levels of Parallelism and which will be taken advantage of by us, and which are yet to be examined.
+
+
+- What is the trend in hardware and why is the FMM a good kernel for scaling in future computer systems?
+
+- What are the principal difficulties we will encounter? Data organisation, and communication costs in a distributed setting.
+
+- What about good FMM software? Specialised kernels and substructures are required to be generically interfaced.
+
+- What parts of this are addressed by this thesis and where?
