@@ -17,7 +17,7 @@ manager and build system Spack, which collectively support a vast and diverse ec
 research.
 
 This thesis is concerned with the development of a software platform
-for kernel independent Fast Multipole Methods. These algorithms have emerged in recent decades to
+for the \acrfull{kifmm}. These algorithms have emerged in recent decades to
 optimally apply dense matrices that exhibit
 a special low-rank structure in their off-diagonal elements. Such matrices arise
 in numerous areas of science and engineering, for example in the linear system
@@ -31,4 +31,4 @@ unified, software framework, that maximally re-uses data structures, is designed
 for high performance, distributed memory environments, and works seamlessly
 across platforms highly challenging.
 
-In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent, the multipole to local field translation, enabled by our design. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
+In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent, the multipole to local field translation, and its redesign enabled by our software's construction. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
