@@ -1,0 +1,3 @@
+- Exascale properties of FMM vs FFT (PVFMM vs their FFT code)
+- This is useful, as it provides a reference for modern exascale ready FMM
+    - Need to find more modern exascale FMM references with explicit timings, Rio Yokota papers are a good source as well as those from the Inria group who've taken quite a different approach.
