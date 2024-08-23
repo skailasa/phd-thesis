@@ -305,5 +305,353 @@ The consequence of Cea's lemma is that the Galerkin solution is the near best ap
 - Expansions which are separable in terms of the variables in the kernel function are called degenerate in FMM literature.
 
 
+Consider SLP for 2D laplace kernel
+
+$$
+\mathcal{G}[u](x) = - \int_{0}^1 \log |x-y| u(y) dy
+$$
+
+Under Galerkin method using $n$-dim basis $(\phi_i)_{i=1}^n$ of piecewise constant functions
+
+$$
+\phi_i(x) = \begin{cases}
+1, \text{if } x \in [(i-1)/n, i/n] \> \> \\
+0, \text{otherwise}
+\end{cases}
+$$
+
+Get a dense matrix,
+
+$$
+G_{i, j} := \int_0^1 \phi_i(x) \int_0^1 g(x, y) \phi_j(y) dy
+$$
+
+where we set the singularities in the kernel function to 0, expressed the density in terms of the test basis and got into weak form by multiplying by the test functions and integrating.
+
+
+Use taylor series approximation in both variables to get a degenerate approximation,
+
+Get an expression for the approximation of the matrix as,
+
+$$
+\tilde{G}_{i, j} = \int_{(i-1)/n}^{i/n} \int_{(j-1)/n}^{j/n} \tilde{g}_{z_0, m}(x, y) dy dx
+$$
+
+Inserting taylor series approximation, shows that we end up with low-rank representation of the matrix as,
+
+$$
+\tilde{G} = V S W^*
+$$
+
+$V, W \in \mathbb{R}^{\mathcal{I} \times K}$, where $K := \{ 0,...,m-1 \}$ and $m$ is the expansion order and $\mathcal{I}$ is the index set $\mathcal{I} = [1,...,n]$ and $S \in \mathbb{R}^{K \times K}$. c.f. SVD
+
+
+With this, considering the remainder of the Taylor series in some interval $[a, b]$, we get an exponential convergence proportional to
+
+$$\frac{a-b}{2a}$$
+
+For points in this interval, and $a$ is the distance to the singularity. we get this as long as the size of the interval is less than the distance to the singularity (at zero). In this simple analysis, more careful analysis says we get this whenever the distance from the singularity is positive. lemma 2.1. on page 12.
+
+Here the speed of convergence depends on the ratio between $a$ and the radius of the interval [$a, b$]. $\zeta$.
+
+For a positive constant $\eta \in \mathbb{R}_{> 0}$ let $t, s \subseteq \mathbb{R}$ be non-trivial intervals such that,
+
+$$
+\text{diam}(t) + \text{diam}(s) \leq 2 \eta \text{dist}(t, s)
+$$
+
+This is an admissibility condition.
+
+then we get the error estimate, $z_0 := x_0 - y_0$ i.e. the distance between the midpoints of the interval:
+
+$$
+|g(x, y) - \tilde{g}_{z_0, m} (x, y)| \leq \log (\eta + 1) \left ( \frac{\eta} {\eta + 1}\right)^{m-1}
+$$
+
+Proof on page 13.
+
+Basically means that the Taylor expansions for the model problem converge exponentiall in $m$, and the speed depends on this ratio of distance between the source and target intervals and their diameter of the intervals.
+
+This implies that we cannot use a global taylor expansion to store the entire matrix G, as at least the diagonal blocks cannot be represented in a low rank form as we won't get the exponential convergence above if our admissibility criterion is not fulfilled.
+
+Instead one uses local expansions, like taylor series, for subblocks of the matrix where the admissibility criteria is fulfilled.
+
+Let $\hat{t}, \hat{s} \subseteq \mathcal{I}$ and intervals $t, s \subseteq [0, 1]$ where
+
+$$
+[(i-1)/n, i/n] \subseteq t
+$$
+
+same for $j \in \hat{s}$. $x_t$ and $y_s$ be the midpoints of these intervals, when we satisfy the admissibility criterion and can expect exponential convergence for the Taylor series approximation. Get low rank approximations for the interactions
+
+$$
+\tilde{G}_{t, s} := V_t S_{t, s} W^*_s
+$$
+
+
+
 - Cluster tree and block cluster tree.
-    -
+    - Have to cover the entire matrix with sub blocks that enable the low rank form, or ensure that when we can't the number of entries is small (dense part).
+
+For the model problem assume that there exists $q \in \mathbb{N}_0$, and $n = 2^q$ i.e. number of leaves proportional to number of rows/columns of this matrix.
+
+Define the intervals and index sets,
+
+$$
+t_{l, a} := [\alpha 2^{-l}, (\alpha+1)2^{-l}]
+$$
+
+$$
+\hat{t}_{l, a} := \{ \alpha 2^{q-l} + 1, (\alpha+1)2^{q-l} \}
+$$
+
+for levels $l \in \{0,..,q\}$ and the displacements $\alpha \in \{0,...,2^{l-1} \}$
+
+then,
+
+$$
+t_{l, \alpha} \subseteq [0, 1], \> \> \hat{t}_{l, \alpha} \subseteq \{1, ..., n \} = \mathcal{I}
+$$
+
+So the support of all basis functions $\phi_i$ wiht $i \in \hat{t}_{l, \alpha}$ is contained in the corresponding interval.
+
+The intervals are called 'clusters'. Clusters can be arranged in a hierarchy depending on their level.
+
+Called the tree, with index sets, the cluster tree.
+
+In this construction, the non-compressible index sets are of size one.
+
+The recursive search for admissable pairs of clusters suggests a second tree of pairs of clusters, the elements of this tree are called _blocks_, as each pair corresponds to a block of the matrix being approximated.
+
+This tree is called the _block cluster tree_, $\mathcal{T}_{\mathcal{I} \times \mathcal{I}}$
+
+For level $l$ and $\alpha, \beta \in \{ 0, ..., 2^{l-1} \}$ use the following notation for blocks,
+
+$$
+b_{l, \alpha, \beta} := (t_{l, \alpha}, t_{l, \beta})
+$$
+
+Can show that the number of blocks only grows linearly with matrix dimension, not quadratically.
+
+### Hierarchical Matrix
+
+Given a block cluster tree, we can define an approximation of the matrix $G$. To avoid using the global index set in notation, we consider submatrices of $G$ as elements of $\mathbb{R} ^ {\mathcal{I} \times \mathcal{I}}$ which vanish outside of the index set for a given block $\hat{t} \times \hat{s}$. For each cluster $t \in \mathcal{T}_\mathcal{I}$ introduce a diagonal matrix $\chi_t \in \mathbb{R}^{\mathcal{I} \times \mathcal{I}}$,
+
+$$
+\chi_{i, j} := \begin{cases}
+1, \> \> \text{if } i = j \in \hat{t} \\
+0, \text{ otherwise}
+\end{cases}
+$$
+
+for all $i, j \in \mathcal{I}$. So the block becomes, $b = (t, s)$
+
+$$
+\chi_t G \chi_s
+$$
+
+where we pick up all rows outside of the target indices, and all columns outside of the source indices.
+
+The leaves of the block cluster tree form a disjoint union,
+
+$$
+G = \sum_{b = (t, s) \in \mathcal{L}_{\mathcal{I} \times \mathcal{I}}} \chi_t G \chi_s
+$$
+
+These leaves can be split into admissible and inadmissable sets, and for admissable sets can be presented by the low-rank approximation leading to the __approximation of G by a hiearchical matrix__
+
+$$
+\mathbf{G} := \sum_{b=(t, s) \in \mathcal{L}^+_{\mathcal{I} \times \mathcal{I}}} V_t S_b W_s^* + \sum_{b=(t, s) \in \mathcal{L}^-_{\mathcal{I} \times \mathcal{I}}} \chi_t G \chi_s
+$$
+
+This is the $\mathcal{H}$-matrix representation of $G$.
+
+He proves a complexity bound for the storage requirement which is
+
+$$
+O(nm \log_2 n)
+$$
+
+improving on the quadratic complexity bound of naive storage of the matrix entries.
+
+Probably the source of all of that `matrix free' critique in Yokota et. al.
+
+Also prove an exponential convergence in terms of additional Taylor terms in terms of its approximation to the true matrix.
+
+
+## $\mathcal{H}^2$ Matrices
+
+The low rank matrices $V_t, W_s$ are now to be treated as entire families $(V_t)_{t \in \mathcal{T}_\mathcal{I}}$, $(W_s)_{s \in \mathcal{T}_\mathcal{I}}$.
+
+These families are referred to as 'cluster bases', as the columns of $V_t$ form a generating set for the range of $\tilde{G}_{t, s}$, and the columns of $W_s$ form a generating set for the range of $\tilde{G}_{t, s}^*$. C.F martinsson notes.
+
+He notes that the columns of these bases don't have to be linearly independent, though they usually are (not sure exactly why he gives no reasoning).
+
+Let's look at a given interval, non-leaf, and its children.
+
+$$
+(V_t)_{iv} = \int_{(i-1)/n}^{i/n} \frac{(x-x_t)^v}{v!}dx
+$$
+
+where $x_t$ is the midpoint of $t$, $i \in \hat{t}$ and $v \in K$. For $t' \in \text{children}(t)$. Using binomial expansion,
+
+$$
+\frac{(x-x_t)^v}{v!} = \frac{1}{v!}(x - x_{t'} + x_{t'} - x_t)^v
+$$
+
+After some cancellation and algebra,
+
+$$
+= \sum_{\mu = 0}^v \frac{(x-x_{t'})^\mu}{\mu!}\frac{(x_{t'}-x_t)^{v-\mu}}{(v-\mu)!}
+$$
+
+So can express the integrand in terms of Taylor monomials centred on the child interval instead of the one of interest,
+
+$$
+(V_t)_{iv} = \sum_{\mu = 0}^v \int_{(i-1)/n}^{i/n} \frac{(x-x_{t'})^\mu}{\mu!} dx \frac{(x_{t'}-x_t)^{v-\mu}}{(v-\mu)!}
+$$
+
+The first factor is just the column basis for the child interval, the second one describes the change of basis when translating between the child and parent intervals, the M2M or 'transfer' matrix in this book.
+
+So,
+
+$$
+(V_t)_{iv} = \sum_{\mu \in K} (V_{t'})_{i\mu} (E_{t'})_{\mu v} = (V_{t'} E_{t'})_{iv}
+$$
+
+For all $v, \mu \in K$, $i \in \hat{t}'$.
+
+By definition of the cluster tree there is only one child $t_i \in \text{children}(t)$ with $i \in \hat{t}_i$ for a given $i \in \hat{t}$, therefore we see that,
+
+$$
+\sum_{t' \in \text{children}(t)} (V_{t'} E_{t'})_{iv} = (V_{t_i} E_{t_i})_{iv} = (V_t)_{i,v}
+$$
+
+Which holds for all clusters that are non-leaves. This is, explicitly spelled out, the concept of cluster bases which gives the FMM ($\mathcal{H}^2$ matrix) its power.
+
+
+Translation matrices only require $O(m^2)$ storage, far more efficient that $\mathcal{H}$ format.
+
+
+## Chapter 3
+
+We need to find a general way of constructing block cluster trees for problems, that retain the approximation benefits demonstrated for the model problem with single layer Laplace.
+
+- The price to pay for optimal complexity in H2 matrices is that we cannot compute matrix vector products directly from the representation (like with H), but need a recursive procedure to perform the computation in linear complexity.
+
+- General way of writing a cluster tree
+
+$\mathcal{T} = (V, S, r)$ a triple of a finite set $V$. A mapping
+
+$$
+S: V \to \mathcal{P}(V)
+$$
+
+of $V$ to subsets of $V$ and element $r \in V$.
+
+A tuple $v_0, v_1,...,v_l \in V$ is called a path connecting $v_0 and v_l$ in $\mathcal{T}$ if
+
+$$
+v_i \in S(v_{i-1})
+$$
+
+holds for all $i \in \{1,...,l \}$
+
+
+The triple is a tree if for each $v \in T$ there is a unique path connecting $r$ to $v$. $V$ is seen to be the set of all nodes, $r$ the tree root and $S(v)$ the sons of $v \in V$.
+
+In the model problem there is an index set $\hat{t} \subseteq \mathcal{I}$ associated with each cluster. In the general case we attach labels to each node for additional information.
+
+We can allow for arbitrary partitions of the index set, instead of the contiguous sets used in the previous model problem in 1D.
+
+In this method there is no spatial information encoded in the block cluster tree, we have to apply the admissability criteria between blocks to find this out
+
+- The blocks are no-longer necessarily square as clusters can contain different numbers of indices at the same level, and not all leaves are on the same level either (adaptivity).
+- Can also split into more than 2 sons per cluster, as an option.
+- Note that if the index sets of two clusters intersect one of them must be a descendent of the other by lemma page 33.
+
+
+
+$\mathcal{T}_{\mathcal{I} \times \mathcal{J}}$ is a block cluster tree where
+
+$$
+\text{root}(\mathcal{T}_{\mathcal{I} \times \mathcal{J}}) = (\text{root}(\mathcal{T}_{\mathcal{I}}), \text{root}(\mathcal{T}_{\mathcal{J}}))
+$$
+
+Each node $b \in \mathcal{T}_{\mathcal{I} \times \mathcal{J}}$ of the form $b=(t,s)$ as before
+
+A more general admissibility condition
+
+$$
+\mathcal{A}: \mathcal{T_\mathcal{I}} \times \mathcal{T_\mathcal{J}} \to \{ \text{true}, \text{false} \}
+$$
+
+is an admissability condition if,
+
+$$
+\mathcal{A}(t, s) \implies \mathcal{A}(t', s)
+$$
+
+$t'$ are the sons of the target. And vice versa.
+
+$$
+\mathcal{A}(t, s) \implies \mathcal{A}(t, s')
+$$
+
+
+The weaker admissibility condition is
+
+$$
+\mathcal{A_{1d, w}}(t, s) := \begin{cases}
+\text{true}, \> \> t \neq s \\
+\text{false}, \> \> \text{otherwise}
+\end{cases}
+
+$$
+
+
+Acceptable for certain 1D problems with certain algorithmic advantages of the more strong admissability condition.
+
+- Each block cluster tree must be associated with an admissability condition and defined with respect to this condition.
+
+- How to practically construct?
+    - Use some kind of hierarchy that already exists implicit in the index set.
+    - Can also do if the index set results from a general hierarchy.
+
+- Can also handle geometries which are not cubic with this approach, spheres, rectangles etc All that needs to be done is to adjust the admissability criterion such that that low rank sub-blocks can still be constructed.
+
+- Use characterstic points (based on support of basis functions) to map geometry to H matrix framework.
+- The usefulness here is that the geometric partitioning can be quite general, with no-reference to an octree and simply defined by the support of the point data. We'll still get out a nice H2 matrix regardless.
+- This is to form the cluster trees, then forming the block cluster trees follows simple recursive algorithm (same for all cluster trees once found for source/target point sets).
+
+
+- The size of a block is no longer connected to the level in the general H matrix framework, however it is connected to the size of its associated source and target clusters.
+
+- A block cluster tree is considered sparse if block rows and columns only contain a bounded number of elemnts.
+
+- Admissable blocks are not subdivided in the construction.
+
+- Fig 3.10 makes neested cluster bases very clear
+
+- In more general situations such as variable-order approximations, require more flexible methods to control the complexity estimates.
+
+- Definition of a general $\mathcal{H}^2$ matrix.
+
+- Let $V$ be a nested cluster bases for $\mathcal{T}_\mathcal{I}$ with rank distribution $K$. I.e. the cluster tree for the rows, and $W$ be a nested cluster bases for $\mathcal{T}_{\mathcal{J}}$ with another rank distribution $L$ (need not be the same as can have non-square matrices, with different sources/targets)
+
+- The corresponding space of $\mathcal{H}^2$ matrices,
+
+- Let $X \in \mathbb{R}^{\mathcal{I} \times \mathcal{J}}$, it is an $\mathcal{H}^2$ matrix for the block cluster tree $\mathcal{T}_{\mathcal{I} \times \mathcal{J}}$, with row cluster basis $V$ and column cluster basis $W$ if there is a family of matrices $S = (S_b)_{b \in \mathcal{L}^+_{\mathcal{I} \times \mathcal{J}}}$ satisfying $S_b \in \mathbb{R}^{K_t \times L_s}$ for admissable blocks $b=(t, s)$.
+
+$$
+X = \sum_{b=(t,s) \in \mathcal{L}^+_{\mathcal{I} \times \mathcal{J}}} V_t S_v W_s^* + \sum_{b=(t,s) \in \mathcal{L}^-_{\mathcal{I} \times \mathcal{J}} } \chi_t X \chi_s
+$$
+
+$S_b$ are called the family of coupling matrices.
+
+- We observe that the set of all $\mathcal{H}^2$ matrices for the same block cluster tree and cluster bases is a matrix subspace, i.e. we can add and multiply these matrices efficiently, and also _we can approximate general matrices when projected into this subspace_.
+
+- HSS matrices, a $\mathcal{H}^2$ matrix based on a balances binary cluster tree $\mathcal{T}_\mathcal{I}$ and block cluster tree $\mathcal{T}_{\mathcal{I} \times \mathcal{I}}$ using the weak admissability condition is called a hierarchically semi-separable matrix. Limited to 1D problems where weak admissability is tolerated, otherwise ranks don't decay fast enough.
+- Possible to use nested dissection techniques to reduce 2D sparse problems into 1D problems that can be handled with HSS.
+- What's the difference between HSS and HODLR? I guess no nested bases in HODLR
+
