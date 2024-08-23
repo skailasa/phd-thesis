@@ -653,5 +653,5 @@ $S_b$ are called the family of coupling matrices.
 
 - HSS matrices, a $\mathcal{H}^2$ matrix based on a balances binary cluster tree $\mathcal{T}_\mathcal{I}$ and block cluster tree $\mathcal{T}_{\mathcal{I} \times \mathcal{I}}$ using the weak admissability condition is called a hierarchically semi-separable matrix. Limited to 1D problems where weak admissability is tolerated, otherwise ranks don't decay fast enough.
 - Possible to use nested dissection techniques to reduce 2D sparse problems into 1D problems that can be handled with HSS.
-- What's the difference between HSS and HODLR? I guess no nested bases in HODLR
+- TODO: What's the difference between HSS and HODLR? I guess no nested bases in HODLR, need to check
 
