@@ -3,6 +3,16 @@
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
 
+The \acrshort{fmm} was introduced to accelerate the application cost of dense matrices which exhibit a special low-rank structure in their off-diagonal blocks, the canonical example of which is the computation of electrostatic or gravitational potentials, described by the Poisson equation. The \acrshort{fmm} reduces the application cost of the resulting matrix-vector product to calculate potentials from mass/charge densities from $O(N^2)$ to just $O(N)$, a significant speedup. As such matrices also arise in the discretisation of boundary integral equations formulation of elliptic \acrfull{pdes}, the \acrshort{fmm} makes practical a vast variety of scientific and engineering simulations.
+
+
+Despite the improved complexity, the operations that the \acrshort{fmm} consists of contain practically significant constants in their complexity estimates, which can be particularly challenging to handle especially in three dimensions.
+
+
+In the time since the \acrshort{fmm}'s first introduction in the late 1980s, software and hardware environments have
+
+
+
 
 The \acrfull{fmm} is an algorithm that accelerates the computation of potential evaluation problems of the form
 
@@ -85,3 +95,8 @@ Basic idea of rank decay in oscillatory case.
 - What about good FMM software? Specialised kernels and substructures are required to be generically interfaced.
 
 - What parts of this are addressed by this thesis and where?
+
+
+\section{Layout of This Thesis}
+
+In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent, the multipole to local field translation, and its redesign enabled by our software's construction. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
