@@ -1,0 +1,17 @@
+\section{Thesis Structure}\label{chpt:fmm:sec:layout}
+
+
+In Chapter \ref{chpt:fmm} we perform a literature review of methods and software for modern \acrlong{fmm}s, with a specific focus on so called `kernel independent' or `black box' \acrshort{fmm}s in Sections ... and ... which are the focus of our implementation efforts. We review related ideas which share many features of the \acrshort{kifmm}s in Section ..., such as the $\mathcal{H}$ and $\mathcal{H}^2$ matrix approaches. We move on to a review of the \acrshort{kifmm}s computational structure in Section ..., where we provide estimates of the computational complexities of its operators, and identify the parallelism available in the algorithm with respect to that provided by modern hardware. We conclude with a review of past software efforts for \acrshort{fmm}s, and place our contribution within this context.
+
+
+A major effort of this thesis was designing a \textit{platform} for \acrshort{kifmm}s. Whereby, one is free to experiment with the implementation of subcomponents in a highly modular way, while retaining performance and the use of the remainder of the library. Therefore a significant early investigation was into appropriate tooling environments for scientific software, first presented in \cite{kailasa2022pyexafmm}. We present this investigation in Chapter \ref{chpt:programming_for_science}, where we document our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software.
+
+Chapter \ref{chpt:field_translation} details a rigorous application of our framework, where we investigated optimisations for the crucial \acrshort{m2l} field translation, recently presented in \cite{kailasa2024m2ltranslationoperatorskernel}. We find non-intuitively that direct matrix compression techniques for admissable blocks can be highly competitive with state of the art optimal schemes based on \acrshort{ffts} for three dimensional problems described by the Laplace kernel.
+
+Chapter \ref{chpt:software_design} describes in detail the engineering approach of our software, particularly the employment of Rust's trait system, as well as specific implementation details of the \acrshort{kifmm}s operators. In Chapter \ref{chpt:hpc} we discuss the design and implementation of our software framework for distributed memory systems, detailing communication reducing schemes for the communication of ghost information.
+
+Chapter \ref{chpt:experiments} contains numerical experiments with our software in a single node (Section ...) as well as HPC (Section ...) setting, including a study of the applicability of our software to problems described by Helmholtz problems with low to moderate wavenumbers.
+
+
+We conclude with a reflection on our results and suggestions for future investigations in Chapter \ref{chpt:conclusion}.
+
