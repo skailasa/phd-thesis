@@ -1,88 +1,14 @@
-\chapter{Introduction and Background}\label{chpt:introduction}
+\chapter{Introduction}\label{chpt:introduction}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
-
-\section{Fast Multipole Methods}
-
-
-The \acrfull{fmm} is an algorithm that accelerates the computation of potential evaluation problems of the form
-
-\begin{equation}
-    \label{eq:chpt:introduction:potential}
-    \phi(x_i) = \sum_{j=1}^M K(x_i, y_j) q(y_j), \> \> \> i=1,...,N
-\end{equation}
-
-where the potential $\phi(x_i)$ at a set of target points $\{ x_i \}_{i=1}^N$ due to a set of source points $\{ y_j \}_{j=1}^M$  associated with the densities $\{ q(y_j) \}_{j=1}^M$ where $K(,)$ is an interaction kernel. The \acrshort{fmm} accelerates this from a naive $O(NM)$ to, in the best case depending on the interaction kernel, $O(N + M)$. Introduced by Greengard and Rokhlin \cite{greengard1987fast}, the FMM has had a wide ranging impact in the field of computational science due to the prevalence of calculations of the form (\ref{eq:chpt:introduction:potential}) in science and engineering applications.
-
-- Introduction to idea and justification of fast multipole methods
-- origin of idea, and difference with respect to similar ideas, and utility in the era of exascale computing.
-- their research context and utility, and reason for why implementing them is still a research question.
-
-- Review of FMM literature for software
-
-- Go through the details of current and past projects, and detail exactly where in this context this thesis fits in.
-
-- open questions on software side addressed by this thesis. How to make a framework that is usable, and open to extension.
-
-- open questions on the algorithm side addressed by this thesis, with a software framework in hand can compare subcomponents of the algorithm.
-
-\section{Kernel Independent Fast Multipole Method}
-
-- Review of the KiFMM and variants. Black Box FMM, Analytical FMM, Data Driven Techniques.
-
-- Motivation for use from a software engineering and computational performance perspective.
-
-- Data flow during the KiFMM.
-
-- Performance characteristics and features of the kiFMM.
-
-- Reflection on the kiFMM and modern software and hardware
+The \acrshort{fmm} was introduced to accelerate the application cost of dense matrices which exhibit a special low-rank structure in their off-diagonal blocks, the canonical example of which is the computation of electrostatic or gravitational potentials, described by the Poisson equation. The \acrshort{fmm} reduces the application cost of the resulting matrix-vector product to calculate potentials from mass/charge densities from $O(N^2)$ to just $O(N)$, a significant speedup. As such matrices also arise in the discretisation of boundary integral equations formulation of elliptic \acrfull{pdes}, the \acrshort{fmm} makes practical a vast variety of scientific and engineering simulations.
 
 
-\section{Related Ideas}
-
-- H Matrix and H2 matrices, and wider setting of the FMM and related problems.
-
-- Abduljabbar thesis contains a nice summary I can read.
+Despite the improved complexity, the operations that the \acrshort{fmm} consists of contain practically significant constants in their complexity estimates, which can be particularly challenging to handle especially in three dimensions.
 
 
+In the time since the \acrshort{fmm}'s first introduction in the late 1980s, software and hardware environments have
 
 
-\section{Laplace and Helmholtz}
+In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent, the multipole to local field translation, and its redesign enabled by our software's construction. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
 
-- What are the computational problems in Lapalce FMMs?
-
-- Precomputations
-
-- M2L operator pre-computations.
-
-The oscillatory case is considerably more complicated both in formulation and implementation.
-
-Basic idea of rank decay in oscillatory case.
-
-- Different approaches taken so far.
-
-
-- Where is kernel independent FMM weak in oscillatory case? And why?
-
-- What can be done here instead, as a stop gap?
-
-
-
-
-\section{Computational Structure of Fast Multipole Methods}
-
-- Parallelism levels in computing (ILP (Pipelining, Superscalar, Speculative execution), Data level (SIMD, GPU), Thread level TLP (multithreading, simultaneous multithreading and hyper threading), Process level (symettric and asymettrixc multitprocessing), task level, Distributed Parallelism e.g. MPI and MapReduce)
-
-- Only some of these are relevant for scientific computing
-
-- Examine FMM data flow and relate to levels of Parallelism and which will be taken advantage of by us, and which are yet to be examined.
-
-
-- What is the trend in hardware and why is the FMM a good kernel for scaling in future computer systems?
-
-- What are the principal difficulties we will encounter? Data organisation, and communication costs in a distributed setting.
-
-- What about good FMM software? Specialised kernels and substructures are required to be generically interfaced.
-
-- What parts of this are addressed by this thesis and where?

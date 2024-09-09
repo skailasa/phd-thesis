@@ -1,0 +1,19 @@
+\chapter{The Kernel Independent Fast Multipole Method for Distributed Memory Systems}\label{chpt:distributed_fmm}
+\thispagestyle{chaptertitle} % Force the fancy style on this page
+
+- Focus is on the maximal reduction in communication.
+
+- what communication can and cannot be avoided?
+
+- How the local/global split in terms of tree gives rise to optimal communication scheme.
+
+- What simplifying assumptions can we take for most pre-exascale systems?
+
+- Avoid sorting of Morton keys/point data, the local/global split gives us a way to statically partition tree across available resources - simplifying assumption if work with ncpu = pow(8).
+- Not restricted to this, but makes threading simpler for local FMMs.
+
+- Optimal implementation of MPI primitives for common data sizes.
+
+- What will probably not work approaching exascale?
+- the gather operation over all processes required for multiple steps of this algorithm - ghost exchange, multipoles at local root on nominated processor. How can these problems be addressed? Do they even matter for the problem sizes we're concerned with?
+

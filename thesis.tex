@@ -25,6 +25,10 @@
 \usepackage{enumitem}
 \usepackage[acronym]{glossaries}
 
+% Telugu script
+\usepackage{fontspec}
+\newfontfamily{\tel}[Script=Telugu]{Mandali}
+
 % Custom colors
 \definecolor{deepblue}{rgb}{0,0,0.5}
 \definecolor{deepred}{rgb}{0.6,0,0}
@@ -230,15 +234,14 @@
     \pagestyle{fancy}
 
     \input{chapters/introduction/introduction.tex}
+
+    \input{chapters/fmm/fmm.tex}
+
     \input{chapters/programming_for_science/programming_for_science.tex}
     \input{chapters/designing_software_for_fmm/designing_software_for_fmm.tex}
     \input{chapters/field_translation/field_translation.tex}
 
     \input{chapters/experiments/experiments.tex}
-    % \input{chapters/ch_4/ch_4.tex}
-    % \input{chapters/ch_5/ch_5.tex}
-    % \input{chapters/ch_6/ch_6.tex}
-    % \input{chapters/ch_7/ch_7.tex}
     \input{chapters/conclusion/conclusion.tex}
 
     \appendix

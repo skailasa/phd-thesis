@@ -1,6 +1,6 @@
 #!/bin/bash
-pdflatex thesis.tex
+xelatex thesis.tex
 bibtex thesis
 makeglossaries thesis
 # pdflatex main.tex
-pdflatex thesis.tex
+xelatex thesis.tex

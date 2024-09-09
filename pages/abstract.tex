@@ -4,31 +4,8 @@
     \textbf{Abstract}
 \end{center}
 
-Software has come to be a central asset produced during
-computational science research. Projects that build off the research software outputs of external groups rely on the software implementing proper engineering practice,
-with code that is well documented, well tested, and easily extensible. As a
-result research software produced in the course of scientific discovery has
-become an object of study itself, and successful scientific software projects
-that operate with performance across different software and hardware platforms,
-shared and/or distributed memory systems, can have a dramatic impact on the
-research ecosystem as a whole. Examples include projects such as the SciPy and
-NumPy projects in Python, OpenMPI for distributed memory computing, or the package
-manager and build system Spack, which collectively support a vast and diverse ecosystem of scientific
-research.
+Modern scientific computing is constrained by the dual requirement for practitioners to develop algorithms that exhibit optimal complexities and convergence, at the same time as remaining fast in practice, and malleable to new algorithmic and hardware advances. This thesis is concerned with the development of a software platform for the \acrfull{kifmm}, a variant of the widely applied \acrfull{fmm} algorithm which finds far reaching application across computational science. Indeed, for certain dense rank-structured matrices, such as those that arise from the boundary integral formulation of elliptic \acrfull{pdes}, the \acrshort{fmm} and its variants accelerate the computation of a matrix vector product from $O(N^2)$ to just $O(N)$ in the best case.
 
-This thesis is concerned with the development of a software platform
-for the \acrfull{kifmm}. These algorithms have emerged in recent decades to
-optimally apply dense matrices that exhibit
-a special low-rank structure in their off-diagonal elements. Such matrices arise
-in numerous areas of science and engineering, for example in the linear system
-matrices of boundary integral formulations of problems from acoustics and
-electromagnetics to fluid dynamics, geomechanics and even seismology. In the
-best case matrices can be stored and applied in $O(N)$, in contrast
-to $O(N^2)$ for storage and application when computed
-naively. The diversity of the implementation approaches for these algorithms, as
-well as their intricacy, makes the development of an ergonomic,
-unified, software framework, that maximally re-uses data structures, is designed
-for high performance, distributed memory environments, and works seamlessly
-across platforms highly challenging.
+In this thesis we demonstrate the efficacy of our software's flexible design by contrasting implementations of a key bottleneck known as the \acrfull{m2l} field translation, and present a new highly optimised approach based on direct matrix compression techniques and BLAS operations, demonstrating its competitiveness with the current state of the art approach based on \acrfull{ffts} for \acrshort{kifmm}s. We show that we are able to achieve similar runtimes for three dimensional problems described by the Laplace kernel to the state of the art, and often faster depending on the available hardware, with a simpler approach. The introduced approach is well suited to the direction of development of hardware architectures, and demonstrates the importance of re-considering the design of algorithm implementations to reflect underlying hardware features.
 
-In Chapter \ref{chpt:introduction} we review the Fast Multipole Method and its kernel independent variant, going over the key challenges in achieving high performance parallel implementations. Chapter \ref{chpt:programming_for_science} reviews the challenges of software engineering in research, documenting our experience with Python as an alternative for achieving low-level performance as well as our chosen platform Rust, a relatively new language emerging as a contender for performant and productive research software. Chapter \ref{chpt:designing_software_for_fmm} describes in detail the engineering approach of our software, and Chapter \ref{chpt:field_translation} demonstrates the utility of these techniques with a benchmark study of competing approaches to a critical algorithmic subcomponent, the multipole to local field translation, and its redesign enabled by our software's construction. Chapter \ref{chpt:experiments} contains benchmarks of our codes, and we conclude with a reflection on this work in Chapter \ref{chpt:conclusion}.
+The software itself is written in Rust, a modern systems programming language, with features that enable a `data oriented’ approach to design, where operations are centred on minimising memory movements. We describe our approach to the design of the software, the flexibility of which allows us to extend our software to problems described by the Helmholtz kernel, at low frequencies, as well as in a distributed memory setting.
