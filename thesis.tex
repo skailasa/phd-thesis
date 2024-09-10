@@ -100,9 +100,28 @@
 % Clear a page after current page is done
 \usepackage{afterpage}
 
+% Filler
 \usepackage{lipsum}
 
+% Shortcuts
+\def\Htwo{\mathcal{H}^2}
+\def\H{\mathcal{H}}
+\def\R{\mathbb{R}}
+\def\Rtwo{\mathbb{R}^2}
+\def\Rthree{\mathbb{R}^3}
+\def\Rd{\mathbb{R}^d}
+\def\Xbf{\mathbf{x}}
+\def\Ybf{\mathbf{y}}
 
+
+% % Shortcuts
+% \newtheorem{theorem}{Theorem}[section]
+% \newtheorem{definition}{Definition}[section]
+% \newtheorem{notation}{Notation}[section]
+% \newtheorem{remark}{Remark}[section]
+% \newtheorem{corollary}{Corollary}[theorem]
+% \newtheorem{lemma}[theorem]{Lemma}
+% \newtheorem{problem}[theorem]{Problem}
 
 % Default fixed font does not support bold face
 \DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
@@ -188,7 +207,6 @@
 
 % Remove excess double page
 \let\cleardoublepage\clearpage
-\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 
 \makeglossaries                    % Initialize glossaries
 \input{pages/acronyms.tex}
@@ -196,6 +214,9 @@
 \doublespacing
 
 \begin{document}
+
+
+
 % declaration of the new block
 \algblock{PARFOR}{ENDPARFOR}
 % customising the new block
