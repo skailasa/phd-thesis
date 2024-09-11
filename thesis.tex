@@ -23,7 +23,7 @@
 \usepackage{color}
 \usepackage{hyperref}
 \usepackage{enumitem}
-\usepackage[acronym]{glossaries}
+\usepackage[toc, acronym]{glossaries}
 
 % Telugu script
 \usepackage{fontspec}
@@ -210,7 +210,6 @@
 \let\cleardoublepage\clearpage
 
 \makeglossaries                    % Initialize glossaries
-\input{pages/acronyms.tex}
 
 \doublespacing
 
@@ -245,9 +244,6 @@
     \input{pages/impact.tex}
 
     \cleardoublepage
-    % \chapter*{List of Acronyms}
-    % \addcontentsline{toc}{chapter}{List of Acronyms}
-    \printglossary[type=\acronymtype]  % Print the acronyms list
 
     \tableofcontents
 
@@ -269,6 +265,9 @@
 
     \input{chapters/experiments/experiments.tex}
     \input{chapters/conclusion/conclusion.tex}
+
+    \printglossary[type=\acronymtype, title=List of Acronyms]
+    \input{pages/acronyms.tex}
 
     \appendix
     \input{chapters/appendix/appendix.tex}
