@@ -4,3 +4,8 @@
 In this thesis we have presented progress on the development and design of a software framework for kernel independent Fast Multipole methods. We've documented outputs towards the broader goal of a sustainable framework which can be extended, with re-usable subcomponents. This research performed necessitated a significant investigation into the optimal programming environment for high-performance scientific computing that enabled high productivity within the constraints of academic software development. The resultant software enabled a new investigation of the critical \acrshort{m2l} field translation operation, a key bottleneck in the \acrshort{kifmm} algorithm, and the development of a highly competitive approach well suited to emerging trends in computer hardware.
 
 Due to the high-performance the \acrshort{fmm} operator kernels for both the Laplace and low-frequency Helmholtz kernels demonstrated in this work as well as the creation of trees, we are in a good position to extend our software to a distributed setting. The decoupling of operator kernels from their implementation via the design of our software also enables future extensions to a heterogenous platforms in which batch BLAS for the M2L, and SIMT for the P2P operations
+
+- Direction of travel of hardware, how this could effect exactly how the algorithm is set up
+
+- specifically handling as much as possible on a GPU, data organisation in a unified memory context will be cheap.
+

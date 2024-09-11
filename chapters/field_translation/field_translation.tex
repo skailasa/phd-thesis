@@ -1,10 +1,49 @@
-\chapter{Performant Multipole To Local Field Translation}\label{chpt:field_translation}
+\chapter{Performant Multipole To Local Field Translation for the kernel independent Fast Multipole Method}\label{chpt:field_translation}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
 \begin{center}
     \textit{The discussion in this chapter, including figures and diagrams, is adapted from the material first presented in \cite{kailasa2024m2ltranslationoperatorskernel} }
 \end{center}
 
+
+\section{Forming the Multipole To Local Translation for Kernel Independent Fast Multipole Methods}
+
+\section{Computational Constraints}
+
+- Exactly why is this hard to evalaute?
+- Maybe complexity estimates of memory accesses.
+- Layout discussion.
+
+
+\section{Review of Acceleration Methods}
+
+- Full literature review of past approaches
+- brief summary of analytical approaches (1-2 paragraphs)
+- Where past efforts have been focussed, and why? (Original paper dismissed direct matrix compression)
+- Why this may be a good idea now (randomised methods, available hardware)
+
+- use this section to introduce idea of transfer vectors, reflection and rotational symettry
+- how this is achieved in practice (i.e. what computations are needed, not the implementation details)
+
+Fast Multipole Method as a Matrix-Free Hierarchical Low-Rank Approximation
+Rio Yokota, Huda Ibeid, David Keyes
+
+
+\section{A Direct Matrix Compression Based Acceleration Scheme}
+
+- Why might this be preferred, or advantageous, what are its constraints
+- Why it is counterintuitive
+
+
+\section{FFT based Acceleration Based Schemes}
+
+- Explanation of the method, and why it was able to achieve high performance.
+- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
+
+
+
+
+- Both algorithmic and computational
 
 - Review of approaches, success and failures, and what works in the context of modern software and hardware systems.
 

@@ -1,0 +1,19 @@
+\section{The Fast Multipole Method's Computational Structure}\label{chpt:fmm:sec:computational_structure}
+
+- Parallelism levels in computing (ILP (Pipelining, Superscalar, Speculative execution), Data level (SIMD, GPU), Thread level TLP (multithreading, simultaneous multithreading and hyper threading), Process level (symettric and asymettrixc multitprocessing), task level, Distributed Parallelism e.g. MPI and MapReduce)
+
+- Only some of these are relevant for scientific computing
+
+- Examine FMM data flow and relate to levels of Parallelism and which will be taken advantage of by us, and which are yet to be examined.
+
+- What is the trend in hardware and why is the FMM a good kernel for scaling in future computer systems?
+
+- What are the principal difficulties we will encounter? Data organisation, and communication costs in a distributed setting.
+
+- What about good FMM software? Specialised kernels and substructures are required to be generically interfaced.
+
+- What parts of this are addressed by this thesis and where?
+
+- Data flow during the KiFMM.
+
+- Performance characteristics and features of the kiFMM.
