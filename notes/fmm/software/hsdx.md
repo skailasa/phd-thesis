@@ -15,7 +15,7 @@ that runs entirely on the GPU processor. J. Comput. Phys. 231(7), 2825–2839
 applications. In: Proceedings of the 29th ACM on International Conference on
 Supercomputing, ser. ICS 2015, pp. 415–424. ACM, New York (2015)
     - Parallel FMM implementation as a benchmark for high-level communication skeletons
-    - 
+    -
 
 - Two objectives for good partitioning
     - load balance
@@ -48,8 +48,8 @@ conditions, mutual interaction, more efficient translation stencils, and dual tr
 traversals.
 
 Conventional parallel N-body methods use a bulk-synchronous MPI
-alltoallv to communicate the whole LET at once, and overlap this communication with the local tree traversal to hide latency. 
-- 
+alltoallv to communicate the whole LET at once, and overlap this communication with the local tree traversal to hide latency.
+-
 while something like an RDMA per task per cell
 would be at the other end of the granularity spectrum.
 

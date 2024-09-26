@@ -7,7 +7,7 @@ Geometry-Oblivious FMM for Compressing Dense SPD Matrices Chenhan
 - Construction O(N ln N), matvec at most of same complexity.
 - Their approximation scheme cannot guarantee accuracy and complexity bound at same time.
 - Since arbitrary SPD matrices may not admit good low rank approximations.
-- Describe a hiearrachically compressible low-rank matrix as one that admits.
+- Describe a hierarchically compressible low-rank matrix as one that admits.
 
 $$\tilde{K} \in \mathcal{H}$$
 
@@ -35,9 +35,7 @@ $$\tilde{K} = D + S + UV $$
 
 - GoFMM supports multiple right hand sides which is useful for MC, optimisation and blocked krylov methods.
 
-
 - Requires computing matrix entries, other ones like strumpack have inherent support for matrix-free compression
-
 
 - Low rank approximations of arbitrary matriices from linear algebra
     - e.g. CUR, used in place of SVD where don't need as much accuracy.

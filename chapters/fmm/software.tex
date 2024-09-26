@@ -1,14 +1,17 @@
 
 \section{Available Software}\label{chpt:fmm:sec:software}
 
+Despite the intensity of developments over the last decade, the software landscape is fragmented for \acrshortpl{fmm} and related methods.
+
 - What software exists, and which approaches do they use?
 
-- What are they optimised for, and what kind of performance do they promise?
+The lack of re-usable subcomponents slows down algorithmic innovation. For example, there are numerous implementations of \acrshort{simd} vectorised Green's functions, community software building has been poor.
 
-- What are the trade-offs of each software
+We show the performance of some of the main implementations below for Laplace and Helmholtz.
 
-- Hardware targetted by each available software, what's missing?
+Additionally, implementations are designed to demonstrate the performance of specific approaches and algorithms. It is exceptionally hard to swap algorithmic approaches, hardware and software backends. For example ExaFMM-T / ExaFMM are re-implementations of the entire FMM algorithm, where much of the underlying machinery for algorithm deployment is identical - it's just the metadata required for the operators and the approximation scheme which is different. Yet these are both long, overlapping, and complex libraries.
 
-- What's available, and what are the shortcomings?
+- No software aims to make any guarantee about performance, but neither do they expose subcomponents to users. At least one fo these should be done so that community efforts can begin in earnest, and software lives beyond a PhD research project.
 
-- And then
+To the best of our knowledge, no other open-source FMM software have the ability to vary expansion order by level.
+

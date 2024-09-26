@@ -1,7 +1,61 @@
 
 \section{Oscillatory Fast Multipole Methods}\label{chpt:fmm:sec:oscillatory}
 
+The crucial feature of the Laplace kernel (\ref{eq:chpt:introduction:laplace_kernel}) is the fact that far-field interactions (\ref{eq:chpt:fmm:near_far_split}) can be considered `low rank', and therefore amenable to compression. Importantly for (\ref{eq:chpt:introduction:laplace_kernel}) the rank of a given interaction between two boxes is scale invariant, and only depends on their relative positions.
 
-- helmholtz fmm
+However, for problems described by the Helmholtz kernel,
 
-- high frequency helmholtz FMM, out of scope of the thesis but can mention that they exist. Especially in the context of kiFMM approaches, what is the key difference? When does it apply (the directional low rank condition), where is there an additional loop? Why might this result in greater complexity
+\begin{equation}
+    K(\mathbf{x-y}) = \begin{cases}
+        \frac{i}{4} H_0^{(1)}(k |\mathbf{x-y}|)  \text{, $d$ = 2}\\
+         \frac{e^{ik |\mathbf{x-y}|}}{4\pi |\mathbf{x-y}|}  \text{, $d$ = 3}
+    \end{cases}
+    \label{eq:chpt:fmm:helmholtz_kernel}
+\end{equation}
+
+where $d$ is the spatial dimension, $\Xbf, \Ybf \in \Rd$, $k$ is the wavenumber, $H_0^{(1)}$ is the Hankel function of the first kind of order 0. The rank of interactions is no longer scale invariant, and indeed grows with box size. To see why this may be, consider the case for $d=3$. From theorem 2.11 in \cite{colton1998inverse}, we can express the Helmholtz kernel as a separable series,
+
+\begin{equation}
+    \frac{e^{ik|\Xbf - \Ybf|}}{4\pi |\Xbf - \Ybf|} = ik \sum_{p=0}^\infty \sum_{-p}^p h_p^{(1)}(k|\Xbf|) Y_p^m(\frac{\Xbf}{|\Xbf|})j_p(k|\Ybf|) \overline{Y_p^m(\frac{\Ybf}{|\Ybf|})}
+\end{equation}
+
+Where $k$ is the wavenumber, $Y_p^m$, for $m=-n,...,p$ $p=0,1,...$ are set of orthonormal spherical harmonics, and $|\Xbf| > |\Ybf|$, $j_p$ is the spherical Bessel function of order $p$ and $h_p^{(1)}$ is the spherical Hankel function of the first kind of order $p$.
+
+In which case, an expression of the form (\ref{eq:chpt:fmm:degenerate_kernel}) for the Helmholtz potential evaluated at a set of $M$ target particles due to a set of $N$ source particles
+
+\begin{equation}
+    \phi(\Xbf_i) \approx \sum_{p=1}^P \sum_{m=-p}^p \sum_{j=1}^N A_p(x_i) B_p(y_j) q(y_j), i=1,...,M
+\end{equation}
+
+where we've truncated the expansion to $P$ terms, known as the expansion order, and $A$ and $B$ are functions of the target and source particle positions only, respectively. We see that in this case for increasing expansion order, the number of terms in the sum grows quadratically. Though a demonstration is out of scope for this thesis, we mention that the number of terms $P$ required to observe convergence in the above sum is proportional to $kD$
+
+\begin{equation}
+    P \approx kD
+    \label{eq:chpt:fmm:p_kd}
+\end{equation}
+
+Some work for schemes that rely on the \acrshort{mfs} is presented in \cite{barnett2008stability}. Therefore, in the \acrshort{fmm} for oscillatory problems interactions between boxes can be seen to have ranks growing quadratically, proportionally to $(kD)^2$, for increasing box size in 3D.
+
+For schemes based on \acrshort{mfs} as the \acrshort{kifmm} used in our software, the quadratic relationship between rank growth and box size is observed by noting that the condition for convergence (\ref{eq:chpt:fmm:p_kd}) corresponds to a fixed number of points per square wavelength (in 3D), therefore the rank, which is proportional to the number of points used to discretise the equivalent surfaces, can be seen to grow quadratically with increasing box size.
+
+Previous approaches to handle this for analytical \acrshortpl{fmm} can be technically complex
+
+However, there has been some significant results in developing `kernel independent' approaches for oscillatory problems. The resulting schemes closely mirror the \acrshort{kifmm}
+
+
+
+
+% In order to handle this, past implementations rely on so called `diagonal forms' of the translation apparatus when the \acrshort{fmm} can be considered to be in its high frequency regime.
+
+% The implementation of these schemes is complex, and few optimised softwares exist in the open source. Indeed, kernel independent variants have also been developed. These rely on the so called `directional low rank' property of the Helmholtz kernel.
+
+% ... basic scheme of directional low-rank
+
+% The basic scheme is extremely similar to the kernel independent \acrshort{fmm}, save for the additional loop over cone directions.
+
+% However, there is no actively maintained open-source software available.
+
+% Considering this, we consider to what extent the machinery of the \acrshort{kifmm} can be re-used for moderate frequency problems. How high can wavenumber be increased, before the lack of linear scaling leads to poor overall runtimes? We are able to test this as in our implementation we are able to tune expansion order by level.
+
+% However, if one can increase $P$ with decreasing tree level, for trees of moderate depth and moderate wavenumbers $k$, as long as the \acrshort{p2p} and \acrshort{m2l} implementations are optimal, we demonstrate that it is possible to achieve high practical performance with the relatively simple machinery of the \acrshort{kifmm}.
+

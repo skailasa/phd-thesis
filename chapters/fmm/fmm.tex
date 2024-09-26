@@ -2,17 +2,14 @@
 \chapter{Review of Fast Multipole Methods}\label{chpt:fmm}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
-\begin{center}
-    \textit{Portions of the discussion in Sections \ref{chpt:fmm:sec:analytical} and \ref{chpt:fmm:sec:kifmm} of this chapter are adapted from the material first presented in \cite{kailasa2024m2ltranslationoperatorskernel} }
-\end{center}
+\input{chapters/fmm/generic.tex}
 
+\include{chapters/fmm/kifmm.tex}
 
-\input{chapters/fmm/analytical.tex}
+\include{chapters/fmm/oscillatory.tex}
 
-\input{chapters/fmm/kifmm.tex}
+\include{chapters/fmm/algorithm_zoo.tex}
 
-\input{chapters/fmm/oscillatory.tex}
-
-\input{chapters/fmm/related.tex}
+\include{chapters/fmm/computational_structure.tex}
 
 \include{chapters/fmm/software.tex}
