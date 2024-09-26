@@ -1,12 +1,25 @@
-\chapter{Performant Multipole To Local Field Translation for the kernel independent Fast Multipole Method}\label{chpt:field_translation}
+\chapter{High Performance Field Translations for kiFMM}\label{chpt:field_translation}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
 \begin{center}
     \textit{The discussion in this chapter, including figures and diagrams, is adapted from the material first presented in \cite{kailasa2024m2ltranslationoperatorskernel} }
 \end{center}
 
+\section{Leaf Level Operators (P2P, L2P, P2M)}
 
-\section{Forming the Multipole To Local Translation for Kernel Independent Fast Multipole Methods}
+- How do the SIMD implementations work? Newton steps + fast inverse square root.
+- how are we blocking targets over threads?
+- how could we translate our current codes to a GPU for P2P, what are the trade-offs? Would memory transfer mean that it's never worth it?
+
+\section{Multipole to Multipole (M2M) and Local to Local (L2L)}
+
+- Formulation as BLAS3
+    - specifically I want to show the exact way that this is done
+    - i.e. using morton-like (at the level of a level) encoding to lookup siblings/sets of siblings at once and apply BLAS3.
+    - block sizes determined heuristically for a given architecture, but could in principle be estimate from available L2/L3 cache sizes.
+
+
+\section{Forming the Multipole To Local Translation}
 
 \section{Computational Constraints}
 
