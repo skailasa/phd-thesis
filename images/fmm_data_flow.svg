@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="2.1550619"
-     inkscape:cx="507.64202"
-     inkscape:cy="166.81655"
+     inkscape:zoom="1.2944714"
+     inkscape:cx="297.4187"
+     inkscape:cy="125.53386"
      inkscape:window-width="1941"
      inkscape:window-height="1163"
      inkscape:window-x="0"
@@ -38,6 +38,12 @@
      fit-margin-bottom="0" />
   <defs
      id="defs2">
+    <rect
+       x="282.74089"
+       y="377.76037"
+       width="276.9599"
+       height="145.71279"
+       id="rect34146" />
     <inkscape:path-effect
        effect="bspline"
        id="path-effect13501"
@@ -1471,5 +1477,10 @@
          style="stroke-width:0.264583"
          x="154.2411"
          y="104.27021">P2P</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,6.8013839,46.757487)"
+       id="text34144"
+       style="line-height:1.25;font-family:'CMU Serif';font-size:21.33333333px;-inkscape-font-specification:'CMU Serif';white-space:pre;shape-inside:url(#rect34146)" />
   </g>
 </svg>

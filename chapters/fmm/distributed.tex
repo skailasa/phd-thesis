@@ -1,0 +1,38 @@
+
+\section{Distributed Memory Fast Multipole Methods}\label{chpt:fmm:sec:distributed}
+
+Supercomputers are usually defined as massively parallel machines characterised by hundreds to thousands of individual nodes comprising of individual hardware pieces which communicate via a network. In this context memory movements, now between compute nodes, are of even greater practical relevance
+
+- Network topologies, NVLink and other RDMA technologies that are emerging.
+- Rate of improvement in bandwidth/latency on network vs DRAM.
+
+Minimising communication is crucial
+- Ibeid communication costs, and how these can be simplified.
+
+
+
+
+- How are FMMs distributed for distributed memory?
+
+- Focus is on the maximal reduction in communication.
+
+- what communication can and cannot be avoided?
+
+- How the local/global split in terms of tree gives rise to optimal communication scheme.
+
+- What simplifying assumptions can we take for most pre-exascale systems?
+
+- Avoid sorting of Morton keys/point data, the local/global split gives us a way to statically partition tree across available resources - simplifying assumption if work with ncpu = pow(8).
+- Not restricted to this, but makes threading simpler for local FMMs.
+
+- Optimal implementation of MPI primitives for common data sizes.
+
+- What will probably not work approaching exascale?
+- the gather operation over all processes required for multiple steps of this algorithm - ghost exchange, multipoles at local root on nominated processor. How can these problems be addressed? Do they even matter for the problem sizes we're concerned with?
+
+- Bandwidth and latency complexity estimates for communication approaches
+- Bandwidth
+    - total data transfer, transfer per process, scaling with PARFOR
+- latency
+    - Number of communication steps,
+    - scaling with P

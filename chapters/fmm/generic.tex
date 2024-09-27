@@ -87,14 +87,10 @@ at the target particles. The approximation of the potential with this scheme can
 
 In cases where a source and target cluster can be considered \textit{admissable}, i.e. the source cluster is considered in the \textit{far field} of the target cluster such that each $\Ybf_j \in \text{Far}(\Xbf_j)$, we apply the approximation (\ref{eq:chpt:fmm:degenerate_kernel}). However, when a source and target cluster are \textit{inadmissable}, such that the source cluster is considered in the \textit{near field} of a target cluster such that each $\Ybf_j \in \text{Near}(\Xbf_j)$ we are left to evaluate the sum directly via (\ref{eq:chpt:fmm:laplace_potential_sum}).
 
+The notion of admissability is made more concrete by reference to a data structure chosen to discretise the problem. For the \acrshort{fmm} quadtrees and octrees are commonly used in two and three dimensions respectively. These are data structures in which a $d$-dimensional bounding box is used to cover the source and target particles, and is recursively divided into $2^d$ `child' boxes. This process can be either `adaptive' or `uniform'. In the former case, the box is divided until a user defined threshold defining the maximum number of points per terminal leaf box is reached, which can lead to adjacent boxes of differing sizes and is able to closely model extreme particle distributions. In the latter case, boxes are divided such that each leaf box is of the same size, specified by a user defined parameter controlling the maximum depth of the tree.
 
-The notion of admissability is made more concrete by reference to a data structure chosen to discretise the problem.
 
-- For FMM, Octree, but alternatives include ORB.
 
-- princiapply, just need a way of encoding the geometry of the problem to be able to define admissability.
-
-- as we will see, by choosing an appropriate scheme for creating octrees, one can achieve O(1) lookup times for data associated with octants.
 
 - In order to achieve its $\bigO{N}$ complexity the \acrshort{fmm} is structured to reduce to a minimum the number of sums evaluated between inadmissable clusters.
 

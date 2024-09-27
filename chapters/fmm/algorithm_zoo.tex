@@ -30,6 +30,18 @@ Common $\H$ matrix formats are summarised in table [Ambikasaran table], indeed w
 
 - Note on admissibility, how it defines a broad class of FMM matrices, table of related matrix types with different rank structure and admissability criterion
 
+- HSS, HBS, $\H$, $\Htwo$ exactly where does the FMM fit in.
+
+- What is the expected complexity of matrix vector product, how do they differ (nested vs non-nested bases).
+
+- How are off diagonals approximated? Linear algebra. e.g. SVD/ACA/CUR decompositions vs analytical expansions.
+
+- Relative costs of computing these, precomputation is expensive in general compared to FMM which uses analytical expansions and minimal precomputation costs.
+
+- Alternative to geometry captured by oct/quadtree. ORB could also be used for the FMM.
+
+- But rely on cluster tree and cluster block trees over the matrix indices.
+
 This is achieved with a hierarchical discretisation of the problem domain, often a \textit{quadtree} in two dimensions and correspondingly an \textit{octree} in three dimensions.
 
 - trees define admissability from geometry for FMM, note on alternative approaches such as ORB.

@@ -1,70 +1,70 @@
-\chapter{High Performance Field Translations for kiFMM}\label{chpt:field_translation}
+\chapter{High Performance Field Translations for the kiFMM}\label{chpt:field_translation}
 \thispagestyle{chaptertitle} % Force the fancy style on this page
 
 \begin{center}
     \textit{The discussion in this chapter, including figures and diagrams, is adapted from the material first presented in \cite{kailasa2024m2ltranslationoperatorskernel} }
 \end{center}
 
-\section{Leaf Level Operators (P2P, L2P, P2M)}
+\section{The Multipole To Local Operator (M2L)}
 
-- How do the SIMD implementations work? Newton steps + fast inverse square root.
-- how are we blocking targets over threads?
-- how could we translate our current codes to a GPU for P2P, what are the trade-offs? Would memory transfer mean that it's never worth it?
+- From chandrowlishwaram 2010 to now, the M2L has become the key bottleneck in terms of optimising kiFMM implementations. Cost of DRAM access hasn't scaled as quickly as available flops.
 
-\section{Multipole to Multipole (M2M) and Local to Local (L2L)}
+- We've already observed the M2L operator to be of convolution type, and therefore amenable to FFT acceleration if using regular grids like in the kiFMM.
 
-- Formulation as BLAS3
-    - specifically I want to show the exact way that this is done
-    - i.e. using morton-like (at the level of a level) encoding to lookup siblings/sets of siblings at once and apply BLAS3.
-    - block sizes determined heuristically for a given architecture, but could in principle be estimate from available L2/L3 cache sizes.
+- This has optimal complexity, but the low arithmetic intensity of the internal Hadamard product is difficult to optimise out.
+
+- We postulate that direct matrix compression techniques, with specially designed hardware features that optimise for BLAS, as well as randomised methods for matrix compression - reducing pre-computation time, can result in highly competitive runtimes. Very high arithmetic intensity
+- summarise BLIS/GotoBLAS, matrix mul register availability due to AI applications, and why this idea is good now.
 
 
-\section{Forming the Multipole To Local Translation}
-
-\section{Computational Constraints}
-
-- Exactly why is this hard to evalaute?
-- Maybe complexity estimates of memory accesses.
-- Layout discussion.
-
-
-\section{Review of Acceleration Methods}
-
-- Full literature review of past approaches
-- brief summary of analytical approaches (1-2 paragraphs)
-- Where past efforts have been focussed, and why? (Original paper dismissed direct matrix compression)
-- Why this may be a good idea now (randomised methods, available hardware)
+\subsection{Literature Review}
 
 - use this section to introduce idea of transfer vectors, reflection and rotational symettry
+
+- Full literature review of past approaches
+
+- Where past efforts have been focussed, and why? (Original paper dismissed direct matrix compression)
+
 - how this is achieved in practice (i.e. what computations are needed, not the implementation details)
 
-Fast Multipole Method as a Matrix-Free Hierarchical Low-Rank Approximation
-Rio Yokota, Huda Ibeid, David Keyes
 
 
-\section{A Direct Matrix Compression Based Acceleration Scheme}
+\subsection{A New Direct Matrix Compression Based Acceleration Scheme}
 
 - Why might this be preferred, or advantageous, what are its constraints
+
 - Why it is counterintuitive
-
-
-\section{FFT based Acceleration Based Schemes}
-
-- Explanation of the method, and why it was able to achieve high performance.
-- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
-
-
-- Both algorithmic and computational
-
-- Review of approaches, success and failures, and what works in the context of modern software and hardware systems.
-
-- Can include section reviewing PVFMM approach
 
 - Approaches for BLAS based field translation in some more detail than in the paper.
 
-- Our approach, and why it works with reference to the software and hardware currently available.
+- The method itself, the precomputations required - metadata for displacements
 
-- Articulate the significance of this result
+- runtime metadata that's required, and the new allocations that are required for contiguous blocks of multipole data over sibling.
+
+
+
+\subsection{Review of FFT based Acceleration Based Schemes}
+
+- Explanation of the method, and why it was able to achieve high performance.
+
+- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
+
+- Both algorithmic and computational
+
+\subsection{Results}
+
+- Caching experiment vs ScalFMM. Why software comparisons can be contrived, due to the vast differences in implementation details -e.g. kernel evaluations, but can directly compare the M2L runtimes alone for different expansion orders and tree levels.
+    - i.e. similar software and hardware backends (they use OpenMP tasking vs Rayon for threading)
+    - cache destroyed by granular tasking approach
+
+- The numerical results from the paper.
+
+- some color here, like the pirate ship.
+
+- Comment and discussion from the paper can be lifted here.
+
+
+\subsection{Discussion}
 
 - Why our approach is sustainable given long term trends in hardware and software.
 
@@ -74,3 +74,27 @@ Rio Yokota, Huda Ibeid, David Keyes
 
 - Interesting point of comparison with ScalFMM to demonstrate the importance of caching to performance, noting that direct software comparisons are not entirely fair.
 
+
+
+\section{Leaf Level Operators (P2P, L2P, P2M)}
+
+- How do the SIMD implementations work? Newton steps + fast inverse square root.
+- how are we blocking targets over threads?
+- how could we translate our current codes to a GPU for P2P, what are the trade-offs? Would memory transfer mean that it's never worth it?
+
+\section{Parent to Child Operators (M2M, L2L)}
+
+- Formulation as BLAS3
+    - specifically I want to show the exact way that this is done
+    - i.e. using morton-like (at the level of a level) encoding to lookup siblings/sets of siblings at once and apply BLAS3.
+    - block sizes determined heuristically for a given architecture, but could in principle be estimate from available L2/L3 cache sizes.
+
+\section{Field Translation in a Distributed Setting}
+
+- Handling of ghost data, algorithms for this vs what is done now which is explained in the introduction now.
+
+- Global/local tree split.
+
+- Available parallelism in the downward pass
+
+- Opportunities for kernel re-use

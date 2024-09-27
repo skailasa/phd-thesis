@@ -10,8 +10,6 @@
 
 - Overview of the design of the software.
 
-- Diagram for principal traits and how they link together in the final software.
-
 - Why is this good for the future? Well, it leaves open extension to other approaches for any individual subcomponent.
 
 - An example of this is the genericity over data type, kernel implementation, and field translation method, with a space for the kind of tree data structure.
@@ -21,7 +19,7 @@
 
 \section{FMM Software As A Framework}
 
-- Want to encourage as much code re-use as possible.
+- Want to encourage as much code re-use as possible, and minimal structural rewrites.
 
 - The re-implementation of critical subcomponents should be avoided. A step towards this is the development low-level C interfaces which enable the construction of higher level interfaces in compatible languages.
 
@@ -31,12 +29,13 @@
 
 - High level diagram of how software components fit together
 
-
 - Code generation for multiple targets enabled by Rust's llvm based compiler.
 
 - C ABI as a compatiblity layer to other projects, success with this in developing Python wrappers and integration with NGBEM
 
 - Flexible backends enabled by RLST package for BLAS and Lapack.
+
+We discuss the features of our software by examining three important test-cases, that are critical to its performance.
 
 \section{Case Study: A Trait Based M2L}
 
@@ -44,12 +43,11 @@
 
 - What does this look like in practice? Exactly what traits are there, how can re-implement them for an alternative M2L implementation?
 
-
-In principal, how could one also implement a new FMM, a new tree or a new operator for e.g. GPU?
-
 This is incredibly compelling for an FMM software, as it can serve as a testbed for extension and algorithmic experimentation as well as comparison. E.g. we could attempt to use our framework to directly compare analytical and kiFMM methods, re-using the same kernel/lapack/blas backends, tree data structure, the only difference would be the translation operator implementations allowing for a fair comparison.
 
-\section{High Performance Trees}
+- In principal, how could one also implement a new FMM, a new tree or a new operator for e.g. GPU?
+
+\section{Case Study: High Performance Trees}
 
 - Exactly how are Morton encodings done, and what are the drawbacks and alternatives. Hilbert encodings, ORB. How much difference do any of these things make?
 
@@ -61,7 +59,6 @@ This is incredibly compelling for an FMM software, as it can serve as a testbed 
 - What did we end up doing, and what is the justification for these being good enough.
     - weakly adaptive vs fully adaptive FMM.
     - why?
-
 
 Important implementation details
     - construction of interaction lists, neighbour finding.
@@ -75,15 +72,19 @@ Important implementation details
 
 - How are multi/single node trees designed?
 
+- How are ghosts handled in distributed setting? How could this be further optimised via blocking algorithms on very large systems.
+
+- Compare to ghost handling of competing softwares, why this is so much simpler and often good enough.
+
 - basically, have a very shallow struct, with trait interfaces that define the trees/fmm trees. This means that the actual tree is incredibly abstract, and flexible. Being able to query it like a single node tree means that kernel code is largely unchanged for operators.
 
-
-\section{FMM Metadata}
+\section{Case Study: FMM Metadata}
 
 - Arguably the most important part of setting up the calculation to be fast is calculating metadata effectively, i.e. need to move as much of the work away from the runtime as possible.
 
 - Most important pieces here are figuring out how the interaction lists correspond to runtime data structures in M2L.
 
+- Metadata for ghosts, some have to be done at runtime.
 
 
 
