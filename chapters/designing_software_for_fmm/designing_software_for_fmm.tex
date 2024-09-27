@@ -37,7 +37,7 @@
 
 We discuss the features of our software by examining three important test-cases, that are critical to its performance.
 
-\section{Case Study: A Trait Based M2L}
+\section{Case Study: A Trait Based M2L}\label{chpt:software_design:sec:m2l}
 
 - How do metadata computations work for a configurable M2L implementation? What does the high-level framework expect of an M2L implementation?
 
@@ -47,7 +47,7 @@ This is incredibly compelling for an FMM software, as it can serve as a testbed 
 
 - In principal, how could one also implement a new FMM, a new tree or a new operator for e.g. GPU?
 
-\section{Case Study: High Performance Trees}
+\section{Case Study: High Performance Trees}\label{chpt:software_design:sec:trees}
 
 - Exactly how are Morton encodings done, and what are the drawbacks and alternatives. Hilbert encodings, ORB. How much difference do any of these things make?
 
@@ -78,7 +78,7 @@ Important implementation details
 
 - basically, have a very shallow struct, with trait interfaces that define the trees/fmm trees. This means that the actual tree is incredibly abstract, and flexible. Being able to query it like a single node tree means that kernel code is largely unchanged for operators.
 
-\section{Case Study: FMM Metadata}
+\section{Case Study: FMM Metadata}\label{chpt:software_design:sec:metadata}
 
 - Arguably the most important part of setting up the calculation to be fast is calculating metadata effectively, i.e. need to move as much of the work away from the runtime as possible.
 
