@@ -6,6 +6,15 @@ TASK-BASED FMM FOR MULTICORE ARCHITECTURES (2014)
 - Parallel efficiency = Speedup / N Proc
 E = T(1) / P T(P)
 
+- Pthreads vs Omp threads
+- p threads need to manually manage all aspects of thread creation.
+    - unix like
+    - low level creation/join/fork mutex etc.
+
+
+
+
+
 - Study shared memory uniformly discretised octrees
 
 - Consider task based parallelism
@@ -55,3 +64,55 @@ Nonuniform memory access (NUMA): In a NUMA architecture, memory is physically di
 
 - Though the FMM in principle offers a lot of parallelism, in practice the trade-off between blocking and concurrency makes the problem more difficult.
 - Runtime systmes are a useful asset for developers, so less care is needed with parallel communication.
+
+O. Coulaud, P. Fortin, and J. Roman, Hybrid MPI-thread parallelization of the fast mul- tipole method, in ISPDC ’07, Sixth International Symposium on Parallel and Distributed Computing, 2007, p. 52.
+ - citation for another Pthread/Blas FMM
+
+
+ - Quote chandramowlishwaram FMM papers
+    - [3] A. Chandramowlishwaran, K. Madduri, and R. Vuduc, Diagnosis, tuning, and redesign for multicore performance: A case study of the fast multipole method, in Proceedings of the 2010 ACM/IEEE Conference on Supercomputing, 2010.
+    - [4] A. Chandramowlishwaran, S. Williams, L. Oliker, and G. B. Ilya Lashuk, and R. Vuduc, Optimizing and tuning the fast multipole method for state-of-the-art multicore architectures
+
+- again completely dead software, as examples of exploiting thread affinity to increase cache performance for adaptive FMM.
+
+- early examples of using SIMD/SSE optimisations.
+
+    - B. Zhang, J. Huang, and N. P. Pitsianis, Dynamic prioritization for parallel traversal of irregularly structured spatio-temporal graphs, in Proceedings of the 3rd USENIX Workshop on Hot Topics in Parallelism, 2011.
+    - graph based formulation of the FMMi
+
+In this paper, we study the impact of the parallelization method on the performance of the FMM on shared-memory multicore machines with uniform octree. For
+
+- async m2l and p2p
+
+- StarPU manages the data transfers.
+- some of them, not all, manage with GPU - need to check which ones, probably most / all of them by now.
+
+
+In other words, a runtime does not release us from writing code for each specific architecture
+- just manages scheduling.
+
+StarPU transparently guarantees that a codelet which needs to access a piece of data will be given a pointer to a valid data replicate.
+    - seems like this will wreck caching
+
+- don't talk much about data locality, seemingly only rely on that provided by Morton ordering, not a level wise re-order like us.
+
+- group together blocks of nodes, slightly coarser than per box.
+
+- Scheduler choices.
+    - seems really hard to schedule a non-uniform load, across heterogenous devices.
+    - developed a custom scheduler 'priority' for the FMM
+    - inbuilt Eager scheduler
+        - greedy algorithm, releases ead of FIFO queue, no choices, no distinctions between the tasks, no user control
+    - Having to design a custom scheduler is a very strange approach for achieving performance, as you focus entirely on load rather than cache coherence and memory accesses.
+    - Doesn't even say how their scheduler works.
+    - But can give different priority marks with respet to geometry.
+    - try and differentiate with small and large P2P tasks, and assign them diffferent priority.
+        - why does this even matter? Surely total load is all that's important, rather than priority of execution times
+
+- Indeed, the principle problem with this approach is a focus on runtime and not memory.
+
+- useful for MPI, as DAG can handle data dependencies.
+
+NUMA policies:
+
+We have assessed different NUMA policies for the memory allocation. In the present study, we use a memory interleave policy as it achieved the highest perfor- mance. Memory is allocated using round robin on all memory nodes with the “nu- mactl –interleave=all” option. We have also tuned the OpenMP environment. We have bound the threads to the CPU cores by setting the “OMP PROC BIND=true” environment variable and we have enabled an active waiting policy by setting the “OMP WAIT POLICY=ACTIVE” variable. The OpenMP codes rely on the Intel OpenMP runtime library embedded with the compiler. The task flow codes rely on StarPU 1.0.0rc3
