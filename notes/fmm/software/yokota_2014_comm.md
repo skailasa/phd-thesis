@@ -20,7 +20,6 @@ computationally optimal methods tend to be storage-optimal because the amount of
 
 today’s optimal hierarchical methods, FMM and H-matrices excel in concurrency, tolerance of asynchronicity, arithmetic intensity, and the ability to tune SIMT data sizes to natural boundaries in the hardware hierarchy.
 
-
 - Arithmetic intensity of inner kernel of N-body method
 
 - $O(N^2)$ kernel evaluations, distance requires 10 flops per kernel eval, 3 subs, 3 squares 2 additions, 1 sqrt, 1 inverse, but really depends on the kernel. So not sure where 20 comes form..
@@ -40,4 +39,31 @@ O(\frac{2N^3}{2N^2}) = O(N)
 $$
 
 Comparable/slightly higher to evaluate Laplace kernel (thank naive) matrix multiplication.
+
+There are numerous constraints on exascale algorithms, chief among which are minimizing mem- ory storage and minimizing frequency of deep memory access
+
+- All-to-all exchanges are an endangered idiom
+    - see the requirements for gradient updates in deep learning
+    - inner product of globally distributed vectors.
+    - even if the work imbalance between synching such steps can be bounded, which is unsolved in distributed adaptive computations.
+        - but processors of the future cannot be expected to be performance reliable
+        - e.g. dynamic clocking to maintain safe levels of heat generation, or dynamic correction of errors due to low signal-to-noise ratios in energy efficient hardware
+
+- Bulk synchronous programming will have to give way to new programming models, and *must be co-designed with hardware*
+    - this is a great point, and should be hammered home in the conclusion.
+
+- 25. P. Kogge, K. Bergman, S. Borkar, D. Campbell, W. Carlson, W. Dally, M. Denneau, P. Franzon, W. Harrod, K. Hill, J. Hiller, S. Karp, S. Keckler, D. Klein, R. Lucas, M. Richards, Al. Scarpelli, S. Scott, A. Snavely, T. Sterling, R. S. Williams, and K. Yelick. Exascale computing study: Technology challenges in achieving exascale systems. Technical report, DARPA, 2008
+    - Speculative roadmap for exascale
+    - to note that many of us don't have exascale yet, or anywhere near.
+
+Today’s optimal algorithms have evolved, as mentioned above, to squeeze out flops, whereas
+the premium at the exascale is to squeeze out memory storage and accesses
+
+computationally optimal methods tend to be storage-optimal because the amount of relevant data cannot be greater than that touched in executing the flops
+
+Therefore, computationally optimal algorithms are the first places to look for memory parsimonious exascale kernels
+
+- leads to the idea of the FMM as a premier exascale kernel, and likely to reach exascale easily.
+
+- demonstrate that complexity bounds are valid for non-uniform distributions too. Can just cite this out.
 

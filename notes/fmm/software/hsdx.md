@@ -31,13 +31,16 @@ Supercomputing, ser. ICS 2015, pp. 415–424. ACM, New York (2015)
 - Sender initiated communication, not clear how this works.
     - Common in N-body cosmology codes apparantly
 
-
 - Conventional (PVFMM, Lashuk etc) the global tree is constructed bottom up, and therefore severed across processors
+
 - merging of LET was complex, and typically largest part of the code.
+
 - hard to implement new features.
 
 - ExaFMM simplifies the structure.
+
 - overlaps communication with computation.
+
 - traditional, BSP alll to all v for LET construction
 
 - Therefore, the tree structure was severed in many places,
