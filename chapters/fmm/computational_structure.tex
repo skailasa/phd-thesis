@@ -39,7 +39,9 @@ However, there are also many positives
 - Many past works have alluded to this feature of the FMM, though it is rarely expressed as such explicitly in the literature.
 
 - Early examples include the works of Chandramowlishwaram and co-workers, who develop performance models characterising the kiFMM on various hardwares, and acknowledge the trade-off between the M2L and P2P as the key characteristic for FMM performance, and controlled by the tree depth.
+
 - Deeper trees, synonymous with fewer particles per leaf node, and therefore smaller $U$-lists for P2P, but with more M2L.
+
 - Shallower trees, synonymous with larger P2P and fewer M2L.
 
 - Since then many works have focussed on expressing the data dependencies explicitly, and exposing them to special runtimes. - Proponent of task based runtime systems, as not restricted to specific algorithmic ordering of tasks removes artificial syncs, expose more native concurrency, and shorten critical path. The latter tends to restrict operations to a specific order. DAG-based dynamic runtime engines can remove artifactual synchronizations in the form of subroutine boundaries, remove artifactual orderings in the form of pre-scheduled loops, expose the native concurrency, and shorten the critical path. StarPU, Charm++ and Legion being popular runtimes.

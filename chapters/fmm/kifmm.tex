@@ -1,10 +1,32 @@
-
 \section{Kernel Independent Fast Multipole Methods}\label{chpt:fmm:sec:kifmm}
 
-The decades since its original presentation have seen the \acrshort{fmm} extended with related ideas which principally differ in how they represent interactions between distant clusters of particles typically referred to as \textit{algebraic} FMMs.
+As mentioned the functions $A_p$ and $B_p$ in (\ref{eq:chpt:fmm:degenerate_kernel}) corresponded to explicit expansions of the Green's function in the original formulation of the FMM.
 
-- Review of the KiFMM and variants. Black Box FMM, Analytical FMM, Data Driven Techniques.
+- This approach has benefits, principally it will have a very low pre-computation time for all the operators, and there have been translation operators developed for a wide range of common PDE kernels [CITE AVAILABLE KERNELS]. However, this approach also contains significant trade-offs. Very often kernel expansions rely on the evaluation of special functions for the translation operators, which can be expensive at runtime especially when large expansion orders are used.
 
-- Motivation for use from a software engineering and computational performance perspective.
+- From a practical perspective, each kernel implementation may require kernel specific fine-tuning to achieve high performance, making a unified software framework that can tackle a range of kernels a daunting task.
 
-- Approximation scheme via method of fundamental solutions, why do we expect certain convergence?
+- Variants of the FMM , known as `kernel Independent', take an alternative approach to explicitly constructing kernel expansions. Instead of constructing explicit expansions, they use proxies to represent the field due to the charges contained in each box, their defining feature being that they result in schemes which only rely on kernel evaluations, while remaining compatible with a wide range of elliptic PDE kernels. Notable examples include [Darve paper], [Rokhlin and Martinsson paper in 1D].
+
+- From a software perspective, this leaves a smaller surface area of code optimisation, data organisation for the application of operators and the kernel evaluations, which together determine the performance.
+
+- We describe in detail the approach taken in \cite{Ying:2004:JCP} as it's the method which we implement in our software.
+
+- The principal features of this approach are its usage of equivalent charges placed on surfaces that enclose the box, and the method of fundamental solutions as its approximation scheme.
+
+- As the scheme relies on an analysis based uniqueness argument, the kiFMM and similar schemes with some analysis used in their specification are occasionally referred to as `semi-analytical' FMMs. Though this term garners scattered use through the literature, and it is relatively common to refer to any method which does not rely on explicit analytical expansions of the interaction kernel as an `algebraic' method.
+
+- Review all translation operators
+
+- How is pinv constructed? What limits the accuracy of these factors in the original kiFMM, how was this rectified by kiFMM (pvFMM)
+
+- Comment on storage requirements for Laplace and Helmholtz kernels in 3D.
+
+- Comment on what can be precomputed and cached.
+
+- Comment on specification of the operators as matrix-vector operations.
+
+- Brief comment on M2L acceleration of the original spec of this method, ie. why was SVD based compression and BLAS abandoned and FFT favoured?
+
+- Expected convergence behaviour, are the multipoles also exponentially converging with expansion order?
+

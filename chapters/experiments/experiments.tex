@@ -22,60 +22,10 @@
 
 Simple benchmark for low $k$
 
-\subsection{How High Can $k$ Go?}\label{chpt:experiments:sec:helmholtz:sub:high_k}
-
-- We have an implementation that allows us to vary $P$ by level, therefore can keep observed accuracy constant while increasing $P$ as boxes get larger.
-
-- Some kind of experiment showing the convergence graph with increasing P, in the geometric then convergence regimes.
-
-- Scaling graph vs $\bigO{N}$ $\bigO{N \log{N}}$ - need to check. However, the actual complexity will increase quartically with $k$ as growing number of terms with level,
-
-e.g. \acrshort{m2m}
-
-Diameter at level $l$ is $$ D_l = D_d 2^{d-l}$$
-
-where $d$ is the depth of the octree.
-
-$$
-\text{Cost at level $l$} = O(N_l^2) = O((kD_l)^4)
-$$
-
-Where the rank of the M2M matrices is $N_l$ at level $l$ and $D_l$ is the box diameter at level $l$ and $k$ is the wave number
-
-Written in terms of the diameter of the finest boxes at depth $d$,
-
-$$
-\text{Cost at level $l$ } = O((k D_d 2^{d-l})^4) = O(k^4 D_d^4 2^{4(d-l)})
-$$
-
-
-\begin{flalign}
-    \text{Total Cost } &= O \left( k^4 D_d^4 2^{4d} \sum_{l=0}^d  2^{-4l} \right) \\
-    &=O \left( k^4 D_d^4 2^{4d} \frac{16}{15}(1- \frac{1}{16^{d+1}}) \right)
-\end{flalign}
-
-Scales quartically with $k$ and exponentially with depth $d$ - which is used to balance P2P cost.
-
-Consider that for $\sim N$ leaf boxes, the depth of the tree is given by $d = \log_8{N}$,
-
-$$
-d = \log_8{N} = \frac{1}{3} \log_2{N}
-$$
-
-Substituting into the complexity estimate and ignoring small terms,
-
-$$
-\text{Total Cost } = O \left( \frac{16}{15}  k^4 D_d^4 N^{4/3}  \right)
-$$
-
-For a fixed $k$, and $D_d$, we have an $O(N^{4/3})$ algorithm for computing all \acrshort{m2m}, as other operators \acrshort{m2l} and \acrshort{l2l} will result in very similar complexity estimates as the \acrshort{m2l} will only differ by a constant. So cost of \acrshort{fmm} with this scheme of increasing expansion order by level is of $O(N^{4/3})$, but constants are determined by $kD$ which scales quartically, so only manageable for relatively shallow trees and moderate wavenumbers. In terms of complexity, not hugely different to $N \log{N}$ algorithm
-
 - A graph of $p$ vs level for each given accuracy, e.g. pick a few in single and double, likely to be easiest and most appropriate for single precision, and low double precision.
 
 - Big colorful plot of HF helmholtz, use same parameters as in the Lexing Ying/Engquist paper, can't directly compare runtimes - but these are considered high frequencies in 3D.
 
 - Comment, with optimal $K$ evaluations appropriately using SIMD, relatively shallow trees, especially in single precision, can model very high frequency problems in practically useful runtimes, though perhaps (need to check) lose asymptotic scaling.
-
-
 
 

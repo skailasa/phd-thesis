@@ -23,13 +23,27 @@
 
 - Full literature review of past approaches
 
+- Dense and Analytical approaches
+
+- The historical push for this originally resulted in point and shoot/diagonal forms ('new' FMM paper)
+
 - Where past efforts have been focussed, and why? (Original paper dismissed direct matrix compression)
 
 - how this is achieved in practice (i.e. what computations are needed, not the implementation details)
 
+- Explanation of the FFT method, and why it was able to achieve high performance.
 
+- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
 
-\subsection{A New Direct Matrix Compression Based Acceleration Scheme}
+- How PVFMM makes it work, with very high arithmetic intensities, and special structure.
+
+- Some criticism here of that approach.
+
+- Require a special implementation for each architecture, intricate to maintain, requires passing mutable pointers over threads. Difficult to replicate, ours is the only re-implementation of this scheme in the open-source.
+
+- Give the gist here, the actual details can be shoved in the appendix as it's not really a part of the discussion.
+
+\subsection{A New Direct Compression Based Acceleration Scheme}
 
 - Why might this be preferred, or advantageous, what are its constraints
 
@@ -41,18 +55,6 @@
 
 - runtime metadata that's required, and the new allocations that are required for contiguous blocks of multipole data over sibling.
 
-
-
-\subsection{Review of FFT based Acceleration Based Schemes}
-
-- Explanation of the method, and why it was able to achieve high performance.
-
-- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
-
-- Both algorithmic and computational
-
-\subsection{Results}
-
 - Caching experiment vs ScalFMM. Why software comparisons can be contrived, due to the vast differences in implementation details -e.g. kernel evaluations, but can directly compare the M2L runtimes alone for different expansion orders and tree levels.
     - i.e. similar software and hardware backends (they use OpenMP tasking vs Rayon for threading)
     - cache destroyed by granular tasking approach
@@ -63,9 +65,6 @@
 
 - Comment and discussion from the paper can be lifted here.
 
-
-\subsection{Discussion}
-
 - Why our approach is sustainable given long term trends in hardware and software.
 
 - Why might it be useful for Helmholtz FMM ...
@@ -73,7 +72,6 @@
 - What are important trends, and what have we actually done.
 
 - Interesting point of comparison with ScalFMM to demonstrate the importance of caching to performance, noting that direct software comparisons are not entirely fair.
-
 
 
 \section{Leaf Level Operators (P2P, L2P, P2M)}

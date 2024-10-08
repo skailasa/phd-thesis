@@ -1,37 +1,26 @@
-gi# Global TODOs
+# Global TODOs
 
-- Introduction
-    - Look at recent FMM advances over the past decade to properly cite in paragraph, beyond ones that are super prominent.
-    - Do the citations section for FMM applications
-    - dta re-use comment for direct calculation, might be helpful to have an arithmetic intensity estimate, like that in one of the yokota papers
+Chapter 2:
+- Finish all sections
+- Reading left to do:
+    - ped. intro to HF FMM, for complexity estimates (of both types) as I want these or similar in 2.1
+    - HF FMM (analytic and ki) complexity estimates, and convergence properties.
+    - H2, how are the approximations typically constructed? Linear algebra?
+        - the review paper by Steffen Borm is good, have a look at the book again if there is anything I've missed.
+    - I always forget HBS/HSS - kressner notes, and Martinsson book.
 
-- Review of FMM
-    - Analytical derivation in 2D for multipole expansions and local evaluations, will need to look up.
-    - Need to lookup 3D expansions in terms of spherical coordinates just for my revision purposes and exam and write a note about this.
-    - kiFMM
-        - MFS convergence properties
-    - Oscillatory section
-        - need to write clearly about diagonolisation but in words
-        - can mention the MFS result, and how this could be used to re-use the kiFMM framework and crank up sampling required.
-    - How exactly are H/H2 matrices related to FMM ideas? Where are they equivalent?
-        - basically algebraic FMMs are more or less equivalent if a particular choice is taken for block cluster tree.
-        - need to be able to spell out exactly the difference.
+- Distributed memory
+    - need to write up communication of ghost's complexity that I worked out for the old Lashuk paper, and contrast it with my own approach.
 
-    - Computational structure
-        - FMM flow diagram
-        - break down kiFMM operations by computational complexity, as well as memory accesses required?
-        - identify bottlenecks,
+- Computational structure
+    - maybe a short note on the arithmetic intensity (need the reference for this and roofline plots maybe, but its so common)
 
-    - Review of software approaches,
-        - need to finish literature review of FMM software that is available
-        - need to describe exactly what is available, their stated aims, and where we fit in
+- Algorithm zoo:
+    - if I have the main bits of the FMM I'm using spelled out by this point, it is good to place it in context of competing methods, that's why that table there is good.
+    - I need to expand on the table though, it's not clear what those complexities are or where they come from. I need to write sentences to that effect.
+    - It would be good to have a table also breaking down each approximation scheme by translation method instead of just one big one.
+
+    - reading left to do:
+        - go through the approximation schemes I'm not familiar with in this list of papers.
 
 
-
-1. Sort out papers for review on
-    - parallel FMM
-    - high frequency FMM
-    - fast solvers and extensions of FMM
-    - BIEs etc.
-
-4.ii. Drafting of chapter headings for thesis
