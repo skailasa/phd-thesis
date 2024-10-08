@@ -90,24 +90,18 @@ In cases where a source and target cluster can be considered \textit{admissable}
 The notion of admissability is made more concrete by reference to a data structure chosen to discretise the problem. For the \acrshort{fmm} quadtrees and octrees are commonly used in two and three dimensions respectively. These are data structures in which a $d$-dimensional bounding box is used to cover the source and target particles, and is recursively divided into $2^d$ `child' boxes. This process can be either `adaptive' or `uniform'. In the former case, the box is divided until a user defined threshold defining the maximum number of points per terminal leaf box is reached, which can lead to adjacent boxes of differing sizes and is able to closely model extreme particle distributions. In the latter case, boxes are divided such that each leaf box is of the same size, specified by a user defined parameter controlling the maximum depth of the tree.
 
 
-
-
 - In order to achieve its $\bigO{N}$ complexity the \acrshort{fmm} is structured to reduce to a minimum the number of sums evaluated between inadmissable clusters.
 
-
-- The full algorithm for uniform case
+- Algorithm sketch, note on adaptivity and how it's defined and achieved (weak and strong)
 
 - sketch of complexity for full generic algorithm
 
-- adaptive case, and why this might be useful.
+The power of the FMM's original insight was the split of near and far interactions, and the usage of `interaction lists' to describe the interactions relative to each box. Furthermore the organisation into a hierarchical algorithm provide the tools for achieving linear complexity for non-oscillatory problem key to which is the ability to translate between multipole and local expansion representations. These three features (i) the construction of interaction lists and (ii) the low-rank approximation scheme used to express the field due to a collection of charges and (iii) the methods used to translate between these operators principallly define all existing FMM variants, which retain a common recursive algorithmic structure. From a computational perspective, the FMM offers even more features that combine with those above that result in algorithmic variants, the main ones being approaches to (i) tree construction, and resulting data layout and access schemes (ii) the approach to parallelisation and distribution across nodes (iii) the approach to mapping algorithmic subcomponents to take advantage of high-performance software and hardware.  This has resulted in a diverse set of algorithmic approaches, some of which we review in Section \ref{chpt:fmm:sec:algorithm_zoo}, all with their own benefits and trade-offs between implementational and algorithmic complexities.
 
-- What extras does it entail. Will we consider it in this thesis?
 
-- Define interaction lists.
+% However, this is also the principal reason as to why the FMM is a challenging algorithm to achieve high performance in three dimensions for. The interaction lists for a given box, despite being bounded in size, can be large especially in 3D, which is worsened due to the fact that the rank decay of kernels in three dimensions is slower than in one or two dimensions, leading to higher interaction ranks as well as more interactions.
 
-- Define all operators.
+% The organisation into a hierarchical tree poses practical problems in terms of optimal data layout for looking up and manipulating data from interaction lists, if a tree is programmed naiveley using pointers linking child and parent nodes, looking up data from interaction lists will result in cache misses, and be difficult to organise into BLAS calls.
 
-- Give an algorithm sketch.
 
-- Give complexity sketch.
 

@@ -48,6 +48,7 @@ This is incredibly compelling for an FMM software, as it can serve as a testbed 
 - In principal, how could one also implement a new FMM, a new tree or a new operator for e.g. GPU?
 
 \section{Case Study: High Performance Trees}\label{chpt:software_design:sec:trees}
+% Figure \ref{fig:chpt:fmm:data_flow} illustrates the dataflow in the \acrshort{fmm} when evaluating the potentials due to a set of source particles at a set of target particles in its far-field. Shown this way, it's easy to see how the spatial locality of required boxes for during the \acrshort{p2m} and \acrshort{m2m} steps during the upward pass, and the \acrshort{l2l}, \acrshort{l2p} and \acrshort{p2p} steps during the downward pass could be implemented using contiguous buffers for spatially local octant data. Indeed there are many established encodings for `space filling curves', which can be used to encode the indices of nodes in a hierarchical tree, common examples including so called Hilbert and Morton curves \cite{sagan2012space}. The power of this, in combination with an octree data structure is that it allows for extremely efficient lookups for node data, and that of nodes adjacent to a given node, as geometric information is tied to memory layout.
 
 - Exactly how are Morton encodings done, and what are the drawbacks and alternatives. Hilbert encodings, ORB. How much difference do any of these things make?
 

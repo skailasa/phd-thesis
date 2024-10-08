@@ -41,6 +41,8 @@ PVFMM: A parallel kernel independent FMM for particle and volume potentials
 - M2L approach measured to achieve over 50% of theoretical peak performance, which is very decent.
 - For volume FMM use tasking parallelism between near interactions on co-processor and far interactions on CPU.
 
+- condition number for unitary matrix of being 1 comes from the fact that it's norm preserving.
+
 - Communication scheme for Ghost octants, hypercube all-reduce .
 - Scales as
 

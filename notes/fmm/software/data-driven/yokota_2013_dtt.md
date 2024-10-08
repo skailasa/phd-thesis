@@ -108,3 +108,5 @@ An FMM Based on Dual Tree Traversal for Many-core Architectures
 - Don't observe anywhere near their published benchmarks on the threadripper in double precision.
 
 
+- contains table of all expansions which is very useful
+

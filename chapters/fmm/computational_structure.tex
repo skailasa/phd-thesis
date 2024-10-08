@@ -1,41 +1,53 @@
 \section{Computational Structure}\label{chpt:fmm:sec:computational_structure}
 
-Figure \ref{fig:chpt:fmm:data_flow} illustrates the dataflow in the \acrshort{fmm} when evaluating the potentials due to a set of source particles at a set of target particles in its far-field. Shown this way, it's easy to see how the spatial locality of required boxes for during the \acrshort{p2m} and \acrshort{m2m} steps during the upward pass, and the \acrshort{l2l}, \acrshort{l2p} and \acrshort{p2p} steps during the downward pass could be implemented using contiguous buffers for spatially local octant data. Indeed there are many established encodings for `space filling curves', which can be used to encode the indices of nodes in a hierarchical tree, common examples including so called Hilbert and Morton curves \cite{sagan2012space}. The power of this, in combination with an octree data structure is that it allows for extremely efficient lookups for node data, and that of nodes adjacent to a given node, as geometric information is tied to memory layout.
+- The data flow is shown in Figure \ref{fig:chpt:fmm:data_flow} for all the operators for a uniform FMM in two dimensions with two levels taken in the hierarchical tree.
 
-In terms of the tree data structure, the leaf level operators: \acrshort{l2p} \acrshort{p2m} and \acrshort{p2p} are embarrassingly parallel over each leaf. As would be the \acrshort{m2p} for an adaptive \acrshort{fmm}. In a single node setting on a \acrshort{cpu} these operators can effectively handled with a combination of multi-threading and efficient vectorisation via \acrshort{simd}, and similarly easy to translate into a \acrshort{gpu} implementation. However, in this case the small data sizes involved in the the \acrshort{l2p}, \acrshort{p2m} and \acrshort{m2p} for an adaptive \acrshort{fmm}, may make \acrshort{gpu} implementations redundant due to the memory transfer costs outweighing the increased throughput. This is enabled by the high arithmetic-intensity of leaf-level operators that involve the particle data. Consider the \acrshort{p2p}
+As expressed in the preceding section on may have a pessimistic view on obtaining performance for a given FMM implementation as it relies on:
 
-... P2P arithmetic intensity. It is compute bound, and scales very well with direction of processor technology.
+- nonlinear hierarchical data structure - resulting in non-linear data access patterns, illsuited to the data movement requirements of modern hardwares.
 
-As we have seen, it is possible to form the \acrshort{m2m} and \acrshort{l2l} operators as matrix-vector products for the \acrshort{kifmm}, and also its variants [CITE FORTIN, bbFMM]. Indeed, as these operations depend on the relative position between two boxes, we can effectively block these operations as matrix-matrix products of sets of boxes at a given level, usually siblings as their coefficient data can effectively be stored contiguously in memory alongside a localtional encoding.
+- A double recursion through a hierarchical data structure.
 
-... Matrix multiplication is a heavily optimised routine in both software and hardware
-    - BLIS, gotoblas etc.
-    - special registers in Apple/new AMD/qualcomm devices due to AI
+- A number of `operators' that define linear transformations between data associated with each box at each level during the hierarchical recursion.
+
+- A critical operator, M2L, which necessarily relies on data non-local to a given box.
+
+- The long range interactions captured by the recursive tree loop and the M2L operator leading to an O(N) algorithm, are also features which mean that practical implementations on modern computers where flops are no longer a good proxy for the runtime complexity of a software.
+
+- Algorithm implementations must instead focus heavily on data operations such as transfer, synchrnoisations, and attempt to heavily utilise the cache available to us in modern CPUs/GPUs to minimise data transfer, even at the cost of extra flops - as extra flops on locally cached data represent a modest increase in the runtime/energy usage.
+
+However, there are also many positives
+
+- Expensive operations involving particle data at the leaf level can be efficiently parallelised due to natural expression via SIMT/SIMD approaches.
+
+- The M2M/L2L operators offer clear opportunities for data re-use over siblings as they are operating between parent/child boxes.
+
+- These operators can therefore be expressed very high arithmetic intensity. Which we define as the ratio of \textit{useful flops per memory access}.
+
+- Although at first glance the M2L and the recursive application of operators seem to be barriers to achieving high arithmetic intensity overall for the FMM, it's clear that symmetry arguments can be used to batch together applications of M2L operators across multiple boxes if the kernels defining the interaction exhibit translational invariance.
+- Furthermore, the tree is considered level-wise in a highly consistent fashion across all levels. And therefore offers significant opportunities for linear data layout for all required data per tree level.
+
+- Therefore, although the FMM at first glance appears to be an algorithm with significant data access issues and cache problems due to its recursive structure and reliance on a hierarchical data structure, it can be seen when unrolled that it is in principle expressable using linear data structures where all operators have opportunities for high-arithmetic intensity formulations.
+- as we show in figure ... where we sketch the data flow operation in Figure \ref{fig:chpt:fmm:data_flow} as an unrolled FMM loop, with linear data access.
 
 \begin{figure}[h]
     \includegraphics[width=\textwidth]{fmm_data_flow.png}
-    \caption{Data flow for the evaluation of the potentials due to a given set of (red) source particles in the far field of a given set of (blue) target particles, in 2D for clarity with a uniform tree of depth 2. The source particles in the near field of the target box are shown in grey.}
+    \caption{Data flow for the evaluation of the potentials due to a given set of (red) source particles in the far field of a given set of (blue) target particles, in two dimensions for clarity with a uniform tree of depth two. The source particles in the near field of the target box are shown in grey.}
     \label{fig:chpt:fmm:data_flow}
 \end{figure}
 
-However, the power of the \acrshort{fmm} and its derived asymptotic complexity come from capturing long-range interactions via the \acrshort{m2l} field translations. This naturally leads to non-contiguous memory accesses during this step, as the \acrshort{m2l} operator is only defined for non-adjacent nodes. Indeed, despite the $O(N)$ complexity, efficiently organising data for this step alone can define the runtime of a practical implementation. This is of even greater importance in 3D, where the sizes of interaction lists are larger, as well as for oscillatory problems where the rank for a given interaction grows with box diameter. Performing efficient \acrshort{m2l} requires a careful balance between efficiently handling the interaction lists to ensure contiguous data access, as well as algorithmic optimisations to reduce the complexity of this operator.
+- Many past works have alluded to this feature of the FMM, though it is rarely expressed as such explicitly in the literature.
 
-The expense of the \acrshort{fmm} can therefore be considered a trade-off between compute-bound leaf level operators, and the memory bound \acrshort{m2l} operator.
+- Early examples include the works of Chandramowlishwaram and co-workers, who develop performance models characterising the kiFMM on various hardwares, and acknowledge the trade-off between the M2L and P2P as the key characteristic for FMM performance, and controlled by the tree depth.
+- Deeper trees, synonymous with fewer particles per leaf node, and therefore smaller $U$-lists for P2P, but with more M2L.
+- Shallower trees, synonymous with larger P2P and fewer M2L.
 
-... Chandramowlishwaram result from ages ago, have things gotten worse since then for M2L?
+- Since then many works have focussed on expressing the data dependencies explicitly, and exposing them to special runtimes. - Proponent of task based runtime systems, as not restricted to specific algorithmic ordering of tasks removes artificial syncs, expose more native concurrency, and shorten critical path. The latter tends to restrict operations to a specific order. DAG-based dynamic runtime engines can remove artifactual synchronizations in the form of subroutine boundaries, remove artifactual orderings in the form of pre-scheduled loops, expose the native concurrency, and shorten the critical path. StarPU, Charm++ and Legion being popular runtimes.
 
+- However as we can see there are remarkably few intra-level synchrnoisations required for the FMM, meaning that the overhead of a runtime system in comparison to ordinary multithreading based appraoches
 
-The \acrshort{fmm} offers further opportunities for parallelism. The two most expensive parts of the \acrshort{fmm}, the \acrshort{p2p} and \acrshort{m2l} are independent from each other, and can be performed asynchronously. This is the basis of approaches which offload one of these operators, usually the \acrshort{p2p}, to a co-processor while performing the recursive loop.
+- The principal drawback of losing this control is that though NUMA aware approaches do exist, it is significantly hardware to control data locality, which i§s critical for performance on modern architectures.
 
-Given two non-intersecting boxes at level $l$
-- If their interaction lists do not overlap, they can proceed independently of one another during the downward pass
-- Even if their interaction lists do overlap, if the appropriate metadata structure required for the M2L is setup - i.e. where to look for multipole data, perhaps a re-allocation to get data contiguous for lookup. They can still proceed independently of each other.
-- This has remarkable consequences for parallelising distributed FMMs. Early approaches suffered from a reliance on a global all-reduce, stemming from the fact that nodes near the root are required by almost all boxes during the downward pass.
-- However, as first noted by Ibeid et. al. There is (in 3D) at least an 8 fold redundancy if data is partitioned across MPI ranks such that each rank contains roots that correspond to leaves of a `global' tree.
-- This means, that the FMM below the depth of the global tree, can proceed completely independently on each rank, and the communication required for the global tree is only of multipole and local coefficient data which is inherently small as only a few ranks are involved in the communication.
-- The second issue in distributed memory, aside from ghost communication, is achieving an appropriate load balance among processors. This is addressed in a multitude of ways, commonly by creating a cost function that is proportional to the size of each box's interaction list, followed by a repartition of the data. As the initial partition is achieved via parallel sort, the appropriate load-balanced partition again relies on a parallel sort, for which numerous communication optimal implementations are readily available.
+- Furthermore, most critically, the two most expensive operations of the FMM, the P2P and M2L operators, \textit{have no data dependencies} Meaning that there is amply opportunity to develop fully asynchronous implementations of these two operations, and given the optimal SIMD/SIMT structure of the P2P operation the obvious choice of operator to deploy to GPU in a heterogenous implementation.
 
-As we can see the most significant bottlenecks in \acrshort{fmm} implementations are related to memory transfer both vertically through the cache-hierarchy on a specific device, and horizontally among distributed devices. Specifically, the data organisation required for performing the \acrshort{m2l}, and the communication of ghost information in a distributed setting. The remainder of the algorithm can be very efficiently parallelised with established approaches, as long as care is taken to keep the computational intensity (i.e. number of effective flops) as high as possible.
-
-The \acrshort{fmm} also exposes significant opportunities for deployment via asynchronous execution and task based runtimes, as the most time consuming sections of the algorithm can be evaluated independently of each other. Additionally, during the recursive loop, as long as appropriate metadata is created, all operations are trivially parallel over each box at a given level.
 

@@ -81,7 +81,6 @@ $$
 
 Where $L_l$ are the set of low-rank blocks at level $l$. Each of the three muls are streamed through the GPU over batches of blocks. Even when not enough work for all threads at top levels of the tree. Overlap with 'streams'
 
-
 Boukaram W, Turkiyyah G, Keyes D. 2019 Hierarchical matrix operations on GPUs: matrix- vector multiplication and compression. ACM Trans. Math. Softw. 45, 3:1–3:28. (doi:10.1145/ 3314951) - full GPU paper
 
 - 78% of theoretical peak bandwidth in their implementation via latency hiding.
@@ -116,7 +115,6 @@ Double-buffering is a technique used to improve performance and efficiency in sc
 Non-temporal stores are a type of memory write operation that bypasses the CPU cache. They are used when writing large amounts of data that will not be reused in the near future, thus avoiding unnecessary cache pollution and improving performance for specific scenarios.
 
 - Hicma is incorporated in cuBLAS
-
 
 NUMA aware / DAG specified runtimes
 
