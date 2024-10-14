@@ -100,10 +100,70 @@ The notion of admissability is made more concrete by reference to a data structu
 
 - From a computational perspective, the FMM offers even more features that combine with those above that result in algorithmic variants, the main ones being approaches to (i) tree construction, and resulting data layout and access schemes (ii) the approach to parallelisation and distribution across nodes (iii) the approach to mapping algorithmic subcomponents to take advantage of high-performance software and hardware.  This has resulted in a diverse set of algorithmic approaches, some of which we review in Section \ref{chpt:fmm:sec:algorithm_zoo}, all with their own benefits and trade-offs between implementational and algorithmic complexities.
 
+- There are large lurking constants in FMM.
 
-% However, this is also the principal reason as to why the FMM is a challenging algorithm to achieve high performance in three dimensions for. The interaction lists for a given box, despite being bounded in size, can be large especially in 3D, which is worsened due to the fact that the rank decay of kernels in three dimensions is slower than in one or two dimensions, leading to higher interaction ranks as well as more interactions.
+- Aluru, some arguments that the original FMM was not O(N) for Laplace
+- Kurzak paper, in the 00s some people even thought that FMM only competetive with Ewald/treecodes at 10e62 particles, completely unfeasible
+- disproved by a series of landmark codes and developments, which showed that *particular* FMMs could harness petascale compute resources.
 
-% The organisation into a hierarchical tree poses practical problems in terms of optimal data layout for looking up and manipulating data from interaction lists, if a tree is programmed naiveley using pointers linking child and parent nodes, looking up data from interaction lists will result in cache misses, and be difficult to organise into BLAS calls.
+- Give a break down table for each operator in analytical, and kernel independent cases (bbFMM and kiFMM) without acceleration, in 3D, and memory accesses total
+
+- Have a breakdown table of each approach *with acceleration* in 3D, and memory accesses (total) required
+
+- Despite most schemes in principle having a high flop/byte ratio, in practice the M2L by construction is memory limited, due to the non-contiguous nature of interaction lists.
+
+- In addition to practical significance of each approach due to requirements of data access on modern CPUs, Kurzak / Dongarra paper reference on how rules have changed.
+
+- This was addressed in a series of papers in the 90s/2000s to address this with new forms of translation operators, that reduced the asymptotic complexity of the far-field evaluations, some of which we will cover in chapter on field translations.
+
+- Principally, can be grouped into two broad camps: analytical and algebraic. The latter of which coincide with the H matrix approach.
+
+- Distinguishing features math: compression scheme for low rank sub-blocks
+    - alg vs analytical schemes. admissability
+        - algebraic
+            - ACA, SVD, QR, Randomised, Krylov.
+            - interpolation basis
+                - MFS, Cheb
+        - analytical
+            - expansions
+                - Sph Harm, Cartesian (Taylor)
+            - compression
+                - diagonalisation, plane wave/exponential
+    - hierarchical block structure (HSS/HODLR/H/H2).
+        - FMM is an instance of H2. analytical FMM is H2 but unrolled loop.
+
+- Distinguishing features CS
+    - Data access
+    - tree (ORB vs Octree)
+        - Octree:
+            - pointer based
+            - bottom up
+        - ORB scheme, bounding boxes (square etc)
+            - Abduljabbar
+    - hardware
+        - GPU support, het, CPU only
+        - SIMD
+    - interaction list data access
+        - linearisation of the tree.
+        - ghost exchange in distributed memory.
+    - software
+        - asych
+        - runtime model
+        - threading model
+    - software platform
+        - language and platform support, performance.
+        - ability to support all the variants listed above, and be flexible to swap them out and compare them as toolbox for understanding the FMM.
+
+- Combinatorial explosion of FMM variants, very little work on unifying the work that has been done. Unclear of which the best approaches even are. People find an approach and stick to it. Especially in the context of rapidly changing hardware environment, where many previous acceleration schemes based on optimal flops may no longer be optimal.
+
+- Heuristically, the best approach in practice is likely to be one that maximises flop/bytes, while simulatneously linearising interaction list data access to take advantage of modern cache hierarchies, must also be tunable in terms of building up cache.
+
+- The actual expansion scheme is also of relevance, as will reflect the nature of the flops
+    - e.g. are we computing spherical harmonics and other special functions
+    - however, the consequence of this is likely to matter less than admissability choices, and linearisation of data access schemes.
+
+- Have ambikasaran diagram here for matrix decomposition variants as it's very clear.
+
 
 
 

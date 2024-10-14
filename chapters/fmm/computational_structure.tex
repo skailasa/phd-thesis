@@ -2,33 +2,86 @@
 
 - The data flow is shown in Figure \ref{fig:chpt:fmm:data_flow} for all the operators for a uniform FMM in two dimensions with two levels taken in the hierarchical tree.
 
-As expressed in the preceding section on may have a pessimistic view on obtaining performance for a given FMM implementation as it relies on:
+- In this section we map this data flow to the available parallelism on shared and distributed memory systems.
 
-- nonlinear hierarchical data structure - resulting in non-linear data access patterns, illsuited to the data movement requirements of modern hardwares.
+- Tree construction
 
-- A double recursion through a hierarchical data structure.
+    - bottom up vs top down, complexities of each approach
+    - Morton vs Hilbert spatial decompositions
+    - ORB as an alternative approach.
+    - What are the positives and trade-offs of different spatial encodings? How much do I think it matters?
+    - linked list vs linear
+        - linear us, pvfmm
+        - exafmm-t as an example of linked list variant.
 
-- A number of `operators' that define linear transformations between data associated with each box at each level during the hierarchical recursion.
+- Interaction list access
+    - Originally, based on linked lists - Anderson,
+    - Move towards masking techniques, bebendorf GPU and Gumerov, as GPUs became a thing.
+    - High degree of success with index pointer based techniques, us, pvfmm and exafmm.
 
-- A critical operator, M2L, which necessarily relies on data non-local to a given box.
+- Runtime, Thread and Data level parallelism
+    - threading model
+        - tbb/rayon approach on work stealing vs openmp fork-join
+    - data level
+        - achieved easily if formulated with modern BLAS libraries for critical operators.
 
-- The long range interactions captured by the recursive tree loop and the M2L operator leading to an O(N) algorithm, are also features which mean that practical implementations on modern computers where flops are no longer a good proxy for the runtime complexity of a software.
+- Formulation of translation operators.
+    - analytical (unrolled) formulations
+        - relies on special functions, multithreading possible but manual
+        - can be written as BLAS
+    - algebraic
+        - BLAS
 
-- Algorithm implementations must instead focus heavily on data operations such as transfer, synchrnoisations, and attempt to heavily utilise the cache available to us in modern CPUs/GPUs to minimise data transfer, even at the cost of extra flops - as extra flops on locally cached data represent a modest increase in the runtime/energy usage.
+Ghost data exchange of interaction lists
+    - MPI
+        - point to point vs collective vs neighbourhood collective
+    - Runtime systems
+        - BSP (ie MPI) vs task based
 
-However, there are also many positives
+    - implications for caching based on granularty of tasks.
 
-- Expensive operations involving particle data at the leaf level can be efficiently parallelised due to natural expression via SIMT/SIMD approaches.
+How can parallelism best be expressed?
 
-- The M2M/L2L operators offer clear opportunities for data re-use over siblings as they are operating between parent/child boxes.
+- Unroll the FMM loop
+- linearise data access for interaction lists
+- ensure that as many key operations as possible can use those implementations with high flop/byte ratio and take advantage of SIMD i.e. open source FFTW/BLAS/LAPACK.
 
-- These operators can therefore be expressed very high arithmetic intensity. Which we define as the ratio of \textit{useful flops per memory access}.
+What does this mean in terms of the operators?
 
-- Although at first glance the M2L and the recursive application of operators seem to be barriers to achieving high arithmetic intensity overall for the FMM, it's clear that symmetry arguments can be used to batch together applications of M2L operators across multiple boxes if the kernels defining the interaction exhibit translational invariance.
-- Furthermore, the tree is considered level-wise in a highly consistent fashion across all levels. And therefore offers significant opportunities for linear data layout for all required data per tree level.
+- Data dependency at coarsest granularty is over levels, reminiscent of V list cycle in multigrid approaches.
+    - Picking this level of granularty gives the greatest flexibility to an implementer to explore options.
+    - Furthermore, the P2P and recursive scheme are completely data independent and should be treated as such.
 
-- Therefore, although the FMM at first glance appears to be an algorithm with significant data access issues and cache problems due to its recursive structure and reliance on a hierarchical data structure, it can be seen when unrolled that it is in principle expressable using linear data structures where all operators have opportunities for high-arithmetic intensity formulations.
-- as we show in figure ... where we sketch the data flow operation in Figure \ref{fig:chpt:fmm:data_flow} as an unrolled FMM loop, with linear data access.
+- Ensuring data locality for translations
+    - i.e. it's clear that M2M and L2L can be batched over sets of siblings.
+        - but can also batch over multiple sets of siblings at each level.
+
+    - the challenge ise the M2L, where the number of accesses is as no order of magnitude larger than M2M and L2L.
+    - P2P, standard techniques can be adapted due to natural parallelism over target particles. The challenge is ensuring that SIMD is used appropriately for inverse square roots, and special functions, to fully utilise cache and CPU.
+    - tree and admissibility condition should be separated from the data access method
+        - i.e. no matter what these are, level-wise data access is always linear over contiguous blocks.
+
+- Parallel model that allows for tunable cache utilisation
+    - this means taking advantage of 'free lunches' from open-source software for high performance, relying on BLAS/LAPACK as much as possible as well as FFT if utilised.
+        - SIMD special functions, and inverse roots
+    - i.e. avoid parallel models where cache coherence could be destroyed for any reason.
+
+- Removing as much as possible into the pre-computation step.
+    - i.e. separate out required data into that evaluated at runtime, and that which can be stored and cached.
+
+- Distributed memory
+    - Foundational work by Warren and Salmon.
+    - naively, due to global data dependency over each level, high levels of the tree are required across the entire domain.
+    - BUT the amount of data is actually extreemly small, just the multipole coefficients for long range interactions. The P2P charge data is by definition extremely local, and can be handled effectively even with point to point communication patterns which are simple.
+    - modern MPI implementations can do all-reduce style operations in log(P), talk a little about this.
+    - MPI 3.0 and above introduce neighbourhood communication
+        - Note that, when viewed hierarchically, data exchange is local in terms of morton keys. So maps well to hierarchical neighbourhood collective communication patterns
+
+- Software environment that allows us to mix and match all of the above, and can be a tool for both high performance simulation and algorithmic exploration.
+
+At the end of this we have a skeleton for a high performacne FMM/hierarchical matrix
+
+- Component diagram for high performance abstract FMM:
 
 \begin{figure}[h]
     \includegraphics[width=\textwidth]{fmm_data_flow.png}

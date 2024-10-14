@@ -1,0 +1,135 @@
+
+\section{The Multipole to Local Translation (M2L)}\label{chpt:field_translation:sec:m2l}
+
+- From chandrowlishwaram 2010 to now, the M2L has become the key bottleneck in terms of optimising kiFMM implementations. Cost of DRAM access hasn't scaled as quickly as available flops.
+
+- Note here on the computational structure of the M2L problem. How it's poorly matched to modern CPU/GPU.
+
+- We've already observed the M2L operator to be of convolution type, and therefore amenable to FFT acceleration if using regular grids like in the kiFMM.
+
+- This has optimal complexity, but the low arithmetic intensity of the internal Hadamard product is difficult to optimise out.
+
+- We postulate that direct matrix compression techniques, with specially designed hardware features that optimise for BLAS, as well as randomised methods for matrix compression - reducing pre-computation time, can result in highly competitive runtimes. Very high arithmetic intensity
+
+- Introduce this subchapter
+
+\subsection{Literature Review}
+
+- use this section to introduce idea of transfer vectors, reflection and rotational symmetry
+
+- Full literature review of past approaches
+
+- Dense and Analytical approaches
+
+- The historical push for this originally resulted in point and shoot/diagonal forms ('new' FMM paper)
+
+- Where past efforts have been focussed, and why? (Original paper dismissed direct matrix compression)
+
+- how this is achieved in practice (i.e. what computations are needed, not the implementation details)
+
+- Explanation of the FFT method, and why it was able to achieve high performance.
+
+- Why this may not be completely appropriate, low arithmetic intensity (maybe estimate?)
+
+- How PVFMM makes it work, with very high arithmetic intensities, and special structure.
+
+- Some criticism here of that approach.
+
+- Require a special implementation for each architecture, intricate to maintain, requires passing mutable pointers over threads. Difficult to replicate, ours is the only re-implementation of this scheme in the open-source.
+
+- Give the gist here, the actual details can be shoved in the appendix as it's not really a part of the discussion.
+
+- Numerical compressoin of low rank blocks, approaches
+- ie. how is SVD handled for aspect ratio
+- randomised SVD
+- estimating cutoff rank
+- power iterations, and practical considerations
+    - multithreading, where to use rSVD, limitation due to internal QR required, potentially alternative schemes - krylov-schur
+
+- Alternative recompression scheme based on QR
+
+\begin{flalign}
+    A = BC^T, \text{ with } B \in \mathbb{R}^{m \times K}, C \in \mathbb{R}^{n \times K}
+\end{flalign}
+
+where $K > k$ target rank, but still much smaller than $m,n$.
+
+\begin{enumerate}
+    \item Compute Economic QR (cheaper than det SVD) $B = Q_BR_B$, $C = Q_C R_C$.
+    \item  Compute truncated SVD $T_k(R_B, R_C^T) = \tilde{U}_k \Sigma_k \tilde{V}_k$
+    \item Set $U_k = Q_B \tilde{U}_k$, $V_k = Q_C\tilde{V}_k$, return $T_k(A) := U_k \Sigma_k V_k^T$
+\end{enumerate}
+
+Complexity is $O((m+n)K^2)$, but smaller constant than SVD.
+
+
+When $A$ does not have rank $k$ but can be well approximated by a rank - $k$ matrix, it is advisable to choose the oversampling parameter $p$ larger than 0 in the rSVD (alg 2 in Kressner review).  The following result shows that the resulting error will not be far away from the best approximation error $sigma\_k+1$ in expectation, with resepct to the the random matrix $\Omega$,
+
+- Theorem, Let $k \geq 2$ and $p \geq 2$ be chosen such that $k+1 \leq \min\{m,n\}$. Then the rank-$k$ approximation $\tilde{A}$ satisfies
+
+\begin{flalign}
+    \mathbb{E}\|A-\tilde{A}\| \leq \left(2 + \frac{4\sqrt{(k+p)\min{\{m, n\}}}}{p-1}\right)\sigma_{k+1}
+\end{flalign}
+
+The bound improves significantly when performing a few steps of subspace iteration after Step 2 in Algorithm2, which requires a few additional block matrix-vector multiplications with AT and A. In practice, this may not be needed. As the following example shows, the observed approximation error is much better than predicted by Theorem above
+
+Can here demonstrate compression of Laplace operator with different oversampling paremeters and observe how close erorr is to $\sigma_{k+1}$, use this to justify lack of power iterations.
+
+- Need Singular value distributions for Helmholtz kernel to justify the parameters for compression, that investigation needs to be in this section. Similar to the Darve paper, i.e. to justify the approximate rank for the rSVD.
+
+- Why might this be preferred, or advantageous, what are its constraints
+
+- structure of modern CPU and GPU
+
+- emerging CPU architectures with specialised units for matrix multiplication
+    - examples of CPUs, apple M series, Qualcomm snapdragon
+
+- implications for matmuls on GPU (low-precision)
+
+- Using numerical compression schemes for low-rank blocks has a long history in the H matrix community
+    - ACA, 'adaptive' expansion order schemes.
+    - can be seen to correspond to 'variable expansion order FMM' schemes of the 90s/00s.
+
+\subsection{A New Direct Compression Based Acceleration Scheme}
+
+- Pioneering work by messner et. al. took these schemes and specifically focussed on computational aspects, the SVD is an expensive algorithm, worked on re-ordering the computation to reduce expense
+    - we build on this
+- Furthermore they worked on re-organising application to improve caching, and our approach extends this.
+
+
+- Precomputations required for Laplace and Helmholtz, required storage.
+- Why 'storage' is perhaps irrelevant - shallow trees, and anyways data movement rather than storage is critical.
+
+- Approaches for BLAS based field translation in some more detail than in the paper.
+
+- Essentially, we extend the idea of Messner et. al by completely unrolling the M2L loop via precomputatioan of critical metadata.
+
+- Explanation of what metadata is required, what we mean by unrolling.
+
+- Demonstrate how this is actually a general variant of what's been done in other approaches.
+
+- This specification is very suggestive of an approach that relies on linear data structures and preserves cache-coherence.
+
+- Suggests that a simple method using BLAS and multithreading can be highly effective, in contrast to the runtime systems experimented with in the past decades, simply because the cache structure of these computations is simple, and runtimes may destroy this.
+
+- Algorithm itself, take from paper
+
+- Caching experiment vs ScalFMM. Why software comparisons can be contrived, due to the vast differences in implementation details -e.g. kernel evaluations, but can directly compare the M2L runtimes alone for different expansion orders and tree levels.
+    - cache destroyed by granular tasking approach
+
+- The numerical results from the paper for Precomputations as well as M2L application cost. Need the same results for Helmholtz, but first need to find optimal parameters.
+
+- Comment and discussion from the paper can be lifted here.
+
+- Interesting point of comparison with ScalFMM to demonstrate the importance of caching to performance, noting that direct software comparisons are not entirely fair, but we are relying on same compiler version, threading model, and BLAS versions. The only difference being the organisation of the computation.
+
+- Time just the M2L for ScalFMM, multithreading enabled, on threadripper. Single and double precision if possible, at different expansion orders, for increasing tree depth,
+
+Kressner discussion on approaches for low rank matrix factorisations (non-hierarchical)
+
+- Martin Stoll Krylov schur
+- Levitt and Martinsson Linear Complexity Black Box Compression
+- Halko, randomised linear algebra
+- ACA
+- SVD
+- Other methods from paper.
